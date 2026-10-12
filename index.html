@@ -47,10 +47,10 @@ canvas{display:block;touch-action:none}
 .over p{margin:0;color:var(--muted)}
 .over .big{font-size:2.2rem;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
 .over .btn{margin:6px 0 0;background:var(--gold);color:#1a1300;border:0;padding:10px 20px;font-size:1rem}
-.tray{display:grid;grid-template-columns:1fr 1fr 1fr .8fr;gap:8px;height:108px;flex:none}
-.slot{width:100%;height:100%;cursor:grab}
-.nextbox{display:flex;flex-direction:column;align-items:center;gap:2px;border:1px dashed var(--line);border-radius:12px;padding:6px 4px 4px;min-width:0}
-.nextbox canvas{flex:1;width:100%;min-height:0}
+.tray{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,.8fr);grid-template-rows:108px;gap:8px;height:108px;flex:none;overflow:hidden}
+.slot{width:100%;height:108px;min-width:0;cursor:grab}
+.nextbox{position:relative;height:108px;min-width:0;overflow:hidden;border:1px dashed var(--line);border-radius:12px;text-align:center;padding-top:6px}
+.nextbox canvas{position:absolute;left:4px;right:4px;top:24px;bottom:4px;width:calc(100% - 8px);height:calc(100% - 28px)}
 .drag{position:fixed;left:0;top:0;pointer-events:none;z-index:10}
 .hint{font-size:.75rem;color:var(--muted);text-align:center;margin:0}
 @media (prefers-reduced-motion:reduce){.tab{transition:none}}
@@ -337,6 +337,7 @@ const Blocks=(()=>{
   }
 
   function drawPiece(c,p,alpha,maxCell){const k=DPR(),w=c.clientWidth,h=c.clientHeight;if(!w||!h)return;
+    c.style.width=w+'px';c.style.height=h+'px';
     c.width=Math.round(w*k);c.height=Math.round(h*k);const g=c.getContext('2d');g.setTransform(k,0,0,k,0,0);g.clearRect(0,0,w,h);
     if(!p)return;const m=Math.min(maxCell,(w-8)/5,(h-8)/5),ox=(w-p.w*m)/2,oy=(h-p.h*m)/2;
     for(const[a,b]of p.s)block(g,ox+b*m+1,oy+a*m+1,m-2,p.c,alpha)}
