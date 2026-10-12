@@ -212,7 +212,7 @@ const Bubbles=(()=>{
       grp.forEach(([a,b],i)=>{fx.push({t:'pop',x:cx(a,b),y:cy(a),c:grid[a][b],age:-i*STEP,n:i});grid[a][b]=null});
       score+=grp.length*10;
       const fl=floating();
-      fl.forEach(([a,b],i)=>{fx.push({t:'fall',x:cx(a,b),y:cy(a),vx:(Math.random()-.5)*3,vy:-2-Math.random()*3,c:grid[a][b],wait:grp.length*STEP+i*.012,first:i===0});grid[a][b]=null;score+=20+i*5});
+      fl.forEach(([a,b],i)=>{fx.push({t:'fall',x:cx(a,b),y:cy(a),vx:(Math.random()-.5)*180*(H/545),vy:(-120-Math.random()*180)*(H/545),c:grid[a][b],wait:grp.length*STEP+i*.012,first:i===0});grid[a][b]=null;score+=20+i*5});
       trim();
       if(!present().length){score+=500;grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());slide=RH*2}
     }else addRow();
@@ -230,13 +230,14 @@ const Bubbles=(()=>{
     ctx.globalAlpha=1}
 
   function frame(dt){
-    if(shot){for(let i=0;i<5;i++){shot.x+=shot.dx*4.2;shot.y+=shot.dy*4.2;
+    if(shot){const V=(SY-R)/.4,dist=V*dt,n=Math.max(1,Math.ceil(dist/4)),st=dist/n;
+      for(let i=0;i<n;i++){shot.x+=shot.dx*st;shot.y+=shot.dy*st;
       if(shot.x<R){shot.x=2*R-shot.x;shot.dx=-shot.dx}if(shot.x>W-R){shot.x=2*(W-R)-shot.x;shot.dx=-shot.dx}
       if(hits(shot.x,shot.y)){land();break}}}
     slide=Math.max(0,slide-RH*dt*5);
     fx=fx.filter(f=>{if(f.t==='pop'){const was=f.age;f.age+=dt;if(was<0&&f.age>=0)plop(f.n);return f.age<.22}
       if(f.wait>0){f.wait-=dt;if(f.wait<=0&&f.first)thud();return true}
-      f.vy+=.45;f.x+=f.vx;f.y+=f.vy;return f.y<H+R});
+      f.vy+=3*H*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;return f.y<H+R});
     // draw
     ctx.setTransform(k,0,0,k,0,0);ctx.clearRect(0,0,W,H);
     const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1d2a5c');bg.addColorStop(1,'#121a3c');
