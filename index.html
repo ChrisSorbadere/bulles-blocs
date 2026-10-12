@@ -88,7 +88,6 @@ canvas{display:block;touch-action:none}
         <h2>Les bulles ont gagné</h2><p>Score</p><div class="big" id="bub-final">0</div>
         <button class="btn" id="bub-again">Rejouer</button></div></div>
     </div>
-    <p class="hint">Vise en glissant, relâche pour tirer. Touche la bulle « suivante » pour l’échanger.</p>
   </section>
 
   <section id="g-blk" class="game" hidden>
@@ -131,8 +130,11 @@ const Bubbles=(()=>{
   const LEVELS=[{cols:10,rows:12,start:6},{cols:13,rows:17,start:9},{cols:15,rows:19,start:10},{cols:17,rows:22,start:11}];
   let lvl=store.get('bb.bubLvl',0),COLS,DR,START,W,H,SX,SY,NX,NY,LIMIT;
   if(!(lvl>=0&&lvl<4))lvl=0;
-  function dims(){const L=LEVELS[lvl];COLS=L.cols;DR=L.rows;START=L.start;W=(2*COLS+1)*R;
-    H=Math.round(R+DR*RH+110);SX=W/2;SY=H-46;NX=SX-90;NY=SY+8;LIMIT=R+(DR-1)*RH+R+4}
+  let aspect=0;
+  function dims(){const L=LEVELS[lvl];COLS=L.cols;START=L.start;W=(2*COLS+1)*R;
+    const base=Math.round(R+L.rows*RH+110);H=Math.max(base,aspect?Math.floor(W*aspect):0);
+    DR=Math.max(L.rows,Math.floor((H-110-R)/RH));
+    SX=W/2;SY=H-46;NX=SX-90;NY=SY+8;LIMIT=R+(DR-1)*RH+R+4}
   dims();
   const COL=['red','yellow','green','cyan','blue','purple'].map(k=>PAL[k]);
   const cv=$('#bub-cv'),ctx=cv.getContext('2d'),stage=$('#bub-stage');
@@ -272,6 +274,7 @@ const Bubbles=(()=>{
   cv.addEventListener('pointerleave',e=>{if(!aiming&&e.pointerType==='mouse')aim=null});
 
   function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
+    aspect=h/w;dims();
     const s=Math.min(w/W,h/H);const cw=Math.floor(W*s),ch=Math.floor(H*s);
     cv.style.width=cw+'px';cv.style.height=ch+'px';cv.width=Math.round(cw*DPR());cv.height=Math.round(ch*DPR());k=cv.width/W}
   new ResizeObserver(resize).observe(stage);
