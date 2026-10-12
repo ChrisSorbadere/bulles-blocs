@@ -37,6 +37,7 @@ body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(
 .val{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
 .best .val{font-size:1.1rem;color:var(--gold)}
 .btn{margin-left:auto;font:600 .85rem var(--display);color:var(--ink);background:var(--tab);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.snd{margin-left:0;padding:8px 10px}
 .stage{flex:1;min-height:0;position:relative;display:grid;place-items:center}
 canvas{display:block;touch-action:none}
 #bub-cv,#blk-cv{border-radius:12px}
@@ -69,6 +70,7 @@ canvas{display:block;touch-action:none}
       <div class="stat"><span class="lbl">Score</span><span id="bub-score" class="val">0</span></div>
       <div class="stat best"><span class="lbl">Record</span><span id="bub-best" class="val">0</span></div>
       <button id="bub-new" class="btn">Nouvelle partie</button>
+      <button id="bub-snd" class="btn snd" aria-label="Son">🔊</button>
     </div>
     <div class="stage" id="bub-stage">
       <canvas id="bub-cv"></canvas>
@@ -122,6 +124,19 @@ const Bubbles=(()=>{
   const cv=$('#bub-cv'),ctx=cv.getContext('2d'),stage=$('#bub-stage');
   let grid,parity,cur,nxt,shot,aim=null,aiming=false,fx=[],score,over,slide=0,k=1;
   let best=store.get('bb.bubBest',0);
+  const STEP=.035;
+  let AC=null,muted=store.get('bb.mute',false);
+  function audio(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume()}
+  function plop(n){if(muted||!AC)return;try{const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(),f=520+Math.min(n,20)*45;
+    o.type='sine';o.frequency.setValueAtTime(f*1.6,t);o.frequency.exponentialRampToValueAtTime(f*.6,t+.07);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.09);
+    o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.1)}catch(e){}}
+  function thud(){if(muted||!AC)return;try{const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+    o.type='triangle';o.frequency.setValueAtTime(260,t);o.frequency.exponentialRampToValueAtTime(90,t+.18);
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.18,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.2);
+    o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.22)}catch(e){}}
+  const sndBtn=$('#bub-snd');const sndUI=()=>{sndBtn.textContent=muted?'🔇':'🔊'};sndUI();
+  sndBtn.onclick=()=>{muted=!muted;store.set('bb.mute',muted);sndUI();audio()};
 
   const shifted=r=>((r+parity)&1)===1;
   const cx=(r,c)=>R+c*2*R+(shifted(r)?R:0);
@@ -174,10 +189,11 @@ const Bubbles=(()=>{
     const[r,c]=cell;while(grid.length<=r)grid.push(Array(COLS).fill(null));grid[r][c]=color;
     const grp=flood(r,c);
     if(grp.length>=3){
-      for(const[a,b]of grp){fx.push({t:'pop',x:cx(a,b),y:cy(a),c:grid[a][b],age:0});grid[a][b]=null}
+      const ox=cx(r,c),oy=cy(r);grp.sort((p,q)=>Math.hypot(cx(p[0],p[1])-ox,cy(p[0])-oy)-Math.hypot(cx(q[0],q[1])-ox,cy(q[0])-oy));
+      grp.forEach(([a,b],i)=>{fx.push({t:'pop',x:cx(a,b),y:cy(a),c:grid[a][b],age:-i*STEP,n:i});grid[a][b]=null});
       score+=grp.length*10;
       const fl=floating();
-      fl.forEach(([a,b],i)=>{fx.push({t:'fall',x:cx(a,b),y:cy(a),vx:(Math.random()-.5)*3,vy:-2-Math.random()*3,c:grid[a][b]});grid[a][b]=null;score+=20+i*5});
+      fl.forEach(([a,b],i)=>{fx.push({t:'fall',x:cx(a,b),y:cy(a),vx:(Math.random()-.5)*3,vy:-2-Math.random()*3,c:grid[a][b],wait:grp.length*STEP+i*.012,first:i===0});grid[a][b]=null;score+=20+i*5});
       trim();
       if(!present().length){score+=500;grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());slide=RH*2}
     }else addRow();
@@ -199,7 +215,9 @@ const Bubbles=(()=>{
       if(shot.x<R){shot.x=2*R-shot.x;shot.dx=-shot.dx}if(shot.x>W-R){shot.x=2*(W-R)-shot.x;shot.dx=-shot.dx}
       if(hits(shot.x,shot.y)){land();break}}}
     slide=Math.max(0,slide-RH*dt*5);
-    fx=fx.filter(f=>{if(f.t==='pop'){f.age+=dt;return f.age<.28}f.vy+=.45;f.x+=f.vx;f.y+=f.vy;return f.y<H+R});
+    fx=fx.filter(f=>{if(f.t==='pop'){const was=f.age;f.age+=dt;if(was<0&&f.age>=0)plop(f.n);return f.age<.22}
+      if(f.wait>0){f.wait-=dt;if(f.wait<=0&&f.first)thud();return true}
+      f.vy+=.45;f.x+=f.vx;f.y+=f.vy;return f.y<H+R});
     // draw
     ctx.setTransform(k,0,0,k,0,0);ctx.clearRect(0,0,W,H);
     const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1d2a5c');bg.addColorStop(1,'#121a3c');
@@ -213,7 +231,10 @@ const Bubbles=(()=>{
       ctx.fillStyle=COL[cur][1];t.pts.forEach(([x,y],i)=>{ctx.globalAlpha=Math.max(.25,1-i/80);ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill()});
       ctx.globalAlpha=1;const cell=snap(t.x,t.y);
       if(cell){ctx.strokeStyle=COL[cur][1];ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(cx(cell[0],cell[1]),cy(cell[0]),R-2,0,7);ctx.stroke();ctx.setLineDash([])}}
-    for(const f of fx){if(f.t==='pop'){const s=1+f.age*2.2;bubble(f.x,f.y-slide,R*s,f.c,1-f.age/.28)}else bubble(f.x,f.y,R-1,f.c)}
+    for(const f of fx){if(f.t==='pop'){if(f.age<0){bubble(f.x,f.y-slide,R-1,f.c);continue}
+        const p=f.age/.22;bubble(f.x,f.y-slide,R*(1+p*.5),f.c,1-p);
+        ctx.globalAlpha=1-p;ctx.strokeStyle=COL[f.c][1];ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y-slide,R*(1+p*1.5),0,7);ctx.stroke();ctx.globalAlpha=1}
+      else bubble(f.x,f.y,R-1,f.c)}
     // shooter
     ctx.fillStyle='rgba(255,255,255,.06)';ctx.beginPath();ctx.arc(SX,SY,R+10,0,7);ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(SX,SY,R+10,0,7);ctx.stroke();
@@ -227,7 +248,7 @@ const Bubbles=(()=>{
   function toLocal(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*W/r.width,(e.clientY-r.top)*H/r.height]}
   function setAim(x,y){let a=Math.atan2(SY-y,x-SX);if(a<0)a=x<SX?Math.PI:0;
     aim=Math.min(Math.max(a,.07*Math.PI),.93*Math.PI)}
-  cv.addEventListener('pointerdown',e=>{if(over)return;const[x,y]=toLocal(e);
+  cv.addEventListener('pointerdown',e=>{audio();if(over)return;const[x,y]=toLocal(e);
     if(nxt!=null&&!shot&&Math.hypot(x-NX,y-NY)<R*2.6){[cur,nxt]=[nxt,cur];return}
     aiming=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}setAim(x,y)});
   cv.addEventListener('pointermove',e=>{if(aiming||e.pointerType==='mouse'){const[x,y]=toLocal(e);if(e.pointerType==='mouse'&&!aiming&&y>SY+R)return;setAim(x,y)}});
