@@ -115,7 +115,7 @@ const PAL={
 
 /* ================= BULLES ================= */
 const Bubbles=(()=>{
-  const COLS=13,R=20,W=(2*COLS+1)*R,RH=R*Math.sqrt(3),DR=17,START=9;
+  const COLS=17,R=20,W=(2*COLS+1)*R,RH=R*Math.sqrt(3),DR=22,START=11;
   const H=Math.round(R+DR*RH+110),SX=W/2,SY=H-46,NX=SX-90,NY=SY+8;
   const LIMIT=R+(DR-1)*RH+R+4;
   const COL=['red','yellow','green','cyan','blue','purple'].map(k=>PAL[k]);
@@ -220,7 +220,7 @@ const Bubbles=(()=>{
     if(shot)bubble(shot.x,shot.y,R-1,shot.c);
     if(!over)bubble(SX,SY,R-1,cur);
     if(nxt!=null){bubble(NX,NY,R*.78,nxt)}
-    ctx.fillStyle='#8e9bcc';ctx.font='500 14px Fredoka, sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#8e9bcc';ctx.font='500 18px Fredoka, sans-serif';ctx.textAlign='center';
     ctx.fillText('SUIVANTE ⇄',NX,NY+R+14);
   }
 
@@ -228,7 +228,7 @@ const Bubbles=(()=>{
   function setAim(x,y){let a=Math.atan2(SY-y,x-SX);if(a<0)a=x<SX?Math.PI:0;
     aim=Math.min(Math.max(a,.07*Math.PI),.93*Math.PI)}
   cv.addEventListener('pointerdown',e=>{if(over)return;const[x,y]=toLocal(e);
-    if(nxt!=null&&!shot&&Math.hypot(x-NX,y-NY)<R*1.5){[cur,nxt]=[nxt,cur];return}
+    if(nxt!=null&&!shot&&Math.hypot(x-NX,y-NY)<R*2.6){[cur,nxt]=[nxt,cur];return}
     aiming=true;try{cv.setPointerCapture(e.pointerId)}catch(_){}setAim(x,y)});
   cv.addEventListener('pointermove',e=>{if(aiming||e.pointerType==='mouse'){const[x,y]=toLocal(e);if(e.pointerType==='mouse'&&!aiming&&y>SY+R)return;setAim(x,y)}});
   cv.addEventListener('pointerup',e=>{if(!aiming)return;aiming=false;fire();if(e.pointerType!=='mouse')aim=null});
