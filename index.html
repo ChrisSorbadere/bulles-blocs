@@ -115,7 +115,7 @@ const PAL={
 
 /* ================= BULLES ================= */
 const Bubbles=(()=>{
-  const COLS=10,R=20,W=(2*COLS+1)*R,RH=R*Math.sqrt(3),DR=12;
+  const COLS=13,R=20,W=(2*COLS+1)*R,RH=R*Math.sqrt(3),DR=17,START=9;
   const H=Math.round(R+DR*RH+110),SX=W/2,SY=H-46,NX=SX-90,NY=SY+8;
   const LIMIT=R+(DR-1)*RH+R+4;
   const COL=['red','yellow','green','cyan','blue','purple'].map(k=>PAL[k]);
@@ -134,7 +134,7 @@ const Bubbles=(()=>{
     for(const rr of[r-1,r+1])for(const cc of a)o.push([rr,cc]);
     return o.filter(([rr,cc])=>rr>=0&&cc>=0&&cc<COLS)}
 
-  function reset(){grid=[];parity=0;for(let i=0;i<6;i++)grid.push(newRow());
+  function reset(){grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());
     score=0;over=false;shot=null;fx=[];slide=0;cur=pick();nxt=pick();aim=null;hud();$('#bub-over').hidden=true}
   function hud(){if(score>best){best=score;store.set('bb.bubBest',best)}
     $('#bub-score').textContent=score;$('#bub-best').textContent=best}
@@ -179,7 +179,7 @@ const Bubbles=(()=>{
       const fl=floating();
       fl.forEach(([a,b],i)=>{fx.push({t:'fall',x:cx(a,b),y:cy(a),vx:(Math.random()-.5)*3,vy:-2-Math.random()*3,c:grid[a][b]});grid[a][b]=null;score+=20+i*5});
       trim();
-      if(!present().length){score+=500;grid=[];parity=0;for(let i=0;i<6;i++)grid.push(newRow());slide=RH*2}
+      if(!present().length){score+=500;grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());slide=RH*2}
     }else addRow();
     trim();
     nxt=pick();const p=present();if(p.length&&!p.includes(cur))cur=pick();
@@ -220,7 +220,7 @@ const Bubbles=(()=>{
     if(shot)bubble(shot.x,shot.y,R-1,shot.c);
     if(!over)bubble(SX,SY,R-1,cur);
     if(nxt!=null){bubble(NX,NY,R*.78,nxt)}
-    ctx.fillStyle='#8e9bcc';ctx.font='500 11px Fredoka, sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#8e9bcc';ctx.font='500 14px Fredoka, sans-serif';ctx.textAlign='center';
     ctx.fillText('SUIVANTE ⇄',NX,NY+R+14);
   }
 
