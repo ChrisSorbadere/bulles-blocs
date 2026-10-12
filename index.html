@@ -135,7 +135,7 @@ const Bubbles=(()=>{
     DR=Math.max(START+3,Math.floor((H-110-R)/RH));
     SX=W/2;SY=H-46;NX=SX-90;NY=SY+8;LIMIT=R+(DR-1)*RH+R+4}
   dims();
-  const COL=['red','yellow','green','cyan','blue','purple'].map(k=>PAL[k]);
+  const COL=['red','yellow','green','cyan','blue','purple','orange'].map(k=>PAL[k]);
   const cv=$('#bub-cv'),ctx=cv.getContext('2d'),stage=$('#bub-stage');
   let grid,parity,cur,nxt,shot,aim=null,aiming=false,fx=[],score,over,slide=0,k=1;
   (()=>{const old=store.get('bb.bubBest',null);if(old!=null&&store.get('bb.bubBest.3',null)==null)store.set('bb.bubBest.3',old)})();
@@ -159,8 +159,8 @@ const Bubbles=(()=>{
   const cy=r=>R+r*RH;
   const at=(r,c)=>(grid[r]&&grid[r][c]!=null)?grid[r][c]:null;
   let shots=0;
-  // Facile : 5 couleurs. Moyen : 5 couleurs pendant les 10 premiers tirs, puis 6. Autres : 6.
-  const nCol=()=>lvl===0||(lvl===1&&shots<10)?5:COL.length;
+  // Facile 4 couleurs, Moyen 5, Difficile 6, Expert 7
+  const nCol=()=>4+lvl;
   const newRow=()=>Array.from({length:COLS},()=>rnd(nCol()));
   function present(){const s=new Set();for(const row of grid)for(const v of row)if(v!=null)s.add(v);return[...s]}
   function pick(){const p=present();return p.length?p[rnd(p.length)]:rnd(nCol())}
