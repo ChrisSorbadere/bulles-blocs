@@ -405,7 +405,7 @@ let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   (active==='bub'?Bubbles:Blocks).frame(dt);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{}));
 </script>
 
 </body>
