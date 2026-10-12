@@ -158,14 +158,17 @@ const Bubbles=(()=>{
   const cx=(r,c)=>R+c*2*R+(shifted(r)?R:0);
   const cy=r=>R+r*RH;
   const at=(r,c)=>(grid[r]&&grid[r][c]!=null)?grid[r][c]:null;
-  const newRow=()=>Array.from({length:COLS},()=>rnd(COL.length));
+  let shots=0;
+  // Facile : 5 couleurs. Moyen : 5 couleurs pendant les 10 premiers tirs, puis 6. Autres : 6.
+  const nCol=()=>lvl===0||(lvl===1&&shots<10)?5:COL.length;
+  const newRow=()=>Array.from({length:COLS},()=>rnd(nCol()));
   function present(){const s=new Set();for(const row of grid)for(const v of row)if(v!=null)s.add(v);return[...s]}
-  function pick(){const p=present();return p.length?p[rnd(p.length)]:rnd(COL.length)}
+  function pick(){const p=present();return p.length?p[rnd(p.length)]:rnd(nCol())}
   function nbrs(r,c){const o=[[r,c-1],[r,c+1]];const a=shifted(r)?[c,c+1]:[c-1,c];
     for(const rr of[r-1,r+1])for(const cc of a)o.push([rr,cc]);
     return o.filter(([rr,cc])=>rr>=0&&cc>=0&&cc<COLS)}
 
-  function reset(){grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());
+  function reset(){shots=0;grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());
     score=0;over=false;shot=null;fx=[];slide=0;cur=pick();nxt=pick();aim=null;hud();$('#bub-over').hidden=true}
   function hud(){if(score>best){best=score;store.set('bb.bubBest.'+lvl,best)}
     $('#bub-score').textContent=score;$('#bub-best').textContent=best}
@@ -199,7 +202,7 @@ const Bubbles=(()=>{
   function addRow(){grid.unshift(newRow());parity^=1;slide=RH}
   function trim(){while(grid.length&&grid[grid.length-1].every(v=>v==null))grid.pop()}
 
-  function fire(){if(over||shot||aim==null)return;
+  function fire(){if(over||shot||aim==null)return;shots++;
     shot={x:SX,y:SY,dx:Math.cos(aim),dy:-Math.sin(aim),c:cur};cur=nxt;nxt=null}
   function land(){const cell=snap(shot.x,shot.y);const color=shot.c;shot=null;if(!cell)return;
     const[r,c]=cell;while(grid.length<=r)grid.push(Array(COLS).fill(null));grid[r][c]=color;
