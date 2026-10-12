@@ -38,6 +38,10 @@ body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(
 .best .val{font-size:1.1rem;color:var(--gold)}
 .btn{margin-left:auto;font:600 .85rem var(--display);color:var(--ink);background:var(--tab);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
 .snd{margin-left:0;padding:8px 10px}
+.levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--panel);padding:3px;border-radius:10px;flex:none}
+.lvl{font:500 .8rem var(--display);color:var(--muted);background:transparent;border:0;border-radius:8px;padding:6px 0;cursor:pointer}
+.lvl[aria-checked="true"]{background:var(--tab);color:var(--gold)}
+.lvl:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
 .stage{flex:1;min-height:0;position:relative;display:grid;place-items:center}
 canvas{display:block;touch-action:none}
 #bub-cv,#blk-cv{border-radius:12px}
@@ -71,6 +75,12 @@ canvas{display:block;touch-action:none}
       <div class="stat best"><span class="lbl">Record</span><span id="bub-best" class="val">0</span></div>
       <button id="bub-new" class="btn">Nouvelle partie</button>
       <button id="bub-snd" class="btn snd" aria-label="Son">🔊</button>
+    </div>
+    <div class="levels" role="radiogroup" aria-label="Niveau">
+      <button class="lvl" data-l="0" role="radio">Facile</button>
+      <button class="lvl" data-l="1" role="radio">Moyen</button>
+      <button class="lvl" data-l="2" role="radio">Difficile</button>
+      <button class="lvl" data-l="3" role="radio">Expert</button>
     </div>
     <div class="stage" id="bub-stage">
       <canvas id="bub-cv"></canvas>
@@ -117,13 +127,18 @@ const PAL={
 
 /* ================= BULLES ================= */
 const Bubbles=(()=>{
-  const COLS=17,R=20,W=(2*COLS+1)*R,RH=R*Math.sqrt(3),DR=22,START=11;
-  const H=Math.round(R+DR*RH+110),SX=W/2,SY=H-46,NX=SX-90,NY=SY+8;
-  const LIMIT=R+(DR-1)*RH+R+4;
+  const R=20,RH=R*Math.sqrt(3);
+  const LEVELS=[{cols:10,rows:12,start:6},{cols:13,rows:17,start:9},{cols:15,rows:19,start:10},{cols:17,rows:22,start:11}];
+  let lvl=store.get('bb.bubLvl',0),COLS,DR,START,W,H,SX,SY,NX,NY,LIMIT;
+  if(!(lvl>=0&&lvl<4))lvl=0;
+  function dims(){const L=LEVELS[lvl];COLS=L.cols;DR=L.rows;START=L.start;W=(2*COLS+1)*R;
+    H=Math.round(R+DR*RH+110);SX=W/2;SY=H-46;NX=SX-90;NY=SY+8;LIMIT=R+(DR-1)*RH+R+4}
+  dims();
   const COL=['red','yellow','green','cyan','blue','purple'].map(k=>PAL[k]);
   const cv=$('#bub-cv'),ctx=cv.getContext('2d'),stage=$('#bub-stage');
   let grid,parity,cur,nxt,shot,aim=null,aiming=false,fx=[],score,over,slide=0,k=1;
-  let best=store.get('bb.bubBest',0);
+  (()=>{const old=store.get('bb.bubBest',null);if(old!=null&&store.get('bb.bubBest.3',null)==null)store.set('bb.bubBest.3',old)})();
+  let best=store.get('bb.bubBest.'+lvl,0);
   const STEP=.035;
   let AC=null,muted=store.get('bb.mute',false);
   function audio(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(AC&&AC.state==='suspended')AC.resume()}
@@ -151,7 +166,7 @@ const Bubbles=(()=>{
 
   function reset(){grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());
     score=0;over=false;shot=null;fx=[];slide=0;cur=pick();nxt=pick();aim=null;hud();$('#bub-over').hidden=true}
-  function hud(){if(score>best){best=score;store.set('bb.bubBest',best)}
+  function hud(){if(score>best){best=score;store.set('bb.bubBest.'+lvl,best)}
     $('#bub-score').textContent=score;$('#bub-best').textContent=best}
 
   function hits(x,y){if(y<=R)return true;
@@ -241,7 +256,7 @@ const Bubbles=(()=>{
     if(shot)bubble(shot.x,shot.y,R-1,shot.c);
     if(!over)bubble(SX,SY,R-1,cur);
     if(nxt!=null){bubble(NX,NY,R*.78,nxt)}
-    ctx.fillStyle='#8e9bcc';ctx.font='500 18px Fredoka, sans-serif';ctx.textAlign='center';
+    ctx.fillStyle='#8e9bcc';ctx.font='500 '+Math.round(W/38)+'px Fredoka, sans-serif';ctx.textAlign='center';
     ctx.fillText('SUIVANTE ⇄',NX,NY+R+14);
   }
 
@@ -261,6 +276,11 @@ const Bubbles=(()=>{
     cv.style.width=cw+'px';cv.style.height=ch+'px';cv.width=Math.round(cw*DPR());cv.height=Math.round(ch*DPR());k=cv.width/W}
   new ResizeObserver(resize).observe(stage);
   $('#bub-new').onclick=reset;$('#bub-again').onclick=reset;
+  const lvlBtns=$$('.lvl');
+  function lvlUI(){lvlBtns.forEach(b=>b.setAttribute('aria-checked',+b.dataset.l===lvl))}
+  lvlBtns.forEach(b=>b.onclick=()=>{const l=+b.dataset.l;if(l===lvl&&!over)return;lvl=l;store.set('bb.bubLvl',lvl);
+    best=store.get('bb.bubBest.'+lvl,0);dims();lvlUI();resize();reset()});
+  lvlUI();
   reset();
   return{frame,resize}
 })();
