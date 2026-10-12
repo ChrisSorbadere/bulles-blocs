@@ -186,7 +186,8 @@ const Bubbles=(()=>{
   let shots=0;
   // Facile 4 couleurs, Moyen 5, Difficile 6, Expert 7
   const nCol=()=>4+lvl;
-  const newRow=()=>Array.from({length:COLS},()=>rnd(nCol()));
+  // pool : couleurs autorisées. Les nouvelles rangées n'utilisent que les couleurs encore présentes.
+  const newRow=(pool)=>{const p=pool&&pool.length?pool:[...Array(nCol()).keys()];return Array.from({length:COLS},()=>p[rnd(p.length)])};
   function present(){const s=new Set();for(const row of grid)for(const v of row)if(v!=null)s.add(v);return[...s]}
   function pick(){const p=present();return p.length?p[rnd(p.length)]:rnd(nCol())}
   function nbrs(r,c){const o=[[r,c-1],[r,c+1]];const a=shifted(r)?[c,c+1]:[c-1,c];
@@ -224,7 +225,7 @@ const Bubbles=(()=>{
     while(q.length){const[a,b]=q.pop();for(const[x,y]of nbrs(a,b)){const key=x+','+y;if(!seen.has(key)&&at(x,y)!=null){seen.add(key);q.push([x,y])}}}
     const out=[];for(let r=0;r<grid.length;r++)for(let c=0;c<COLS;c++)if(grid[r][c]!=null&&!seen.has(r+','+c))out.push([r,c]);
     return out}
-  function addRow(){grid.unshift(newRow());parity^=1;slide=RH}
+  function addRow(){grid.unshift(newRow(present()));parity^=1;slide=RH}
   function trim(){while(grid.length&&grid[grid.length-1].every(v=>v==null))grid.pop()}
 
   function fire(){if(over||shot||aim==null)return;shots++;
