@@ -1,8 +1,8 @@
 {
   "id": "/bulles-blocs/",
-  "name": "Bulles, Blocs & Bonbons",
+  "name": "Bulles, Blocs & Gemmes",
   "short_name": "Bulles&Blocs",
-  "description": "Bubble shooter, jeu de blocs et jeu de bonbons dans une seule appli.",
+  "description": "Bubble shooter, jeu de blocs et jeu de gemmes dans une seule appli.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
