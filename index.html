@@ -65,6 +65,9 @@ canvas{display:block;touch-action:none}
 .slot{width:100%;height:108px;min-width:0;cursor:grab}
 .nextbox{position:relative;height:108px;min-width:0;overflow:hidden;border:1px dashed var(--line);border-radius:12px;text-align:center;padding-top:6px}
 .nextbox canvas{position:absolute;left:4px;right:4px;top:24px;bottom:4px;width:calc(100% - 8px);height:calc(100% - 28px)}
+.stage canvas,.tray{transition:opacity .35s,visibility .35s}
+body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hidden}
+.ask{position:fixed;z-index:40;border-radius:0}
 #fxcv{position:fixed;left:0;top:0;pointer-events:none;z-index:50}
 .drag{position:fixed;left:0;top:0;pointer-events:none;z-index:10}
 .hint{font-size:.75rem;color:var(--muted);text-align:center;margin:0}
@@ -141,6 +144,10 @@ canvas{display:block;touch-action:none}
   </section>
 </div>
 <canvas id="drag" class="drag" hidden></canvas>
+<div class="over ask" id="ask" hidden><div class="card">
+  <h2 id="ask-t"></h2><p id="ask-s"></p>
+  <button class="btn" id="ask-yes">Continuer</button>
+  <button class="btn alt" id="ask-no">Nouvelle partie</button></div></div>
 <canvas id="fxcv" hidden></canvas>
 
 <script>
@@ -180,7 +187,8 @@ const Celebrate=(()=>{
     parts.push({k:'flash',x,y,c,age:0});boomSnd()}
   function pop(p){parts.push({k:'ring',x:p.x,y:p.y,r:p.r,c:p.c,age:0});
     for(let i=0;i<10;i++){const a=i/10*Math.PI*2,sp=60+R()*80;parts.push({k:'spark',x:p.x,y:p.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,c:p.c,life:.5+R()*.3,age:0})}}
-  function start(k,txt){kind=k;text=txt;t=0;acc=0;parts=[];size();cv.hidden=false;tune();
+  let onEnd=null;
+  function start(k,txt,cb){kind=k;text=txt;t=0;acc=0;parts=[];onEnd=cb||null;size();cv.hidden=false;document.body.classList.add('cele');tune();
     if(k==='confetti')for(let i=0;i<(reduce()?40:150);i++)parts.push(confetti(true));
     if(k==='fireworks'){parts.push(rocket(),rocket())}
     if(!running){running=true;last=performance.now();requestAnimationFrame(loop)}}
@@ -226,10 +234,13 @@ const Celebrate=(()=>{
         g.addColorStop(0,'rgba(255,255,255,'+(.7*(1-q))+')');g.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=g;ctx.fillRect(p.x-90,p.y-90,180,180)}
       keep.push(p)}
     parts=keep;banner();
-    if((t>2.7&&!parts.length)||t>6){running=false;cv.hidden=true;ctx.clearRect(0,0,W,H);return}
+    if((t>2.7&&!parts.length)||t>6){running=false;cv.hidden=true;ctx.clearRect(0,0,W,H);document.body.classList.remove('cele');const f=onEnd;onEnd=null;if(f)f();return}
     requestAnimationFrame(loop)}
   addEventListener('resize',()=>{if(running)size()});
-  return{run:start}
+  function ask(title,sub,yes,no,onYes,onNo){$('#ask-t').textContent=title;$('#ask-s').textContent=sub;
+    $('#ask-yes').textContent=yes;$('#ask-no').textContent=no;const box=$('#ask');box.hidden=false;
+    $('#ask-yes').onclick=()=>{box.hidden=true;if(onYes)onYes()};$('#ask-no').onclick=()=>{box.hidden=true;if(onNo)onNo()}}
+  return{run:start,ask,active:()=>running||!$('#ask').hidden}
 })();
 
 /* ================= BULLES ================= */
@@ -324,7 +335,7 @@ const Bubbles=(()=>{
       const fl=floating();
       fl.forEach(([a,b],i)=>{fx.push({t:'fall',x:cx(a,b),y:cy(a),vx:(Math.random()-.5)*180*(H/545),vy:(-120-Math.random()*180)*(H/545),c:grid[a][b],wait:grp.length*STEP+i*.012,first:i===0});grid[a][b]=null;score+=20+i*5});
       trim();
-      if(!present().length){score+=500;Celebrate.run('bubbles','Plateau vidé !');grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());slide=RH*2}
+      if(!present().length){score+=500;Celebrate.run('bubbles','Plateau vidé !',()=>Celebrate.ask('Plateau vidé !','+500 points. On continue la partie ?','Continuer','Nouvelle partie',null,reset));grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());slide=RH*2}
     }else addRow();
     trim();
     nxt=pick();const p=present();if(p.length&&!p.includes(cur))cur=pick();
@@ -491,7 +502,7 @@ const Blocks=(()=>{
     $('#blk-ot').textContent=title;$('#blk-os').textContent=sub;$('#blk-final').textContent=big;
     const se=$('#blk-stars');if(st){se.innerHTML='★'.repeat(st)+'<span class="off">'+'★'.repeat(3-st)+'</span>';se.hidden=false}else se.hidden=true;
     $('#blk-final').hidden=big==null;$('#blk-nextlvl').hidden=!canNext;$('#blk-again').textContent=again;
-    setTimeout(()=>{if(over)$('#blk-over').hidden=false},st?1900:450)}
+    if(!st)setTimeout(()=>{if(over)$('#blk-over').hidden=false},450)}
 
   function place(i,r,c){const p=tray[i];
     for(const[a,b]of p.s)col[(r+a)*N+c+b]=p.c;
@@ -504,13 +515,13 @@ const Blocks=(()=>{
         if(gem[k]){gem[k]=false;if(lv&&lv.type==='gems')got++;fx.push({t:'gem',k,age:0})}
         fx.push({t:'clr',k,age:0});col[k]=-1});
       let txt='+'+gain+(combo>1?'  Série ×'+combo:'');
-      if(col.every(v=>v<0)){score+=300;Celebrate.run('confetti','Parfait !');txt='Parfait ! +'+(gain+300)}
+      if(col.every(v=>v<0)){score+=300;Celebrate.run('confetti','Parfait !',()=>Celebrate.ask('Parfait !','Grille entièrement vidée : +300 points. On continue ?','Continuer','Nouvelle partie',null,reset));txt='Parfait ! +'+(gain+300)}
       fx.push({t:'txt',s:txt,age:0})}
     else{since++;if(since>=3)combo=0}
     tray[i]=next;next=piece();hud();drawTray();
     if(isAdv()&&done()){over=true;const ratio=moves/lv.moves,st=ratio>=.35?3:ratio>=.15?2:1;
       stars[lv.n-1]=Math.max(stars[lv.n-1]||0,st);store.set('bb.advStars',stars);fillSel();
-      Celebrate.run('confetti','Gagné !!');showOver('Niveau '+lv.n+' réussi !','Coups restants : '+moves,null,st,true,'Rejouer')}
+      $('#blk-nextlvl').textContent='Continuer : niveau '+(lv.n+1);Celebrate.run('confetti','Gagné !!',()=>{if(over)$('#blk-over').hidden=false});showOver('Niveau '+lv.n+' réussi !','Coups restants : '+moves,null,st,true,'Rejouer')}
     else if(isAdv()&&moves<=0){over=true;showOver('Raté !','Plus de coups. Objectif : '+objText(),null,0,false,'Réessayer')}
     else if(!tray.some(anyFit)){over=true;
       if(isAdv())showOver('Raté !','Plus de place. Objectif : '+objText(),null,0,false,'Réessayer');
@@ -753,10 +764,10 @@ const Candies=(()=>{
     $('#cdy-ot').textContent=title;$('#cdy-os').textContent=sub;
     const se=$('#cdy-stars');if(st){se.innerHTML='★'.repeat(st)+'<span class="off">'+'★'.repeat(3-st)+'</span>';se.hidden=false}else se.hidden=true;
     $('#cdy-nextlvl').hidden=!canNext;$('#cdy-again').textContent=again;
-    setTimeout(()=>{if(over)$('#cdy-over').hidden=false},st?1900:500)}
+    if(!st)setTimeout(()=>{if(over)$('#cdy-over').hidden=false},500)}
   function win(){over=true;const ratio=moves/lv.moves,st=ratio>=.3?3:ratio>=.12?2:1;
     stars[lv.n-1]=Math.max(stars[lv.n-1]||0,st);store.set('bb.cdyStars',stars);fillSel();
-    Celebrate.run('fireworks','Bravo !!');showOver('Niveau '+lv.n+' réussi !','Score '+score+' · coups restants : '+moves,st,true,'Rejouer')}
+    $('#cdy-nextlvl').textContent='Continuer : niveau '+(lv.n+1);Celebrate.run('fireworks','Bravo !!',()=>{if(over)$('#cdy-over').hidden=false});showOver('Niveau '+lv.n+' réussi !','Score '+score+' · coups restants : '+moves,st,true,'Rejouer')}
   function lose(){over=true;showOver('Raté !','Plus de coups. Objectif : '+objPlain(),0,false,'Réessayer')}
   function objPlain(){return lv.type==='score'?score+' / '+lv.goal+' points':lv.type==='color'?got+' / '+lv.goal+' gemmes '+NAMES[lv.color]:got+' / '+lv.goal+' cases de glace'}
   function hud(){const l1=$('#cdy-l1'),v1=$('#cdy-v1');
@@ -928,7 +939,7 @@ if(!['bub','blk','cdy'].includes(active))active='bub';
 show(active);
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
-  ({bub:Bubbles,blk:Blocks,cdy:Candies})[active].frame(dt);requestAnimationFrame(loop)}
+  if(!Celebrate.active())({bub:Bubbles,blk:Blocks,cdy:Candies})[active].frame(dt);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{}));
 </script>
