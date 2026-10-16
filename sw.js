@@ -1,4 +1,4 @@
-const CACHE='bulles-blocs-v22';
+const CACHE='bulles-blocs-v23';
 const FILES=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','gems/g0.png','gems/g1.png','gems/g2.png','gems/g3.png','gems/g4.png','gems/g5.png','gems/w0.png','gems/w1.png','gems/w2.png','gems/w3.png','gems/w4.png','gems/w5.png','gems/bomb.png','gems/lava.png','gems/shadow.png','gems/stone.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
