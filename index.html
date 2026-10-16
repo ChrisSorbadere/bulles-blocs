@@ -163,7 +163,7 @@ const Bubbles=(()=>{
   function dims(){const L=LEVELS[lvl];COLS=L.cols;START=L.start;W=(2*COLS+1)*R;
     H=aspect?Math.floor(W*aspect):Math.round(R+L.rows*RH+110);
     DR=Math.max(START+3,Math.floor((H-110-R)/RH));
-    SX=W/2;SY=H-46;NX=SX-90;NY=SY+8;LIMIT=R+(DR-1)*RH+R+4}
+    SX=W/2;SY=H-46;NX=W-R*2.2;NY=SY+8;LIMIT=R+(DR-1)*RH+R+4}
   dims();
   const COL=['red','yellow','green','cyan','blue','purple','orange'].map(k=>PAL[k]);
   const cv=$('#bub-cv'),ctx=cv.getContext('2d'),stage=$('#bub-stage');
