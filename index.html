@@ -152,6 +152,8 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 .drow{background:var(--panel);border-radius:10px;padding:7px 8px;font-size:.82rem}
 .dl{color:var(--muted)}.dv{text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
 .dv.win{color:#ffe14d}
+.dvs{display:flex;flex-direction:column;align-items:center;gap:2px}.dvs small{font-size:.62rem;font-weight:500;color:var(--muted);white-space:nowrap}
+.dbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:8px}.dbtns .btn{margin:0;padding:10px 6px}.dbtns .alt{background:var(--panel);color:#ff8a8a;border-color:#6b3040}
 #who .btn{min-width:160px}
 .drag{position:fixed;left:0;top:0;pointer-events:none;z-index:10}
 .hint{font-size:.75rem;color:var(--muted);text-align:center;margin:0}
@@ -291,6 +293,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
     <div class="dcols" id="duel-cols"></div>
     <div class="dlist" id="duel-list"></div>
     <p class="hint" id="duel-status"></p>
+    <div class="dbtns"><button class="btn" id="duel-new">🔄 Nouvelle manche</button><button class="btn alt" id="duel-wipe">🗑 Tout effacer</button></div>
   </section>
 </div>
 <div class="over ask" id="who" hidden><div class="card">
@@ -463,7 +466,7 @@ const Bubbles=(()=>{
 
   function reset(){shots=0;grid=[];parity=0;for(let i=0;i<START;i++)grid.push(newRow());
     score=0;over=false;shot=null;fx=[];slide=0;cur=pick();nxt=pick();aim=null;hud();$('#bub-over').hidden=true}
-  function hud(){if(score>best){best=score;store.set('bb.bubBest.'+lvl,best)}
+  function hud(){if(score>best){best=score;store.set('bb.bubBest.'+lvl,best)}window._duel&&window._duel.report('bub'+lvl,score,'hi');
     $('#bub-score').textContent=score;$('#bub-best').textContent=best}
 
   function hits(x,y){if(y<=R)return true;
@@ -654,7 +657,7 @@ const Blocks=(()=>{
   const done=()=>lv.type==='score'?score>=lv.goal:got>=lv.goal;
   function hud(){const l1=$('#blk-l1'),v1=$('#blk-v1'),l2=$('#blk-l2'),v2=$('#blk-v2');
     if(isAdv()){l1.textContent='Objectif';v1.textContent=objText();l2.textContent='Coups';v2.textContent=moves}
-    else{if(score>best){best=score;store.set('bb.blkBest',best)}
+    else{if(score>best){best=score;store.set('bb.blkBest',best)}window._duel&&window._duel.report('blkC',score,'hi');
       l1.textContent='Score';v1.textContent=score;l2.textContent='Record';v2.textContent=best}}
   function fillSel(){const u=unlocked();let h='<option value="c">Classique</option>';
     for(let n=1;n<=u;n++){const st=stars[n-1]||0;h+=`<option value="${n}">Niveau ${n} ${st?'★'.repeat(st)+'☆'.repeat(3-st):'•'}</option>`}
@@ -692,7 +695,7 @@ const Blocks=(()=>{
     else{since++;if(since>=3)combo=0}
     tray[i]=next;next=piece();hud();drawTray();
     if(isAdv()&&done()){over=true;const ratio=moves/lv.moves,st=ratio>=.35?3:ratio>=.15?2:1;
-      stars[lv.n-1]=Math.max(stars[lv.n-1]||0,st);store.set('bb.advStars',stars);fillSel();
+      stars[lv.n-1]=Math.max(stars[lv.n-1]||0,st);store.set('bb.advStars',stars);fillSel();window._duel&&window._duel.report('blkA',lv.n,'set');
       $('#blk-nextlvl').textContent='Continuer : niveau '+(lv.n+1);Celebrate.run('confetti','Gagné !!',()=>{if(over)$('#blk-over').hidden=false});showOver('Niveau '+lv.n+' réussi !','Coups restants : '+moves,null,st,true,'Rejouer')}
     else if(isAdv()&&moves<=0){over=true;showOver('Raté !','Plus de coups. Objectif : '+objText(),null,0,false,'Réessayer')}
     else if(!tray.some(anyFit)){over=true;
@@ -1097,7 +1100,7 @@ const Candies=(()=>{
     const se=$('#cdy-stars');if(st){se.innerHTML='★'.repeat(st)+'<span class="off">'+'★'.repeat(3-st)+'</span>';se.hidden=false}else se.hidden=true;
     $('#cdy-nextlvl').hidden=!canNext;$('#cdy-again').textContent=again;boostUI();
     if(!st)setTimeout(()=>{if(over)$('#cdy-over').hidden=false},500)}
-  function win(){over=true;phase=null;const st=score>=lv.t3?3:score>=lv.t2?2:1;
+  function win(){over=true;phase=null;const st=score>=lv.t3?3:score>=lv.t2?2:1;window._duel&&window._duel.report('cdy',lv.n,'stars',st);
     stars[lv.n-1]=Math.max(stars[lv.n-1]||0,st);store.set('bb.cdyStars',stars);const gifts=award();
     const nx=lv.n+1,canNext=nx<=unlockedMax();
     $('#cdy-nextlvl').textContent=canNext?'Continuer : niveau '+nx:'Voir la carte';$('#cdy-nextlvl').dataset.go=canNext?'next':'map';
@@ -1344,7 +1347,7 @@ const Solitaire=(()=>{
       for(let f=0;f<4;f++)if(canFound(c,found[f])&&(found[f].length||c.r===1)){doMove({t:'tab',col,i:p.length-1},'found',f);return true}}
     return false}
   function checkWin(){if(found.every(p=>p.length===13)){over=true;auto=false;elapsed=t0?(performance.now()-t0)/1000:0;
-      const best=store.get(bestKey(),0);const rec=!best||elapsed<best;if(rec)store.set(bestKey(),elapsed);ui();
+      const best=store.get(bestKey(),0);const rec=!best||elapsed<best;window._duel&&window._duel.report('sol'+(draw3?3:1),elapsed,'lo');if(rec)store.set(bestKey(),elapsed);ui();
       Celebrate.run('cards','Gagné !!',()=>Celebrate.ask(rec?'Nouveau record !':'Partie gagnée !','En '+moves+' coups et '+fmt(elapsed)+'. Une nouvelle donne ?','Nouvelle donne','Revoir le jeu',newGame,null))}}
 
   let AC=null;
@@ -1461,7 +1464,7 @@ const Sudoku=(()=>{
   function hint(){if(over||!hints)return;let i=sel;if(i<0||val[i]===sol[i]){const e=[...Array(81).keys()].filter(j=>val[j]!==sol[j]);if(!e.length)return;i=e[rnd(e.length)]}
     if(!t0)t0=performance.now();sel=i;val[i]=sol[i];notes[i]=0;hints--;glow.push({i,age:0});ui();checkWin()}
   function checkWin(){if(!val.every((v,i)=>v===sol[i]))return;over=true;elapsed=(performance.now()-t0)/1000;
-    const k='bb.sdkBest'+lvl,b=store.get(k,0),rec=!b||elapsed<b;if(rec)store.set(k,elapsed);
+    const k='bb.sdkBest'+lvl,b=store.get(k,0),rec=!b||elapsed<b;window._duel&&window._duel.report('sdk'+lvl,elapsed,'lo');if(rec)store.set(k,elapsed);
     Celebrate.run('digits','Bravo !!',()=>Celebrate.ask(rec?'Nouveau record !':'Grille terminée !','En '+fmt(elapsed)+' avec '+errors+' erreur'+(errors>1?'s':'')+'. Une nouvelle grille ?','Nouvelle grille','Revoir la grille',newGame,null))}
   let AC=null;
   function tick(bad){if(store.get('bb.mute',false))return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();
@@ -1541,7 +1544,7 @@ const Mines=(()=>{
     setTimeout(()=>{if(over&&!won)Celebrate.ask('Boum !','Tu as touché une mine. On rejoue ?','Rejouer','Voir la grille',newGame,null)},1500)}
   function checkWin(){if(over)return;for(let i=0;i<C*R;i++)if(!mine[i]&&!rev[i])return;
     over=true;won=true;elapsed=(performance.now()-t0)/1000;mine.forEach((m,j)=>{if(m)flag[j]=true});ui();
-    const k='bb.mnsBest'+lvl,b=store.get(k,0),rec=!b||elapsed<b;if(rec)store.set(k,elapsed);
+    const k='bb.mnsBest'+lvl,b=store.get(k,0),rec=!b||elapsed<b;window._duel&&window._duel.report('mns'+lvl,elapsed,'lo');if(rec)store.set(k,elapsed);
     Celebrate.run('stars','Déminé !',()=>Celebrate.ask(rec?'Nouveau record !':'Grille déminée !','En '+fmt(elapsed)+'. Une nouvelle grille ?','Nouvelle grille','Revoir la grille',newGame,null))}
   let AC=null;
   function snd(k){if(store.get('bb.mute',false))return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const t=AC.currentTime;
@@ -1600,17 +1603,32 @@ const Mines=(()=>{
 
 /* ================= DUEL ================= */
 const Duel=(()=>{
-  const SYNC_URL='https://script.google.com/macros/s/AKfycbwQBuEKna-yqnd8VtdZV1dA9medsKJs1TN0IHgxb3iqJSjTbfVBPxuZl73f5PPc8sbHXg/exec';            // URL de l'Apps Script (déploiement « Application Web »)
+  const SYNC_URL='https://script.google.com/macros/s/AKfycbwQBuEKna-yqnd8VtdZV1dA9medsKJs1TN0IHgxb3iqJSjTbfVBPxuZl73f5PPc8sbHXg/exec';
   const SECRET='bb-duel-chris-blanca';
   const PLAYERS=['Chris','Blanca'];
   const fmt=s=>{if(!s)return'–';s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
   const me=()=>store.get('bb.me',null);
   const other=()=>PLAYERS.find(p=>p!==me());
   const lead=a=>{let n=0;while(Array.isArray(a)&&a[n])n++;return n};
-  function summary(){const cs=store.get('bb.cdyStars',[]);
-    return{bub:[0,1,2,3].map(l=>store.get('bb.bubBest.'+l,0)),blkC:store.get('bb.blkBest',0),blkA:lead(store.get('bb.advStars',[])),
-      cdyL:lead(cs),cdyS:Array.isArray(cs)?cs.reduce((a,b)=>a+(b||0),0):0,
-      sol:[store.get('bb.solBest1',0),store.get('bb.solBest3',0)],sdk:[0,1,2,3].map(l=>store.get('bb.sdkBest'+l,0)),mns:[0,1,2].map(l=>store.get('bb.mnsBest'+l,0))}}
+  const empty=id=>({id,v:{},blkA:[],cdy:{}});
+  // Manche en cours : au premier lancement, on part des records existants
+  let S=store.get('bb.season',null);
+  if(!S){S=empty(1);for(let l=0;l<4;l++){S.v['bub'+l]=store.get('bb.bubBest.'+l,0);S.v['sdk'+l]=store.get('bb.sdkBest'+l,0)}
+    for(let l=0;l<3;l++)S.v['mns'+l]=store.get('bb.mnsBest'+l,0);S.v.blkC=store.get('bb.blkBest',0);
+    S.v.sol1=store.get('bb.solBest1',0);S.v.sol3=store.get('bb.solBest3',0);
+    S.blkA=[...Array(lead(store.get('bb.advStars',[]))).keys()].map(i=>i+1);
+    const cs=store.get('bb.cdyStars',[]);if(Array.isArray(cs))cs.forEach((v,i)=>{if(v)S.cdy[i+1]=v});
+    store.set('bb.season',S)}
+  const save=()=>store.set('bb.season',S);
+  function report(k,v,kind,x){if(!v)return;
+    if(kind==='hi'){if(v>(S.v[k]||0)){S.v[k]=v;save()}}
+    else if(kind==='lo'){if(!S.v[k]||v<S.v[k]){S.v[k]=v;save()}}
+    else if(kind==='set'){if(!S[k].includes(v)){S[k].push(v);save()}}
+    else if(kind==='stars'){if((S.cdy[v]||0)<x){S.cdy[v]=x;save()}}}
+  window._duel={report};
+  function summary(){const V=S.v,cv=Object.values(S.cdy);
+    return{sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
+      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0)}}
   const LV4=['Facile','Moyen','Difficile','Expert'];
   const ROWS=[
     ['Bulles',LV4.map((n,i)=>['Record '+n.toLowerCase(),d=>d.bub&&d.bub[i],'hi'])],
@@ -1622,11 +1640,15 @@ const Duel=(()=>{
   let remote=store.get('bb.duelCache',{}),status='';
   async function push(){if(!SYNC_URL||!me())return;try{
       await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:SECRET,p:me(),d:summary()})})}catch(e){}}
-  async function pull(){if(!SYNC_URL){status='Synchronisation pas encore configurée.';return}
+  async function pull(){if(!SYNC_URL){status='Synchronisation pas encore configurée.';return false}
     try{const r=await fetch(SYNC_URL+'?k='+encodeURIComponent(SECRET)+'&t='+Date.now(),{cache:'no-store'});const j=await r.json();
-      remote=j||{};store.set('bb.duelCache',remote);status=''}catch(e){status='Hors ligne : derniers résultats connus.'}}
+      remote=j||{};store.set('bb.duelCache',remote);status=''}catch(e){status='Hors ligne : derniers résultats connus.';return false}
+    const o=remote[other()];if(!o||!o.d)return false;
+    if((o.d.wid||0)>store.get('bb.wipe',0)){wipe(o.d.wid,false);return true}
+    if((o.d.sid||0)>S.id){S=empty(o.d.sid);save();push()}
+    return false}
   function cellTxt(v,kind){return !v?'–':kind==='lo'?fmt(v):Number(v).toLocaleString('fr-FR')}
-  function render(){const A=me(),B=other(),da=summary(),db=(remote[B]&&remote[B].d)||{};
+  function render(){const A=me(),B=other(),da=summary(),o=remote[B]&&remote[B].d,db=o&&o.sid===S.id?o:{};
     let wa=0,wb=0,html='';
     for(const[game,rows]of ROWS){html+=`<div class="dgame">${game}</div>`;
       for(const[label,get,kind]of rows){const va=get(da)||0,vb=get(db)||0;let win=0;
@@ -1634,15 +1656,24 @@ const Duel=(()=>{
         if(win===1)wa++;if(win===2)wb++;
         html+=`<div class="drow"><span class="dl">${label}</span><span class="dv${win===1?' win':''}">${win===1?'👑 ':''}${cellTxt(va,kind)}</span><span class="dv${win===2?' win':''}">${win===2?'👑 ':''}${cellTxt(vb,kind)}</span></div>`}}
     const upd=remote[B]&&remote[B].t?new Date(remote[B].t):null;
-    $('#duel-head').innerHTML=`<div class="dp me"><b>${A}</b><span>${wa}</span></div><div class="dvs">VS</div><div class="dp"><b>${B}</b><span>${wb}</span></div>`;
+    $('#duel-head').innerHTML=`<div class="dp me"><b>${A}</b><span>${wa}</span></div><div class="dvs">VS<small>${S.id>1?'manche du '+new Date(S.id).toLocaleDateString('fr-FR'):'première manche'}</small></div><div class="dp"><b>${B}</b><span>${wb}</span></div>`;
     $('#duel-cols').innerHTML=`<span></span><span>${A}</span><span>${B}</span>`;
     $('#duel-list').innerHTML=html;
     $('#duel-status').textContent=status||(upd?'Résultats de '+B+' mis à jour le '+upd.toLocaleDateString('fr-FR')+' à '+upd.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):B+' n’a pas encore synchronisé ses résultats.')}
-  async function open(){render();await push();await pull();render()}
+  async function open(){render();await push();if(await pull())return;render()}
+  async function sync(){await push();await pull()}
+  function newRound(){Celebrate.ask('Nouvelle manche ?','Le Duel repart à zéro pour '+me()+' et '+other()+'. Vos records personnels dans les jeux sont conservés.','Commencer','Annuler',async()=>{
+      S=empty(Date.now());save();render();await push()},null)}
+  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|season)/;
+  async function wipe(wid,mine){
+    Object.keys(localStorage).forEach(k=>{if(GAME_KEYS.test(k))try{localStorage.removeItem(k)}catch(e){}});
+    store.set('bb.wipe',wid);S=empty(wid);save();if(mine)await push();location.reload()}
+  function wipeAll(){Celebrate.ask('Tout effacer ?','Les records et la progression de tous les jeux seront remis à zéro, sur le téléphone de '+me()+' et sur celui de '+other()+'. C’est définitif.','Tout effacer','Annuler',()=>wipe(Date.now(),true),null)}
   function askWho(force){if(me()&&!force)return;const box=$('#who');box.hidden=false;
     box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{store.set('bb.me',b.dataset.p);box.hidden=true;Home.refresh();push()})}
+  $('#duel-new').onclick=newRound;$('#duel-wipe').onclick=wipeAll;
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')push()});
-  return{open,push,askWho,me}
+  return{open,push,sync,askWho,me}
 })();
 
 /* ================= ACCUEIL ================= */
@@ -1687,7 +1718,7 @@ const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Min
 let active='home';
 function show(t){active=t;$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';if(t==='duel'){Duel.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
-  if(t==='home'){Home.refresh();Duel.push()}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
+  if(t==='home'){Home.refresh();Duel.sync()}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
 $$('.tile').forEach(b=>b.onclick=()=>show(b.dataset.g));
 $$('.homeb').forEach(b=>b.onclick=()=>show('home'));
 $('#duel-tile').onclick=()=>show('duel');$('#who-chip').onclick=()=>Duel.askWho(true);
