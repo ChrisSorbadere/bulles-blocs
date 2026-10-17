@@ -1,5 +1,5 @@
-const CACHE='bulles-blocs-v24';
-const FILES=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','gems/g0.png','gems/g1.png','gems/g2.png','gems/g3.png','gems/g4.png','gems/g5.png','gems/w0.png','gems/w1.png','gems/w2.png','gems/w3.png','gems/w4.png','gems/w5.png','gems/bomb.png','gems/lava.png','gems/shadow.png','gems/stone.png'];
+const CACHE='bulles-blocs-v25';
+const FILES=['./','index.html','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','gems/g0.png','gems/g1.png','gems/g2.png','gems/g3.png','gems/g4.png','gems/g5.png','gems/w0.png','gems/w1.png','gems/w2.png','gems/w3.png','gems/w4.png','gems/w5.png','gems/bomb.png','gems/lava.png','gems/shadow.png','gems/stone.png','gems/h0.png','gems/h1.png','gems/h2.png','gems/h3.png','gems/h4.png','gems/h5.png','gems/v0.png','gems/v1.png','gems/v2.png','gems/v3.png','gems/v4.png','gems/v5.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});
 self.addEventListener('fetch',e=>{
