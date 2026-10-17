@@ -1,8 +1,8 @@
 {
   "id": "/bulles-blocs/",
-  "name": "Bulles, Blocs, Gemmes & Cartes",
-  "short_name": "Bulles&Blocs",
-  "description": "Bubble shooter, jeu de blocs, jeu de gemmes et solitaire dans une seule appli.",
+  "name": "Mes jeux",
+  "short_name": "Mes jeux",
+  "description": "Bulles, Blocs, Gemmes, Solitaire, Sudoku et Démineur dans une seule appli.",
   "lang": "fr",
   "start_url": "./",
   "scope": "./",
