@@ -137,6 +137,22 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 .node .st em{font-style:normal;color:rgba(255,255,255,.3)}
 @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.13)}}
 @media (prefers-reduced-motion:reduce){.node.cur{animation:none}}
+.hhead{display:flex;align-items:center;gap:10px}.hhead .htitle{flex:1}
+.who-chip{font:600 .9rem var(--display);color:var(--ink);background:var(--tab);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer}
+.who-chip b{color:var(--gold)}
+.dtile{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:18px;border:1px solid #6a4fb8;background:linear-gradient(120deg,#5b2f8f,#2a3a8a 60%,#1f6a8a);color:#fff;font:inherit;text-align:left;cursor:pointer}
+.dtile b{display:block;font-size:1.15rem}.dtile small{font-size:.8rem;opacity:.85}.dsw{font-size:1.9rem}
+.dhead{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px}
+.dp{display:flex;flex-direction:column;align-items:center}.dp b{font-size:1rem}.dp span{font-size:2rem;font-weight:700;color:var(--gold);font-variant-numeric:tabular-nums}
+.dp.me b{color:#7fd0ff}.dvs{font-weight:700;color:var(--muted)}
+.dcols,.drow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:6px;align-items:center}
+.dcols{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:0 8px}.dcols span{text-align:center}
+.dlist{display:flex;flex-direction:column;gap:4px}
+.dgame{margin-top:8px;font-weight:700;color:var(--gold);font-size:.95rem}
+.drow{background:var(--panel);border-radius:10px;padding:7px 8px;font-size:.82rem}
+.dl{color:var(--muted)}.dv{text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.dv.win{color:#ffe14d}
+#who .btn{min-width:160px}
 .drag{position:fixed;left:0;top:0;pointer-events:none;z-index:10}
 .hint{font-size:.75rem;color:var(--muted);text-align:center;margin:0}
 @media (prefers-reduced-motion:reduce){.tab{transition:none}}
@@ -147,7 +163,8 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 
 <div class="app">
   <section id="home" class="home">
-    <h1 class="htitle">Mes jeux</h1>
+    <div class="hhead"><h1 class="htitle">Mes jeux</h1><button class="who-chip" id="who-chip">👤 <b id="who-name">?</b></button></div>
+    <button class="dtile" id="duel-tile"><span class="dsw">⚔️</span><span><b>Duel</b><small>Chris contre Blanca, jeu par jeu</small></span></button>
     <div class="tiles">
       <button class="tile" data-g="bub"><canvas class="ticon" data-i="bub"></canvas><span class="tname">Bulles</span><span class="tsub" id="sub-bub"></span></button>
       <button class="tile" data-g="blk"><canvas class="ticon" data-i="blk"></canvas><span class="tname">Blocs</span><span class="tsub" id="sub-blk"></span></button>
@@ -267,7 +284,19 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
     <div class="stage" id="mns-stage"><canvas id="mns-cv"></canvas></div>
     <p class="hint">Touche pour creuser · appui long (ou mode 🚩) pour poser un drapeau</p>
   </section>
+
+  <section id="duel" class="home" hidden>
+    <div class="maphead"><button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button><div class="mtitle">Duel</div></div>
+    <div class="dhead" id="duel-head"></div>
+    <div class="dcols" id="duel-cols"></div>
+    <div class="dlist" id="duel-list"></div>
+    <p class="hint" id="duel-status"></p>
+  </section>
 </div>
+<div class="over ask" id="who" hidden><div class="card">
+  <h2>Qui joue sur ce téléphone ?</h2><p>Tes records seront comparés dans le Duel.</p>
+  <button class="btn" data-p="Chris">Chris</button>
+  <button class="btn" data-p="Blanca">Blanca</button></div></div>
 <canvas id="drag" class="drag" hidden></canvas>
 <div class="over ask" id="ask" hidden><div class="card">
   <h2 id="ask-t"></h2><p id="ask-s"></p>
@@ -1569,6 +1598,53 @@ const Mines=(()=>{
   return{frame,resize,sub:()=>{const b=store.get('bb.mnsBest'+lvl,0);return(['Facile','Moyen','Difficile'][lvl])+(b?' · record '+fmt(b):'')}}
 })();
 
+/* ================= DUEL ================= */
+const Duel=(()=>{
+  const SYNC_URL='';            // URL de l'Apps Script (déploiement « Application Web »)
+  const SECRET='bb-duel-chris-blanca';
+  const PLAYERS=['Chris','Blanca'];
+  const fmt=s=>{if(!s)return'–';s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+  const me=()=>store.get('bb.me',null);
+  const other=()=>PLAYERS.find(p=>p!==me());
+  const lead=a=>{let n=0;while(Array.isArray(a)&&a[n])n++;return n};
+  function summary(){const cs=store.get('bb.cdyStars',[]);
+    return{bub:[0,1,2,3].map(l=>store.get('bb.bubBest.'+l,0)),blkC:store.get('bb.blkBest',0),blkA:lead(store.get('bb.advStars',[])),
+      cdyL:lead(cs),cdyS:Array.isArray(cs)?cs.reduce((a,b)=>a+(b||0),0):0,
+      sol:[store.get('bb.solBest1',0),store.get('bb.solBest3',0)],sdk:[0,1,2,3].map(l=>store.get('bb.sdkBest'+l,0)),mns:[0,1,2].map(l=>store.get('bb.mnsBest'+l,0))}}
+  const LV4=['Facile','Moyen','Difficile','Expert'];
+  const ROWS=[
+    ['Bulles',LV4.map((n,i)=>['Record '+n.toLowerCase(),d=>d.bub&&d.bub[i],'hi'])],
+    ['Blocs',[['Record classique',d=>d.blkC,'hi'],['Niveaux d’aventure réussis',d=>d.blkA,'hi']]],
+    ['Gemmes',[['Niveaux réussis',d=>d.cdyL,'hi'],['Étoiles',d=>d.cdyS,'hi']]],
+    ['Solitaire',[['Meilleur temps · pioche 1',d=>d.sol&&d.sol[0],'lo'],['Meilleur temps · pioche 3',d=>d.sol&&d.sol[1],'lo']]],
+    ['Sudoku',LV4.map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.sdk&&d.sdk[i],'lo'])],
+    ['Démineur',LV4.slice(0,3).map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.mns&&d.mns[i],'lo'])]];
+  let remote=store.get('bb.duelCache',{}),status='';
+  async function push(){if(!SYNC_URL||!me())return;try{
+      await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:SECRET,p:me(),d:summary()})})}catch(e){}}
+  async function pull(){if(!SYNC_URL){status='Synchronisation pas encore configurée.';return}
+    try{const r=await fetch(SYNC_URL+'?k='+encodeURIComponent(SECRET)+'&t='+Date.now(),{cache:'no-store'});const j=await r.json();
+      remote=j||{};store.set('bb.duelCache',remote);status=''}catch(e){status='Hors ligne : derniers résultats connus.'}}
+  function cellTxt(v,kind){return !v?'–':kind==='lo'?fmt(v):Number(v).toLocaleString('fr-FR')}
+  function render(){const A=me(),B=other(),da=summary(),db=(remote[B]&&remote[B].d)||{};
+    let wa=0,wb=0,html='';
+    for(const[game,rows]of ROWS){html+=`<div class="dgame">${game}</div>`;
+      for(const[label,get,kind]of rows){const va=get(da)||0,vb=get(db)||0;let win=0;
+        if(va&&!vb)win=1;else if(vb&&!va)win=2;else if(va&&vb&&va!==vb)win=(kind==='hi'?va>vb:va<vb)?1:2;
+        if(win===1)wa++;if(win===2)wb++;
+        html+=`<div class="drow"><span class="dl">${label}</span><span class="dv${win===1?' win':''}">${win===1?'👑 ':''}${cellTxt(va,kind)}</span><span class="dv${win===2?' win':''}">${win===2?'👑 ':''}${cellTxt(vb,kind)}</span></div>`}}
+    const upd=remote[B]&&remote[B].t?new Date(remote[B].t):null;
+    $('#duel-head').innerHTML=`<div class="dp me"><b>${A}</b><span>${wa}</span></div><div class="dvs">VS</div><div class="dp"><b>${B}</b><span>${wb}</span></div>`;
+    $('#duel-cols').innerHTML=`<span></span><span>${A}</span><span>${B}</span>`;
+    $('#duel-list').innerHTML=html;
+    $('#duel-status').textContent=status||(upd?'Résultats de '+B+' mis à jour le '+upd.toLocaleDateString('fr-FR')+' à '+upd.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):B+' n’a pas encore synchronisé ses résultats.')}
+  async function open(){render();await push();await pull();render()}
+  function askWho(force){if(me()&&!force)return;const box=$('#who');box.hidden=false;
+    box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{store.set('bb.me',b.dataset.p);box.hidden=true;Home.refresh();push()})}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')push()});
+  return{open,push,askWho,me}
+})();
+
 /* ================= ACCUEIL ================= */
 const Home=(()=>{
   const gemImgs=['g4','g0','g3'].map(n=>{const im=new Image();im.src='gems/'+n+'.png';im.onload=()=>draw();return im});
@@ -1603,21 +1679,22 @@ const Home=(()=>{
     $('#sub-cdy').textContent=Candies.sub();
     const d=store.get('bb.solDraw',1),sb=store.get('bb.solBest'+d,0);$('#sub-sol').textContent='Pioche '+d+(sb?' · record '+t(sb):'');
     $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub()}
-  return{draw,refresh:()=>{draw();subs()}}
+  return{draw,refresh:()=>{draw();subs();$('#who-name').textContent=Duel.me()||'?'}}
 })();
 
 /* ================= Navigation ================= */
 const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines};
 let active='home';
-function show(t){active=t;$('#home').hidden=t!=='home';
+function show(t){active=t;$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';if(t==='duel'){Duel.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
-  if(t==='home')Home.refresh();else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
+  if(t==='home'){Home.refresh();Duel.push()}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
 $$('.tile').forEach(b=>b.onclick=()=>show(b.dataset.g));
 $$('.homeb').forEach(b=>b.onclick=()=>show('home'));
-show('home');
+$('#duel-tile').onclick=()=>show('duel');$('#who-chip').onclick=()=>Duel.askWho(true);
+show('home');Duel.askWho(false);
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
-  if(active!=='home'&&!Celebrate.active())GAMES[active].frame(dt);requestAnimationFrame(loop)}
+  if(GAMES[active]&&!Celebrate.active())GAMES[active].frame(dt);requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{}));
 </script>
