@@ -191,7 +191,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 <div class="app">
   <div id="ptime" class="ptime" hidden></div>
   <section id="home" class="home">
-    <div class="hhead"><h1 class="htitle">Mes jeux</h1><button class="who-chip" id="who-chip">👤 <b id="who-name">?</b></button></div>
+    <div class="hhead"><h1 class="htitle">Mes jeux</h1><button class="who-chip" id="lang-chip" aria-label="Langue / Language">FR</button><button class="who-chip" id="who-chip">👤 <b id="who-name">?</b></button></div>
     <button class="dtile" id="duel-tile"><span class="dsw">⚔️</span><span><b>Duel</b><small>Chris contre Blanca, jeu par jeu</small></span></button>
     <button class="dtile ttile" id="time-tile"><span class="dsw">⏱</span><span><b>Temps de jeu</b><small id="time-sub">Chris et Blanca : aujourd’hui, moyenne, total</small></span></button>
     <div class="tiles">
@@ -344,6 +344,104 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const rnd=n=>Math.floor(Math.random()*n);
 const DPR=()=>Math.min(window.devicePixelRatio||1,3);
+/* ================= LANGUE (FR / EN) ================= */
+const I18N=(()=>{
+  let lang;try{lang=JSON.parse(localStorage.getItem('bb.lang'))}catch(e){}
+  if(!lang){let me=null;try{me=JSON.parse(localStorage.getItem('bb.me'))}catch(e){}lang=me==='Blanca'?'en':'fr'}
+  const LV={'facile':'easy','moyen':'medium','difficile':'hard','expert':'expert'};
+  const D={
+    'Accueil':'Home','Annuler (3 par donne)':'Undo (3 per deal)','Annuler le dernier coup':'Undo last move','Blocs':'Blocks','Bulles':'Bubbles',
+    'Carte':'Map','Carte des mondes':'World map','Carte des niveaux':'Level map','Chris contre Blanca, jeu par jeu':'Chris vs Blanca, game by game',
+    'Continuer':'Continue','Coups':'Moves','Difficile':'Hard','Démineur':'Minesweeper','Erreurs':'Mistakes','Facile':'Easy','Moyen':'Medium','Expert':'Expert',
+    'Gemmes':'Gems','Les bulles ont gagné':'The bubbles won','Mes jeux':'My games','Mode de jeu':'Game mode','Mode drapeau':'Flag mode','Niveau':'Level',
+    'Niveau suivant':'Next level','Nouvelle donne':'New deal','Nouvelle grille':'New grid','Nouvelle partie':'New game','Pioche':'Draw',
+    'Plus de place':'No more room','Qui joue sur ce téléphone ?':'Who plays on this phone?','Raté !':'Missed!','Recommencer':'Restart',
+    'Recommencer le niveau':'Restart level','Rejouer':'Play again','Réessayer':'Try again','Son':'Sound','Suivante':'Next','Temps':'Time',
+    'Temps de jeu':'Play time','Terminer ✨':'Finish ✨','Tes records seront comparés dans le Duel.':'Your records will be compared in the Duel.',
+    'Touche pour creuser · appui long (ou mode 🚩) pour poser un drapeau':'Tap to dig · long press (or 🚩 mode) to place a flag',
+    '🔄 Nouvelle manche':'🔄 New round','🗑 Tout effacer':'🗑 Erase all','Objectif':'Goal','Classique':'Classic','Record':'Best','Glace':'Ice',
+    'Collecter':'Collect','✎ Notes':'✎ Notes','⌫ Effacer':'⌫ Erase','Marteau':'Hammer','Échange libre':'Free swap','+5 coups':'+5 moves',
+    'Mélange':'Shuffle','Indice':'Hint','Cette semaine':'This week','Ce mois-ci':'This month','Moyenne / jour':'Average / day',
+    'Moy. / jour joué':'Avg. / day played','Série sous la limite':'Days under limit','aujourd’hui':'today','Semaine dernière':'Last week',
+    '📅 Bilan de la semaine dernière':'📅 Last week’s summary','14 derniers jours':'Last 14 days','Ma limite quotidienne':'My daily limit',
+    'limite':'limit','Étoiles':'Stars','Niveaux réussis':'Levels completed','Niveaux d’aventure réussis':'Adventure levels completed',
+    'Record classique':'Classic best','Synchronisation pas encore configurée.':'Sync not set up yet.','Hors ligne : derniers résultats connus.':'Offline: last known results.',
+    'première manche':'first round','Pas encore de données.':'No data yet.','pas encore de semaine complète':'no full week yet','SUIVANTE ⇄':'NEXT ⇄',
+    'Explosion finale !':'Final blast!','Mélange !':'Shuffle!','Bien !':'Nice!','Superbe !':'Superb!','Éblouissant !':'Dazzling!','Parfait !':'Perfect!',
+    'Gagné !!':'You win!!','Bravo !!':'Well done!!','Plateau vidé !':'Board cleared!','Déminé !':'Cleared!','Boum !':'Boom!','Bloqué !':'Stuck!',
+    'La lave a débordé !':'The lava overflowed!','Nouveau record !':'New record!','Partie gagnée !':'Game won!','Grille terminée !':'Grid complete!',
+    'Grille déminée !':'Grid cleared!','Voir la carte':'View map','Voir la grille':'View grid','Revoir la grille':'Review grid','Revoir le jeu':'Review game',
+    'Tout effacer':'Erase all','Tout effacer ?':'Erase everything?','Nouvelle manche ?':'New round?','Commencer':'Start','Annuler':'Cancel',
+    'Faire une pause':'Take a break','Aller dormir':'Go to sleep','C’est fait':'Done','D’accord, je finis':'OK, I’ll finish',
+    'Touche la case à casser':'Tap the tile to break','Échange deux jetons voisins, sans condition':'Swap two neighbouring tokens, no conditions',
+    'Plus aucun coup possible sur ce plateau.':'No more possible moves on this board.','Plus de coups. Essaie encore, ou utilise un bonus.':'Out of moves. Try again, or use a booster.',
+    'Tu as touché une mine. On rejoue ?':'You hit a mine. Play again?','Détruis les roches de lave avant que leur compteur tombe à 0.':'Destroy the lava rocks before their counter reaches 0.',
+    '+500 points. On continue la partie ?':'+500 points. Keep playing?','Grille entièrement vidée : +300 points. On continue ?':'Grid completely cleared: +300 points. Keep going?',
+    '⛔ Limite atteinte':'⛔ Limit reached','🌙 Il est tard':'🌙 It’s late','👀 Pause pour les yeux':'👀 Eye break','🕒 Bientôt ta limite':'🕒 Almost at your limit',
+    'Tu joues depuis 20 minutes sans t’arrêter. Regarde au loin pendant 20 secondes, cligne des yeux, étire-toi.':'You’ve been playing for 20 minutes non-stop. Look into the distance for 20 seconds, blink, stretch.',
+    'Rappel à 80 %, alerte à 100 %, pause des yeux toutes les 20 min, rappel après 23 h.':'Reminder at 80%, alert at 100%, eye break every 20 min, reminder after 11 pm.',
+    'Aligne 3 jetons identiques, ou forme un carré de 4 pour créer un poisson !':'Line up 3 identical tokens, or make a square of 4 to create a fish!',
+    'Brise toute la glace en faisant des alignements dessus.':'Break all the ice by making matches on it.',
+    'Chaînes : le jeton est bloqué, aligne-le pour le libérer.':'Chains: the token is stuck, match it to free it.',
+    'Ingrédients : fais descendre cerises et noisettes jusqu’en bas.':'Ingredients: bring the cherries and hazelnuts down to the bottom.',
+    'Pierre : aligne à côté autant de fois que son chiffre. La glace épaisse se brise en 2 fois.':'Stone: match next to it as many times as its number. Thick ice breaks in 2 hits.',
+    'Ombre : elle s’étend si tu n’en casses aucune. Marmelade : aligne à côté pour libérer le jeton.':'Shadow: it spreads if you don’t break any. Marmalade: match next to it to free the token.',
+    'Lave : détruis-la avant que son compteur tombe à 0.':'Lava: destroy it before its counter reaches 0.',
+    'Réglisse : elle arrête les rayons des flèches. Aligne à côté pour la casser.':'Licorice: it stops arrow beams. Match next to it to break it.',
+    'Coffres : ramasse les clés (aligne-les) pour les ouvrir et libérer un bonus.':'Chests: collect the keys (match them) to open them and free a bonus.',
+    'Nouveau plateau : les jetons glissent par-dessus les trous.':'New board: tokens slide over the holes.',
+    'Temps de jeu des 14 derniers jours':'Play time over the last 14 days','Pioche 1':'Draw 1','Pioche 3':'Draw 3',
+    'Meilleur temps · pioche 1':'Best time · draw 1','Meilleur temps · pioche 3':'Best time · draw 3'};
+  for(const[f,e]of Object.entries(LV)){D['Record '+f]='Best '+e;D['Meilleur temps '+f]='Best time '+e}
+  const WORLD={'Vallée des Cœurs':'Heart Valley','Prairie des Étoiles':'Star Meadow','Baie de la Lune':'Moon Bay','Forêt des Feuilles':'Leaf Forest',
+    'Lac des Gouttes':'Droplet Lake','Pics Améthyste':'Amethyst Peaks','Spirales de Réglisse':'Licorice Spirals','Île aux Trésors':'Treasure Island','Jardin Arc-en-ciel':'Rainbow Garden'};
+  const FEAT={'pierres et double glace':'stones and double ice','roches d’ombre et marmelade':'shadow rocks and marmalade','tourbillons de réglisse':'licorice swirls',
+    'coffres et clés':'chests and keys','chaînes':'chains','ingrédients':'ingredients','lave':'lava'};
+  const COLN={'cœurs':'hearts','étoiles':'stars','lunes':'moons','feuilles':'leaves','gouttes':'drops','hexagones':'hexagons'};
+  const pl=(n,w)=>n+' '+w+(+n>1?'s':'');
+  const F=[
+    [/Niveau (\d+) réussi !/g,'Level $1 complete!'],[/Continuer : niveau (\d+)/g,'Continue: level $1'],[/Niv\. (\d+)/g,'Lvl $1'],
+    [/ · difficile/g,' · hard'],[/Coups restants : /g,'Moves left: '],[/ · 🎁 bonus gagné : /g,' · 🎁 booster earned: '],
+    [/Plus de coups\. Objectif : /g,'Out of moves. Goal: '],[/Plus de place\. Objectif : /g,'No more room. Goal: '],
+    [/ cases de glace/g,' ice tiles'],[/ gemmes /g,' gems '],
+    [/Monde (\d+) · /g,'World $1 · '],[/🔒 (\d+) ★ requises · tu en as (\d+)/g,'🔒 $1 ★ required · you have $2'],[/Nouveau : /g,'New: '],
+    [/^Niveau (\d+)/g,'Level $1'],[/^Record (\d)/g,'Best $1'],[/ · aventure niv\. /g,' · adventure lvl '],[/Pioche (\d)/g,'Draw $1'],[/ · record /g,' · best '],
+    [/Aujourd’hui : /g,'Today: '],[/ · bilans de Chris et Blanca/g,' · Chris & Blanca reports'],[/^Indice (\d)/g,'Hint $1'],
+    [/^Facile/g,'Easy'],[/^Moyen/g,'Medium'],[/^Difficile/g,'Hard'],
+    [/Résultats de (\S+) mis à jour le (.+) à (.+)/g,'$1’s results updated on $2 at $3'],[/(\S+) n’a pas encore synchronisé ses résultats\./g,'$1 hasn’t synced results yet.'],
+    [/manche du /g,'round of '],[/pas encore de semaine complète/g,'no full week yet'],[/^limite /g,'limit '],
+    [/depuis le (.+) · (\d+) jours?/g,(m,a,b)=>'since '+a+' · '+pl(b,'day')],[/ (\d+) j$/g,' $1 d'],
+    [/Le décompte démarre dès que (\S+) joue avec la nouvelle version\./g,'Counting starts as soon as $1 plays with the new version.'],
+    [/soit l’équivalent de (.+?) films?, (.+?) livres? de poche ou (\d+) km de marche/g,'about $1 movie(s), $2 paperback(s) or $3 km of walking'],
+    [/Tu as joué (.+) aujourd’hui, ta limite est de (.+)\. Il te reste environ (.+)\./g,'You’ve played $1 today, your limit is $2. About $3 left.'],
+    [/Tu as atteint ta limite de (.+) pour aujourd’hui\. Prends soin de toi : une pause, un peu de marche, un livre \?/g,'You’ve reached your $1 limit for today. Take care of yourself: a break, a walk, a book?'],
+    [/Tu as dépassé ta limite de (.+)\. Et si on s’arrêtait là pour aujourd’hui \?/g,'You’re $1 over your limit. How about stopping for today?'],
+    [/Il est (.+)\. Le sommeil compte aussi : et si tu reprenais demain \?/g,'It’s $1. Sleep matters too: how about continuing tomorrow?'],
+    [/Le Duel repart à zéro pour (\S+) et (\S+)\. Vos records personnels dans les jeux sont conservés\./g,'The Duel restarts from zero for $1 and $2. Your personal records in the games are kept.'],
+    [/Les records et la progression de tous les jeux seront remis à zéro, sur le téléphone de (\S+) et sur celui de (\S+)\. C’est définitif\./g,'All records and progress in every game will be reset, on $1’s phone and on $2’s. This cannot be undone.'],
+    [/En (.+) avec (\d+) erreurs?\. Une nouvelle grille \?/g,(m,a,b)=>'In '+a+' with '+pl(b,'mistake')+'. A new grid?'],
+    [/En (\d+) coups et (.+)\. Une nouvelle donne \?/g,'In $1 moves and $2. A new deal?'],[/^En (.+)\. Une nouvelle grille \?/g,'In $1. A new grid?'],
+    [/⏱ (.+) de jeu aujourd’hui/g,'⏱ $1 of play today'],[/Déjà (\d+) heures? de jeu/g,(m,a)=>'Already '+pl(a,'hour')+' of play'],
+    [/Score ([\d\s ]+)/g,'Score $1'],[/ pts/g,' pts'],
+    [/Marteau/g,'Hammer'],[/Échange libre/g,'Free swap'],[/\+5 coups/g,'+5 moves'],[/Mélange/g,'Shuffle']];
+  const WRE=new RegExp(Object.keys(WORLD).join('|'),'g'),FRE=new RegExp('\\b('+Object.keys(FEAT).join('|')+')\\b','g'),CRE=new RegExp(' ('+Object.keys(COLN).join('|')+')$','g');
+  const memo=new Map();
+  function tr(s){if(lang!=='en'||!s||typeof s!=='string'||!/[A-Za-zÀ-ÿ]/.test(s))return s;
+    if(memo.has(s))return memo.get(s);
+    const t0=s.trim();let out;
+    if(D[t0]!=null)out=s.replace(t0,D[t0]);
+    else{out=s;for(const[re,r]of F)out=out.replace(re,r);out=out.replace(WRE,m=>WORLD[m]).replace(FRE,m=>FEAT[m]).replace(CRE,(m,a)=>' '+COLN[a])}
+    if(memo.size<5000)memo.set(s,out);return out}
+  if(lang==='en'){
+    for(const fn of['fillText','strokeText']){const o=CanvasRenderingContext2D.prototype[fn];CanvasRenderingContext2D.prototype[fn]=function(t,...a){return o.call(this,tr(String(t)),...a)}}
+    const doNode=n=>{if(n.nodeType===3){const p=n.parentNode;if(p&&/^(SCRIPT|STYLE)$/.test(p.nodeName))return;const t=tr(n.nodeValue);if(t!==n.nodeValue)n.nodeValue=t}
+      else if(n.nodeType===1){for(const a of['title','aria-label']){const v=n.getAttribute&&n.getAttribute(a);if(v){const t=tr(v);if(t!==v)n.setAttribute(a,t)}}
+        n.childNodes.forEach(doNode)}};
+    const start=()=>{doNode(document.body);new MutationObserver(ms=>ms.forEach(m=>{if(m.type==='characterData')doNode(m.target);else m.addedNodes.forEach(doNode)}))
+      .observe(document.body,{subtree:true,childList:true,characterData:true});document.documentElement.lang='en';document.title='My games'};
+    if(document.body)start();else addEventListener('DOMContentLoaded',start)}
+  return{lang,tr,set:l=>{try{localStorage.setItem('bb.lang',JSON.stringify(l))}catch(e){}location.reload()}}
+})();
 const PAL={
   red:['#e84545','#ff9d92','#9c1d1d'], orange:['#f0892a','#ffc27a','#a9560b'],
   yellow:['#f5c518','#ffe880','#b08600'], green:['#36c060','#8cf0a8','#1b7f39'],
@@ -1702,7 +1800,7 @@ const Duel=(()=>{
     store.set('bb.wipe',wid);S=empty(wid);save();if(mine)await push();location.reload()}
   function wipeAll(){Celebrate.ask('Tout effacer ?','Les records et la progression de tous les jeux seront remis à zéro, sur le téléphone de '+me()+' et sur celui de '+other()+'. C’est définitif.','Tout effacer','Annuler',()=>wipe(Date.now(),true),null)}
   function askWho(force){if(me()&&!force)return;const box=$('#who');box.hidden=false;
-    box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{store.set('bb.me',b.dataset.p);box.hidden=true;Home.refresh();push()})}
+    box.querySelectorAll('[data-p]').forEach(b=>b.onclick=async()=>{store.set('bb.me',b.dataset.p);box.hidden=true;Home.refresh();await push();const l=b.dataset.p==='Blanca'?'en':'fr';if(l!==I18N.lang)I18N.set(l)})}
   $('#duel-new').onclick=newRound;$('#duel-wipe').onclick=wipeAll;
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')push()});
   return{open,push,sync,askWho,me,fetchAll:async()=>{await push();await pull();return remote}}
@@ -1838,12 +1936,12 @@ const PlayTime=(()=>{
 /* ================= Navigation ================= */
 const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines};
 let active='home';
-function show(t){active=t;PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
+function show(t){active=t;PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';for(const x in GAMES)$('#g-'+x).hidden=t!==x;if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
   if(t==='home'){Home.refresh();Duel.sync();$('#time-sub').textContent='Aujourd’hui : '+PlayTime.todayTxt()+' · bilans de Chris et Blanca'}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
 $$('.tile').forEach(b=>b.onclick=()=>show(b.dataset.g));
 $$('.homeb').forEach(b=>b.onclick=()=>show('home'));
-$('#duel-tile').onclick=()=>show('duel');$('#time-tile').onclick=()=>show('times');$('#who-chip').onclick=()=>Duel.askWho(true);
+$('#duel-tile').onclick=()=>show('duel');$('#lang-chip').textContent=I18N.lang==='en'?'EN':'FR';$('#lang-chip').onclick=()=>I18N.set(I18N.lang==='en'?'fr':'en');$('#time-tile').onclick=()=>show('times');$('#who-chip').onclick=()=>Duel.askWho(true);
 show('home');Duel.askWho(false);
 setInterval(()=>PlayTime.tick(!!GAMES[active]&&document.visibilityState==='visible'&&!Celebrate.active(),active),1000);
 let last=performance.now();
