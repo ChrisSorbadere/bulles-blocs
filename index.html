@@ -155,6 +155,8 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 .dvs{display:flex;flex-direction:column;align-items:center;gap:2px}.dvs small{font-size:.62rem;font-weight:500;color:var(--muted);white-space:nowrap}
 .dbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-bottom:8px}.dbtns .btn{margin:0;padding:10px 6px}.dbtns .alt{background:var(--panel);color:#ff8a8a;border-color:#6b3040}
 #who .btn{min-width:160px}
+.ptime{flex:none;margin:-4px 0 -4px;text-align:center;font-size:.66rem;letter-spacing:.06em;color:var(--muted);opacity:.8;font-variant-numeric:tabular-nums}
+.ptime.warn{color:#ffb03a;opacity:1}
 .drag{position:fixed;left:0;top:0;pointer-events:none;z-index:10}
 .hint{font-size:.75rem;color:var(--muted);text-align:center;margin:0}
 @media (prefers-reduced-motion:reduce){.tab{transition:none}}
@@ -164,6 +166,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 
 
 <div class="app">
+  <div id="ptime" class="ptime" hidden></div>
   <section id="home" class="home">
     <div class="hhead"><h1 class="htitle">Mes jeux</h1><button class="who-chip" id="who-chip">👤 <b id="who-name">?</b></button></div>
     <button class="dtile" id="duel-tile"><span class="dsw">⚔️</span><span><b>Duel</b><small>Chris contre Blanca, jeu par jeu</small></span></button>
@@ -1713,16 +1716,34 @@ const Home=(()=>{
   return{draw,refresh:()=>{draw();subs();$('#who-name').textContent=Duel.me()||'?'}}
 })();
 
+/* ================= TEMPS DE JEU ================= */
+const PlayTime=(()=>{
+  const el=$('#ptime');
+  const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+  let P=store.get('bb.play',null);if(!P||P.d!==today())P={d:today(),s:0,warned:0};
+  const fmt=s=>{const m=Math.floor(s/60);if(m<1)return'moins d’1 min';if(m<60)return m+' min';return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
+  function render(){el.textContent='⏱ '+fmt(P.s)+' de jeu aujourd’hui';el.classList.toggle('warn',P.s>=3600)}
+  function tick(playing){if(P.d!==today())P={d:today(),s:0,warned:0};
+    if(playing){P.s++;if(P.s%10===0)store.set('bb.play',P);
+      const h=Math.floor(P.s/3600);if(h>=1&&h>(P.warned||0)){P.warned=h;store.set('bb.play',P);warn(h)}}
+    render()}
+  function warn(h){try{navigator.vibrate&&navigator.vibrate([120,80,120])}catch(e){}
+    Celebrate.ask('⏱ Déjà '+h+' heure'+(h>1?'s':'')+' de jeu','Tu joues depuis '+fmt(P.s)+' aujourd’hui. C’est peut-être le moment de faire une pause : bouge un peu, repose tes yeux.','Faire une pause','Continuer',()=>show('home'),null)}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')store.set('bb.play',P)});
+  return{tick,show:v=>{el.hidden=!v;render()}}
+})();
+
 /* ================= Navigation ================= */
 const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines};
 let active='home';
-function show(t){active=t;$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';if(t==='duel'){Duel.open();return}
+function show(t){active=t;PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';if(t==='duel'){Duel.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
   if(t==='home'){Home.refresh();Duel.sync()}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
 $$('.tile').forEach(b=>b.onclick=()=>show(b.dataset.g));
 $$('.homeb').forEach(b=>b.onclick=()=>show('home'));
 $('#duel-tile').onclick=()=>show('duel');$('#who-chip').onclick=()=>Duel.askWho(true);
 show('home');Duel.askWho(false);
+setInterval(()=>PlayTime.tick(!!GAMES[active]&&document.visibilityState==='visible'),1000);
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   if(GAMES[active]&&!Celebrate.active())GAMES[active].frame(dt);requestAnimationFrame(loop)}
