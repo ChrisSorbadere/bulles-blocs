@@ -157,6 +157,29 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 #who .btn{min-width:160px}
 .ptime{flex:none;margin:-4px 0 -4px;text-align:center;font-size:.66rem;letter-spacing:.06em;color:var(--muted);opacity:.8;font-variant-numeric:tabular-nums}
 .ptime.warn{color:#ffb03a;opacity:1}
+.ttile{background:linear-gradient(120deg,#1f5a4a,#24406e 60%,#2a3a8a);border-color:#2f7a63}
+.ptime{position:relative;display:flex;justify-content:center;padding-bottom:3px}
+.ptime i{position:absolute;left:0;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#4fd67a,#ffc54d)}
+.ptime.warn i{background:#ffb03a}.ptime.over{color:#ff7b7b;opacity:1}.ptime.over i{background:#ff5a5a}
+.tweek{display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:.85rem}
+.tweek.mon{border-color:var(--gold)}.tweek b{color:var(--gold)}.tweek .up{color:#ff8a7a}.tweek .down{color:#4fd67a}
+.tcards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tcard{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px;min-width:0}
+.tcard.mine{border-color:#3a6ea0}.tcard h3{margin:0 0 4px;font-size:1rem}
+.tbig{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}.tbig small{display:block;font-size:.65rem;font-weight:500;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.tbar{height:6px;border-radius:3px;background:#0b1128;margin-top:6px;overflow:hidden}.tbar i{display:block;height:100%;background:linear-gradient(90deg,#4fd67a,#ffc54d)}.tbar.over i{background:#ff5a5a}
+.tcard dl{display:grid;grid-template-columns:1fr auto;gap:3px 6px;margin:8px 0 6px;font-size:.74rem}.tcard dt{color:var(--muted)}.tcard dd{margin:0;font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
+.tmuted{color:var(--muted)}.tsmall{font-size:.66rem}
+.tgs{display:flex;flex-direction:column;gap:3px;margin-top:6px}.tg{display:grid;grid-template-columns:4.2em 1fr 2.6em;align-items:center;gap:4px;font-size:.66rem}.tg i{height:5px;border-radius:3px;background:#7fd0ff}.tg b{text-align:right}
+.tsec{margin:6px 0 0;font-size:.95rem;color:var(--gold)}
+.tchart{width:100%;height:auto;background:var(--panel);border-radius:14px}
+.tchart .ba{fill:#7fd0ff}.tchart .bb{fill:#ff7ad9}.tchart .tgrid{stroke:#2c3a72;stroke-width:1}.tchart .tax{fill:#8e9bcc;font:500 9px Fredoka,sans-serif}
+.tchart .tlim{stroke:#ffb03a;stroke-width:1.5;stroke-dasharray:5 4}.tchart .tlimt{fill:#ffb03a}
+.tleg{display:flex;gap:14px;justify-content:center;font-size:.75rem}.tleg span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.tleg .la::before{background:#7fd0ff}.tleg .lb::before{background:#ff7ad9}
+.tequiv{margin:0;font-size:.85rem;line-height:1.5;color:var(--ink)}
+.tlimit{display:flex;align-items:center;gap:10px;padding-bottom:10px}.tlimit .sel{margin:0;flex:none}
+#tstats{display:flex;flex-direction:column;gap:10px}
 .drag{position:fixed;left:0;top:0;pointer-events:none;z-index:10}
 .hint{font-size:.75rem;color:var(--muted);text-align:center;margin:0}
 @media (prefers-reduced-motion:reduce){.tab{transition:none}}
@@ -170,6 +193,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
   <section id="home" class="home">
     <div class="hhead"><h1 class="htitle">Mes jeux</h1><button class="who-chip" id="who-chip">👤 <b id="who-name">?</b></button></div>
     <button class="dtile" id="duel-tile"><span class="dsw">⚔️</span><span><b>Duel</b><small>Chris contre Blanca, jeu par jeu</small></span></button>
+    <button class="dtile ttile" id="time-tile"><span class="dsw">⏱</span><span><b>Temps de jeu</b><small id="time-sub">Chris et Blanca : aujourd’hui, moyenne, total</small></span></button>
     <div class="tiles">
       <button class="tile" data-g="bub"><canvas class="ticon" data-i="bub"></canvas><span class="tname">Bulles</span><span class="tsub" id="sub-bub"></span></button>
       <button class="tile" data-g="blk"><canvas class="ticon" data-i="blk"></canvas><span class="tname">Blocs</span><span class="tsub" id="sub-blk"></span></button>
@@ -288,6 +312,11 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
     </div>
     <div class="stage" id="mns-stage"><canvas id="mns-cv"></canvas></div>
     <p class="hint">Touche pour creuser · appui long (ou mode 🚩) pour poser un drapeau</p>
+  </section>
+
+  <section id="times" class="home" hidden>
+    <div class="maphead"><button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button><div class="mtitle">Temps de jeu</div></div>
+    <div id="tstats"></div>
   </section>
 
   <section id="duel" class="home" hidden>
@@ -1630,7 +1659,7 @@ const Duel=(()=>{
     else if(kind==='stars'){if((S.cdy[v]||0)<x){S.cdy[v]=x;save()}}}
   window._duel={report};
   function summary(){const V=S.v,cv=Object.values(S.cdy);
-    return{sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
+    return{play:window._play?window._play.export():null,sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
       cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0)}}
   const LV4=['Facile','Moyen','Difficile','Expert'];
   const ROWS=[
@@ -1676,7 +1705,7 @@ const Duel=(()=>{
     box.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{store.set('bb.me',b.dataset.p);box.hidden=true;Home.refresh();push()})}
   $('#duel-new').onclick=newRound;$('#duel-wipe').onclick=wipeAll;
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')push()});
-  return{open,push,sync,askWho,me}
+  return{open,push,sync,askWho,me,fetchAll:async()=>{await push();await pull();return remote}}
 })();
 
 /* ================= ACCUEIL ================= */
@@ -1719,31 +1748,104 @@ const Home=(()=>{
 /* ================= TEMPS DE JEU ================= */
 const PlayTime=(()=>{
   const el=$('#ptime');
-  const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-  let P=store.get('bb.play',null);if(!P||P.d!==today())P={d:today(),s:0,warned:0};
-  const fmt=s=>{const m=Math.floor(s/60);if(m<1)return'moins d’1 min';if(m<60)return m+' min';return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
-  function render(){el.textContent='⏱ '+fmt(P.s)+' de jeu aujourd’hui';el.classList.toggle('warn',P.s>=3600)}
-  function tick(playing){if(P.d!==today())P={d:today(),s:0,warned:0};
-    if(playing){P.s++;if(P.s%10===0)store.set('bb.play',P);
-      const h=Math.floor(P.s/3600);if(h>=1&&h>(P.warned||0)){P.warned=h;store.set('bb.play',P);warn(h)}}
+  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur'};
+  const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const today=()=>dkey(new Date());
+  const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+  const addDays=(s,n)=>{const d=parse(s);d.setDate(d.getDate()+n);return dkey(d)};
+  const daysBetween=(a,b)=>Math.round((parse(b)-parse(a))/864e5);
+  let T=store.get('bb.play2',null);
+  if(!T){const old=store.get('bb.play',null);T={start:today(),limit:3600,days:{},warn:{}};if(old&&old.d)T.days[old.d]={s:old.s||0,g:{}};}
+  let cont=0,idleGap=0,dirty=0;
+  const save=()=>store.set('bb.play2',T);
+  const day=k=>T.days[k]||(T.days[k]={s:0,g:{}});
+  const fmt=s=>{const m=Math.round(s/60);if(s<60)return s?'< 1 min':'0 min';if(m<60)return m+' min';return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
+  const fmtS=s=>{const m=Math.round(s/60);if(m<60)return m+' min';return Math.floor(m/60)+' h'+(m%60?' '+String(m%60).padStart(2,'0'):'')};
+  function render(){const s=day(today()).s,p=Math.min(1,s/T.limit);
+    el.innerHTML=`<span>⏱ ${fmt(s)} / ${fmtS(T.limit)}</span><i style="width:${p*100}%"></i>`;
+    el.classList.toggle('warn',s>=T.limit*.8&&s<T.limit);el.classList.toggle('over',s>=T.limit)}
+  function warnOnce(tag,title,text,yes='Faire une pause'){const w=T.warn[today()]||(T.warn[today()]={});if(w[tag])return;w[tag]=1;save();
+    try{navigator.vibrate&&navigator.vibrate([120,80,120])}catch(e){}
+    Celebrate.ask(title,text,yes,'Continuer',()=>show('home'),null)}
+  function tick(playing,game){const k=today();
+    if(!playing){if(++idleGap>60)cont=0;render();return}
+    idleGap=0;const D=day(k);D.s++;D.g[game]=(D.g[game]||0)+1;cont++;if(++dirty>=10){dirty=0;save()}
+    const s=D.s,L=T.limit;
+    if(s>=L*.8&&s<L)warnOnce('80','🕒 Bientôt ta limite','Tu as joué '+fmt(s)+' aujourd’hui, ta limite est de '+fmtS(L)+'. Il te reste environ '+fmt(L-s)+'.','D’accord, je finis');
+    else if(s>=L){const extra=Math.floor((s-L)/1800);warnOnce('100-'+extra,'⛔ Limite atteinte',extra?'Tu as dépassé ta limite de '+fmt(s-L)+'. Et si on s’arrêtait là pour aujourd’hui ?':'Tu as atteint ta limite de '+fmtS(L)+' pour aujourd’hui. Prends soin de toi : une pause, un peu de marche, un livre ?')}
+    if(cont>=1200){cont=0;Celebrate.ask('👀 Pause pour les yeux','Tu joues depuis 20 minutes sans t’arrêter. Regarde au loin pendant 20 secondes, cligne des yeux, étire-toi.','C’est fait','Continuer',null,null)}
+    const h=new Date().getHours();if(h>=23||h<5)warnOnce('night','🌙 Il est tard','Il est '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'. Le sommeil compte aussi : et si tu reprenais demain ?','Aller dormir');
     render()}
-  function warn(h){try{navigator.vibrate&&navigator.vibrate([120,80,120])}catch(e){}
-    Celebrate.ask('⏱ Déjà '+h+' heure'+(h>1?'s':'')+' de jeu','Tu joues depuis '+fmt(P.s)+' aujourd’hui. C’est peut-être le moment de faire une pause : bouge un peu, repose tes yeux.','Faire une pause','Continuer',()=>show('home'),null)}
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')store.set('bb.play',P)});
-  return{tick,show:v=>{el.hidden=!v;render()}}
+  function streak(){let n=0,k=addDays(today(),-1);const t0=T.start;
+    while(k>=t0){if((T.days[k]?T.days[k].s:0)<T.limit)n++;else break;k=addDays(k,-1)}
+    return n}
+  function weekStart(k){const d=parse(k),wd=(d.getDay()+6)%7;d.setDate(d.getDate()-wd);return dkey(d)}
+  function sumRange(days,a,b){let s=0;for(const k in days)if(k>=a&&k<=b)s+=days[k];return s}
+  function export_(){const days={};for(const k in T.days)days[k]=T.days[k].s;const g={};for(const k in T.days)for(const x in T.days[k].g)g[x]=(g[x]||0)+T.days[k].g[x];
+    const recent={};for(let i=0;i<60;i++){const k=addDays(today(),-i);if(days[k])recent[k]=days[k]}
+    return{start:T.start,limit:T.limit,total:Object.values(days).reduce((a,b)=>a+b,0),days:recent,g,streak:streak(),today:today()}}
+  function stats(P){if(!P||!P.start)return null;const td=today(),ws=weekStart(td),ms=td.slice(0,8)+'01';
+    const nd=Math.max(1,daysBetween(P.start,td)+1),played=Object.values(P.days).filter(v=>v>0).length||1;
+    const tot=P.total||0,tday=P.days[td]||0;
+    const lw0=addDays(ws,-7),lw1=addDays(ws,-1),pw0=addDays(ws,-14),pw1=addDays(ws,-8);
+    const top=Object.entries(P.g||{}).sort((a,b)=>b[1]-a[1]);
+    return{tday,week:sumRange(P.days,ws,td),month:sumRange(P.days,ms,td),tot,avg:tot/nd,avgPlayed:tot/played,nd,start:P.start,
+      lastW:sumRange(P.days,lw0,lw1),prevW:sumRange(P.days,pw0,pw1),top,limit:P.limit||3600,streak:P.streak||0,days:P.days}}
+  const equiv=s=>{const h=s/3600;if(h<.5)return'';const n=v=>v.toLocaleString('fr-FR',{maximumFractionDigits:1});const f=n(h/2),b=n(h/5),km=Math.round(h*5);
+    return `soit l’équivalent de ${f} film${h/2>=2?'s':''}, ${b} livre${h/5>=2?'s':''} de poche ou ${km} km de marche`};
+  const plant=n=>n>=7?'🌳':n>=3?'🌿':n>=1?'🌱':'';
+  function card(name,st,mine){if(!st)return`<div class="tcard"><h3>${name}</h3><p class="tmuted">Pas encore de données.<br>Le décompte démarre dès que ${name} joue avec la nouvelle version.</p></div>`;
+    const pct=Math.min(100,st.tday/st.limit*100);
+    const g=st.top.slice(0,3).map(([k,v])=>`<div class="tg"><span>${GN[k]||k}</span><i style="width:${Math.round(v/Math.max(1,st.tot)*100)}%"></i><b>${Math.round(v/Math.max(1,st.tot)*100)} %</b></div>`).join('');
+    return`<div class="tcard${mine?' mine':''}"><h3>${name}</h3>
+      <div class="tbig">${fmt(st.tday)}<small>aujourd’hui</small></div>
+      <div class="tbar${st.tday>=st.limit?' over':''}"><i style="width:${pct}%"></i></div><div class="tmuted tsmall">limite ${fmtS(st.limit)}</div>
+      <dl><dt>Cette semaine</dt><dd>${fmt(st.week)}</dd><dt>Ce mois-ci</dt><dd>${fmt(st.month)}</dd>
+      <dt>Total</dt><dd>${fmt(st.tot)}</dd><dt>Moyenne / jour</dt><dd>${fmt(Math.round(st.avg))}</dd><dt>Moy. / jour joué</dt><dd>${fmt(Math.round(st.avgPlayed))}</dd>
+      <dt>Série sous la limite</dt><dd>${plant(st.streak)} ${st.streak} j</dd></dl>
+      <div class="tmuted tsmall">depuis le ${parse(st.start).toLocaleDateString('fr-FR')} · ${st.nd} jour${st.nd>1?'s':''}</div>
+      ${g?`<div class="tgs">${g}</div>`:''}</div>`}
+  function chart(a,b,na,nb){const W=320,H=150,pad=22,n=14,keys=[...Array(n)].map((_,i)=>addDays(today(),i-n+1));
+    const va=keys.map(k=>a?a.days[k]||0:0),vb=keys.map(k=>b?b.days[k]||0:0),lims=[a&&a.limit,b&&b.limit].filter(Boolean);
+    const max=Math.max(3600,...va,...vb,...lims)*1.1,bw=(W-pad)/n,y=v=>H-18-(v/max)*(H-30);
+    let s=`<svg viewBox="0 0 ${W} ${H}" class="tchart" role="img" aria-label="Temps de jeu des 14 derniers jours">`;
+    for(const hh of[1,2,3,4,5,6])if(hh*3600<max)s+=`<line x1="${pad}" x2="${W}" y1="${y(hh*3600)}" y2="${y(hh*3600)}" class="tgrid"/><text x="${pad-3}" y="${y(hh*3600)+3}" class="tax" text-anchor="end">${hh}h</text>`;
+    keys.forEach((k,i)=>{const x=pad+i*bw;s+=`<rect x="${x+bw*.12}" y="${y(va[i])}" width="${bw*.36}" height="${H-18-y(va[i])}" rx="2" class="ba"/><rect x="${x+bw*.52}" y="${y(vb[i])}" width="${bw*.36}" height="${H-18-y(vb[i])}" rx="2" class="bb"/>`;
+      if(i%2===(n-1)%2)s+=`<text x="${x+bw/2}" y="${H-5}" class="tax" text-anchor="middle">${parse(k).getDate()}</text>`});
+    [...new Set(lims)].forEach(L=>{s+=`<line x1="${pad}" x2="${W}" y1="${y(L)}" y2="${y(L)}" class="tlim"/><text x="${W-2}" y="${y(L)-3}" class="tax tlimt" text-anchor="end">limite</text>`});
+    s+='</svg>';return s+`<div class="tleg"><span class="la">${na}</span><span class="lb">${nb}</span></div>`}
+  function trend(st){if(!st)return'';const a=st.lastW,b=st.prevW;if(!a&&!b)return'pas encore de semaine complète';
+    if(!b)return fmt(a);const d=Math.round((a-b)/b*100);return`${fmt(a)} <b class="${d>0?'up':'down'}">${d>0?'↗ +':'↘ '}${d} %</b>`}
+  function renderPage(remote){save();const A=Duel.me()||'Moi',B=['Chris','Blanca'].find(p=>p!==A)||'Autre';
+    const pa=export_(),pb=remote&&remote[B]&&remote[B].d&&remote[B].d.play;const sa=stats(pa),sb=stats(pb);
+    const isMon=new Date().getDay()===1;
+    $('#tstats').innerHTML=`
+      <div class="tweek${isMon?' mon':''}"><b>${isMon?'📅 Bilan de la semaine dernière':'Semaine dernière'}</b><span>${A} : ${trend(sa)}</span><span>${B} : ${trend(sb)}</span></div>
+      <div class="tcards">${card(A,sa,true)}${card(B,sb,false)}</div>
+      <h3 class="tsec">14 derniers jours</h3>${chart(pa,pb,A,B)}
+      <h3 class="tsec">Ce mois-ci</h3>
+      <p class="tequiv"><b>${A}</b> : ${fmt(sa.month)} ${equiv(sa.month)}${sb?`<br><b>${B}</b> : ${fmt(sb.month)} ${equiv(sb.month)}`:''}</p>
+      <h3 class="tsec">Ma limite quotidienne</h3>
+      <div class="tlimit"><select id="tlim-sel" class="sel">${[1800,2700,3600,5400,7200].map(v=>`<option value="${v}"${v===T.limit?' selected':''}>${fmtS(v)}</option>`).join('')}</select>
+      <span class="tmuted tsmall">Rappel à 80 %, alerte à 100 %, pause des yeux toutes les 20 min, rappel après 23 h.</span></div>`;
+    $('#tlim-sel').onchange=e=>{T.limit=+e.target.value;save();render();Duel.push();renderPage(remote)}}
+  async function open(){renderPage(store.get('bb.duelCache',{}));const r=await Duel.fetchAll();renderPage(r)}
+  window._play={export:export_};
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save()});
+  return{tick,show:v=>{el.hidden=!v;render()},export:export_,open,todayTxt:()=>fmt(day(today()).s)}
 })();
 
 /* ================= Navigation ================= */
 const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines};
 let active='home';
-function show(t){active=t;PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';if(t==='duel'){Duel.open();return}
+function show(t){active=t;PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
-  if(t==='home'){Home.refresh();Duel.sync()}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
+  if(t==='home'){Home.refresh();Duel.sync();$('#time-sub').textContent='Aujourd’hui : '+PlayTime.todayTxt()+' · bilans de Chris et Blanca'}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
 $$('.tile').forEach(b=>b.onclick=()=>show(b.dataset.g));
 $$('.homeb').forEach(b=>b.onclick=()=>show('home'));
-$('#duel-tile').onclick=()=>show('duel');$('#who-chip').onclick=()=>Duel.askWho(true);
+$('#duel-tile').onclick=()=>show('duel');$('#time-tile').onclick=()=>show('times');$('#who-chip').onclick=()=>Duel.askWho(true);
 show('home');Duel.askWho(false);
-setInterval(()=>PlayTime.tick(!!GAMES[active]&&document.visibilityState==='visible'),1000);
+setInterval(()=>PlayTime.tick(!!GAMES[active]&&document.visibilityState==='visible'&&!Celebrate.active(),active),1000);
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
   if(GAMES[active]&&!Celebrate.active())GAMES[active].frame(dt);requestAnimationFrame(loop)}
