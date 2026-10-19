@@ -158,9 +158,10 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 .ptime{flex:none;margin:-4px 0 -4px;text-align:center;font-size:.66rem;letter-spacing:.06em;color:var(--muted);opacity:.8;font-variant-numeric:tabular-nums}
 .ptime.warn{color:#ffb03a;opacity:1}
 .ttile{background:linear-gradient(120deg,#1f5a4a,#24406e 60%,#2a3a8a);border-color:#2f7a63}
-.ptime{position:relative;display:flex;justify-content:center;padding-bottom:3px}
-.ptime i{position:absolute;left:0;bottom:0;height:2px;border-radius:2px;background:linear-gradient(90deg,#4fd67a,#ffc54d)}
-.ptime.warn i{background:#ffb03a}.ptime.over{color:#ff7b7b;opacity:1}.ptime.over i{background:#ff5a5a}
+.ptime{display:flex;align-items:center;gap:10px;margin:-2px 0 -2px;font-size:.85rem;font-weight:600;color:var(--ink);letter-spacing:.02em;opacity:1;white-space:nowrap}
+.ptime .pbar{flex:1;height:8px;border-radius:4px;background:#0b1128;border:1px solid var(--line);overflow:hidden}
+.ptime .pbar i{display:block;height:100%;border-radius:4px;background:linear-gradient(90deg,#4fd67a,#ffc54d);transition:width .5s}
+.ptime.warn{color:#ffb03a}.ptime.warn .pbar i{background:linear-gradient(90deg,#ffc54d,#ffb03a)}.ptime.over{color:#ff7b7b;opacity:1}.ptime.over i{background:#ff5a5a}
 .tweek{display:flex;flex-direction:column;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:.85rem}
 .tweek.mon{border-color:var(--gold)}.tweek b{color:var(--gold)}.tweek .up{color:#ff8a7a}.tweek .down{color:#4fd67a}
 .tcards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -1860,7 +1861,7 @@ const PlayTime=(()=>{
   const fmt=s=>{const m=Math.round(s/60);if(s<60)return s?'< 1 min':'0 min';if(m<60)return m+' min';return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')};
   const fmtS=s=>{const m=Math.round(s/60);if(m<60)return m+' min';return Math.floor(m/60)+' h'+(m%60?' '+String(m%60).padStart(2,'0'):'')};
   function render(){const s=day(today()).s,p=Math.min(1,s/T.limit);
-    el.innerHTML=`<span>⏱ ${fmt(s)} / ${fmtS(T.limit)}</span><i style="width:${p*100}%"></i>`;
+    el.innerHTML=`<span>⏱ ${fmt(s)} / ${fmtS(T.limit)}</span><b class="pbar"><i style="width:${p*100}%"></i></b>`;
     el.classList.toggle('warn',s>=T.limit*.8&&s<T.limit);el.classList.toggle('over',s>=T.limit)}
   function warnOnce(tag,title,text,yes='Faire une pause'){const w=T.warn[today()]||(T.warn[today()]={});if(w[tag])return;w[tag]=1;save();
     try{navigator.vibrate&&navigator.vibrate([120,80,120])}catch(e){}
