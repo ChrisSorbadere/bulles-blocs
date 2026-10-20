@@ -910,7 +910,7 @@ const Blocks=(()=>{
 
 /* ================= GEMMES ================= */
 const Candies=(()=>{
-  const N=8;
+  const N=9;
   const NAMES=['cœurs','étoiles','lunes','feuilles','gouttes','hexagones'];
   const cv=$('#cdy-cv'),ctx=cv.getContext('2d'),stage=$('#cdy-stage'),mapEl=$('#cdy-map'),mapIn=$('#cdy-mapin'),mapSc=$('#cdy-mapsc');
   let cache={};const IMG={};
@@ -948,14 +948,16 @@ const Candies=(()=>{
     chest:'Coffres : ramasse les clés (aligne-les) pour les ouvrir et libérer un bonus.',
     shape:'Nouveau plateau : les jetons glissent par-dessus les trous.'};
   const SHAPES=[
-    ['..XXXX..','.XXXXXX.','XXXXXXXX','XXXXXXXX','XXXXXXXX','XXXXXXXX','.XXXXXX.','..XXXX..'],
-    ['XXXXXXXX','XXXXXXXX','XXX..XXX','XX....XX','XX....XX','XXX..XXX','XXXXXXXX','XXXXXXXX'],
-    ['.XX..XX.','XXXXXXXX','XXXXXXXX','XXXXXXXX','XXXXXXXX','.XXXXXX.','..XXXX..','...XX...'],
-    ['..XXXX..','..XXXX..','XXXXXXXX','XXXXXXXX','XXXXXXXX','XXXXXXXX','..XXXX..','..XXXX..'],
-    ['XXXXXXXX','XXXXXXXX','XXXXXXXX','.XXXXXX.','..XXXX..','.XXXXXX.','XXXXXXXX','XXXXXXXX'],
-    ['XXX..XXX','XXX..XXX','XXXXXXXX','XXXXXXXX','XXXXXXXX','XXXXXXXX','XXX..XXX','XXX..XXX'],
-    ['X.XXXX.X','XXXXXXXX','XXXXXXXX','XX.XX.XX','XXXXXXXX','XXXXXXXX','XXXXXXXX','X.XXXX.X'],
-    ['...XX...','..XXXX..','.XXXXXX.','XXXXXXXX','XXXXXXXX','.XXXXXX.','..XXXX..','...XX...']];
+    ['..XXXXX..','.XXXXXXX.','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','.XXXXXXX.','..XXXXX..'],
+    ['.XXX.XXX.','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','.XXXXXXX.','..XXXXX..','...XXX...','....X....'],
+    ['...XXX...','..XXXXX..','.XXXXXXX.','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','.XXXXXXX.','..XXXXX..','...XXX...'],
+    ['XXXX.XXXX','XXXX.XXXX','XXXX.XXXX','XXXX.XXXX','XXXX.XXXX','XXXX.XXXX','XXXX.XXXX','XXXX.XXXX','XXXX.XXXX'],
+    ['..XXXXX..','..XXXXX..','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','..XXXXX..','..XXXXX..'],
+    ['XXXXXXXXX','XXXXXXXXX','.XXXXXXX.','..XXXXX..','..XXXXX..','..XXXXX..','.XXXXXXX.','XXXXXXXXX','XXXXXXXXX'],
+    ['XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','.XXXXXXX.','.XXXXXXX.','.XXXXXXX.','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX']];
+  const CAL={1:[26,4.3,24350,31800],2:[26,5.2,19150,29500],3:[28,5.2,22750,38350],4:[26,3,20700,35150],5:[22,2.5,24250,31350],6:[22,2,17000,22600],7:[26,3,20200,35700],8:[22,2,18350,31150],9:[22,2.5,21300,33550],10:[22,2.5,23350,32500],11:[30,5.2,23400,36900],12:[22,2.5,20050,34150],13:[26,2.5,15700,24000],14:[26,4.3,23700,42400],15:[19,2.5,23750,31400],16:[22,2,12550,20450],17:[26,5.2,20850,32850],18:[22,2,20250,28900],19:[19,2,18100,27550],20:[24,5.2,24300,38050],21:[34,0.5,15650,32200],22:[22,2.5,15100,19700],23:[26,2.5,20400,26450],24:[22,2,13500,18600],25:[26,3,22000,36350],26:[22,2.5,22900,37750],27:[19,5.2,20650,29750],28:[22,2.5,24050,30900],29:[24,0.65,16450,30300],30:[22,2.5,19200,28950],31:[24,5.2,20000,35500],32:[22,3,23400,32100],33:[22,5.2,22550,34750],34:[19,5.2,27500,36200],35:[22,3,22250,35700],36:[30,2,23900,37350],37:[26,1.3,21650,37700],38:[24,0.65,21100,31950],39:[26,1,22800,37850],40:[22,3,21950,33700],41:[26,1,21750,38250],42:[19,2.5,31100,37700],43:[26,1.3,15950,27400],44:[28,0.8,24050,30550],45:[26,1.3,12000,22500],46:[26,3.6,31800,42500],47:[24,0.8,20450,31050],48:[22,1,9350,12550],49:[23,1.6,21300,30300],50:[24,0.65,22800,37600],51:[14,5.2,208000,508800],52:[27,0.5,18500,26300],53:[26,2,26150,38550],54:[22,1.6,15650,22500],55:[22,2.5,21300,33800],56:[22,2,22200,34700],57:[25,3.6,33750,43900],58:[24,1,18500,30500],59:[22,2.5,20550,30300],60:[24,1,21550,32450],61:[22,1.6,12300,15000],62:[26,2,21100,33300],63:[28,2,37800,44250],64:[21,5.2,25200,36650],65:[28,2,26650,39800],66:[26,2,23200,35100],67:[22,2.5,21550,30950],68:[22,1.6,11100,15950],69:[27,0.5,23900,35650],70:[14,5.2,222100,515850],71:[24,0.5,11250,18450],72:[26,0.5,8500,9950],73:[22,2,18150,22200],74:[12,5.2,193900,423950],75:[22,1.6,16400,30800],76:[12,5.2,155300,402900],77:[22,1.3,13800,17900],78:[22,1.3,11450,17650],79:[19,1.3,14200,19350],80:[26,1.6,27100,33750],81:[26,2.5,23600,35450],82:[24,0.5,16350,35650],83:[14,5.2,241150,549400],84:[27,0.5,21800,34300],85:[26,1,18850,29600],86:[28,2.5,24750,37950],87:[11,5.2,275400,536000],88:[22,1.6,18200,24900],89:[12,5.2,196150,449250],90:[12,5.2,215800,502900],91:[12,5.2,152450,474250],92:[22,2.5,25500,37800],93:[26,1.3,23650,33650],94:[19,2,25600,40750],95:[22,2.5,25200,38200],96:[30,2,28550,39550],97:[29,0.5,14000,19600],98:[22,1.6,18750,26700],99:[26,1.3,25700,35100],100:[26,1,25000,39250],101:[26,1,23550,32100],102:[23,2.5,21250,30200],103:[12,5.2,213050,543500],104:[28,3,31650,37200],105:[28,1.3,20250,32850],106:[12,5.2,220550,390200],107:[26,3.6,30500,35250],108:[12,5.2,272500,637600],109:[27,0.5,10200,13000],110:[24,0.65,27350,43000],111:[33,0.5,23300,40200],112:[32,0.5,20300,28200],113:[27,0.5,22100,41200],114:[22,2,24100,33000],115:[26,0.8,14400,21100],116:[22,1.6,20400,26050],117:[19,1.6,20650,27600],118:[12,5.2,215950,550350],119:[32,0.5,17350,26750],120:[22,5.2,25300,36900],121:[28,0.8,20350,29350],122:[28,1,20900,30250],123:[28,2.5,31800,45050],124:[19,1,12850,18400],125:[12,5.2,148000,462800],126:[26,1,25100,37650],127:[26,0.5,15400,22400],128:[22,1.3,13750,20800],129:[26,1,24450,37150],130:[26,2,27800,38100],131:[14,5.2,55900,98950],132:[21,1,29900,51450],133:[22,5.2,97900,149500],134:[28,1,24200,35600],135:[26,2.5,29700,40050],136:[24,5.2,32050,48150],137:[22,2,28100,51400],138:[26,1.6,31800,39750],139:[11,5.2,182050,525200],140:[22,1.3,19700,24100],141:[12,5.2,260350,667100],142:[16,5.2,201500,479600],143:[26,0.8,27200,37550],144:[26,1,22850,30300],145:[12,5.2,267400,497350],146:[22,0.8,12500,24200],147:[11,5.2,290650,511500],148:[27,0.5,23900,36950],149:[26,0.8,25450,39650],150:[38,0.5,12250,18600],151:[12,5.2,270500,549600],152:[12,5.2,208750,625300],153:[24,1,25500,32700],154:[11,5.2,177500,474250],155:[26,1.3,22800,29450],156:[16,5.2,243950,527350],157:[39,0.5,22250,37400],158:[22,1.6,17800,29000],159:[12,5.2,299350,736900],160:[12,5.2,192600,307950],161:[26,1.6,20700,30000],162:[19,2,30000,41900],163:[12,5.2,228900,441100],164:[26,5.2,30500,49800],165:[26,1.6,27500,34500],166:[22,2,24600,32000],167:[28,1,21300,33850],168:[27,0.5,25900,35900],169:[19,2,28150,40450],170:[22,2.5,29300,38100],171:[26,0.5,10800,15350],172:[22,1.6,23650,34450],173:[26,1.3,25350,42500],174:[24,1,26350,35700],175:[22,1,11050,16450],176:[22,2.5,32600,39150],177:[23,1,28200,40900],178:[26,1,25000,35600],179:[26,1.3,28750,39500],180:[26,0.5,12250,18200]};
+  const isHard=(w,idx)=>w>=2&&(idx===sizeOf(w)-2||idx===Math.floor(sizeOf(w)/2)-1);
+  let SIM=false,simWin=false,doneLeft=null,pendingChest=0;
 
   let stars=store.get('bb.cdyStars',[]);if(!Array.isArray(stars))stars=[];
   if(!store.get('bb.cdyV2',false)){stars=[];store.set('bb.cdyStars',stars);store.set('bb.cdyV2',true)}
@@ -976,7 +978,7 @@ const Candies=(()=>{
 
   let AC=null;
   function initA(){try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume()}catch(e){}}
-  function snd(n,low){if(store.get('bb.mute',false))return;initA();if(!AC)return;try{
+  function snd(n,low){if(SIM||store.get('bb.mute',false))return;initA();if(!AC)return;try{
     const t=AC.currentTime,o=AC.createOscillator(),v=AC.createGain(),f=low?150:440+Math.min(n,8)*90;
     o.type=low?'triangle':'sine';o.frequency.setValueAtTime(f*1.5,t);o.frequency.exponentialRampToValueAtTime(f*.7,t+(low?.2:.09));
     v.gain.setValueAtTime(.0001,t);v.gain.exponentialRampToValueAtTime(.2,t+.006);v.gain.exponentialRampToValueAtTime(.0001,t+(low?.25:.12));
@@ -984,50 +986,60 @@ const Candies=(()=>{
 
   /* ---------- Génération des niveaux ---------- */
   function mulberry(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-  function genLevel(n){const R=mulberry(n*104729+7),r=k=>Math.floor(R()*k),pick=a=>a[r(a.length)];
-    const{w,idx}=worldOf(n),D=(w-1)+idx/15,hard=w>=2&&(idx+1)%5===0,intro=idx===0&&w>=2&&w<=8;
-    const L={n,w,idx,hard,nCol:w>=3?6:5,moves:0,goals:{},ice:[],obs:[],mm:[],keys:0,holes:[],tip:null};
+  function genLevel(n,opt={}){const R=mulberry(n*104729+7),r=k=>Math.floor(R()*k),pick=a=>a[r(a.length)];
+    const{w,idx}=worldOf(n),size=sizeOf(w),pos=idx/(size-1);
+    const hard=w>=2&&(idx===size-2||idx===Math.floor(size/2)-1),intro=idx===0&&w>=2&&w<=8;
     const feat=wInfo(w).feat;
-    // forme du plateau
-    if(!intro&&n>4&&(w>=2&&idx>=4)&&R()<Math.min(.65,.25+w*.06)){const sh=pick(SHAPES);for(let rr=0;rr<N;rr++)for(let cc=0;cc<N;cc++)if(sh[rr][cc]==='.')L.holes.push(id(rr,cc))}
-    const holes=new Set(L.holes);
+    // intensité : dents de scie, chaque monde repart un cran plus bas que la fin du précédent
+    const I=Math.min(3,.35*(w-1))+pos*.9+(hard?.4:0)-(intro?.3:0);
+    const L={n,w,idx,hard,nCol:5,moves:0,goals:{},ice:[],obs:[],mm:[],keys:0,holes:[],tip:null};
     let type;
-    if(n===1)type='order';else if(n===2)type='ice';else if(w===3&&idx===0)type='drop';
-    else{const o=['order','ice'];if(w>=3)o.push('drop');if(w>=4)o.push('mixed','mixed');type=pick(o)}
+    if(n===1)type='order';else if(n===2)type='ice';else if(w===3&&idx===0)type='drop';else if(intro)type=pick(['order','ice']);
+    else{const o=['order','order','ice','ice'];if(w>=3)o.push('drop');if(w>=4&&pos>.3)o.push('mixed');type=pick(o)}
     L.type=type;
-    if(n===1)L.tip=TIPS[1];else if(n===2)L.tip=TIPS[2];else if(intro)L.tip=TIPS[feat];else if(L.holes.length&&w===2&&idx<=6)L.tip=TIPS.shape;
-    // sorties des ingrédients (case la plus basse de chaque colonne)
+    if(n===1)L.tip=TIPS[1];else if(n===2)L.tip=TIPS[2];else if(intro)L.tip=TIPS[feat];
+    // obstacles : un seul type jusqu'au monde 5, deux ensuite
+    const avail=[];if(w>=2)avail.push('chain');if(w>=4)avail.push('stone');if(w>=5)avail.push('shadow','marm');if(w>=6)avail.push('lava');if(w>=7)avail.push('swirl');if(w>=8)avail.push('chest');
+    let kinds=[];
+    if(intro){kinds=[feat==='shadow'?'shadow':feat];if(feat==='shadow')kinds.push('marm');if(feat==='stone')kinds=['stone']}
+    else if(n>4&&avail.length&&R()<Math.min(.85,.45+.08*w)){kinds.push(R()<.5?avail[avail.length-1]:pick(avail));if(w>=6&&R()<.4){const k2=pick(avail);if(!kinds.includes(k2))kinds.push(k2)}}
+    if(feat==='drop'&&intro)kinds=[];
+    // forme du plateau : seulement si peu d'obstacles
+    if(!intro&&n>6&&kinds.length<=1&&R()<(w>=2?.35:0)){const sh=pick(SHAPES);for(let rr=0;rr<N;rr++)for(let cc=0;cc<N;cc++)if(sh[rr][cc]==='.')L.holes.push(id(rr,cc))}
+    const holes=new Set(L.holes);
     const exits=[];for(let cc=0;cc<N;cc++){let rr=N-1;while(rr>0&&holes.has(id(rr,cc)))rr--;exits[cc]=rr}
     const isExit=i=>{const[rr,cc]=RC(i);return exits[cc]===rr};
     const used=new Set(L.holes),dropLvl=type==='drop'||type==='mixed';
     const spot=()=>{for(let t=0;t<300;t++){const i=id(1+r(N-1),r(N));if(!used.has(i)&&!(dropLvl&&isExit(i))){used.add(i);return i}}return -1};
-    const want=(f,minW,p)=>w>=minW&&(intro&&feat===f||R()<p);
-    if(n>2&&want('chain',2,.6)){const k=Math.min(9,2+Math.floor(D*1.1));for(let j=0;j<k;j++){const i=spot();if(i>=0)L.obs.push({i,o:'chain'})}}
-    if(want('stone',4,.5)){const k=Math.min(6,1+Math.floor(Math.max(0,D-3)*.8));for(let j=0;j<k;j++){const i=spot();if(i>=0)L.obs.push({i,o:'stone',hp:D>6&&R()<.5?3:2})}}
-    if(want('shadow',5,.4)){const k=Math.min(4,1+Math.floor(Math.max(0,D-4)/2));for(let j=0;j<k;j++){const i=spot();if(i>=0)L.obs.push({i,o:'shadow',hp:1})}}
-    if(want('shadow',5,.45)){const k=Math.min(7,2+Math.floor(Math.max(0,D-4)));for(let j=0;j<k;j++){const i=spot();if(i>=0)L.mm.push({i,s:R()<.5?pick(['h','v','w']):''})}}
-    if(want('lava',6,.35)){const k=D>8?2:1;for(let j=0;j<k;j++){const i=spot();if(i>=0)L.obs.push({i,o:'lava',hp:1,t:Math.max(8,13-Math.floor((D-5)/2))})}}
-    if(want('swirl',7,.4)){const k=Math.min(6,2+Math.floor(Math.max(0,D-6)));for(let j=0;j<k;j++){const i=spot();if(i>=0)L.obs.push({i,o:'swirl',hp:1})}}
-    if(want('chest',8,.4)){const k=Math.min(4,1+Math.floor(Math.max(0,D-7)/2));for(let j=0;j<k;j++){const i=spot();if(i>=0)L.obs.push({i,o:'chest',hp:99})}L.keys=L.obs.filter(o=>o.o==='chest').length}
+    const cnt=(base,per,max)=>Math.max(1,Math.min(max,Math.round(base+I*per)));
+    for(const k of kinds){
+      if(k==='chain'){const m=cnt(3,2,10);for(let j=0;j<m;j++){const i=spot();if(i>=0)L.obs.push({i,o:'chain'})}}
+      if(k==='stone'){const m=cnt(2,1,6);for(let j=0;j<m;j++){const i=spot();if(i>=0)L.obs.push({i,o:'stone',hp:I>2.2&&R()<.4?3:2})}}
+      if(k==='shadow'){const m=cnt(1,.6,3);for(let j=0;j<m;j++){const i=spot();if(i>=0)L.obs.push({i,o:'shadow',hp:1})}}
+      if(k==='marm'){const m=cnt(2,1.2,6);for(let j=0;j<m;j++){const i=spot();if(i>=0)L.mm.push({i,s:R()<.5?pick(['h','v','w']):''})}}
+      if(k==='lava'){const m=I>2.6?2:1;for(let j=0;j<m;j++){const i=spot();if(i>=0)L.obs.push({i,o:'lava',hp:1,t:Math.max(10,15-Math.round(I))})}}
+      if(k==='swirl'){const m=cnt(2,1,5);for(let j=0;j<m;j++){const i=spot();if(i>=0)L.obs.push({i,o:'swirl',hp:1})}}
+      if(k==='chest'){const m=cnt(1,.5,3);for(let j=0;j<m;j++){const i=spot();if(i>=0)L.obs.push({i,o:'chest',hp:99})}L.keys=L.obs.filter(o=>o.o==='chest').length}}
+    if(L.obs.length+L.mm.length>=10||kinds.length>=2)L.nCol=4;
+    const cal=CAL[n],SC=opt.scale!=null?opt.scale:cal?cal[1]:1,sc=v=>Math.max(1,Math.round(v*SC));
     const solid=new Set([...L.holes,...L.obs.filter(o=>o.o!=='chain').map(o=>o.i)]);
-    const thick=w>=4?Math.min(.6,.2+(D-3)*.06):0;
-    const addIce=cnt=>{const s=new Map();let t=0;while(s.size<cnt&&t++<800){const i=id(r(N),r(N));if(!solid.has(i))s.set(i,R()<thick?2:1)}
+    const thick=w>=4?Math.min(.5,.15+I*.08):0;
+    const addIce=cnt0=>{const cnt=Math.min(N*N-solid.size-2,sc(cnt0));const s=new Map();let t=0;while(s.size<cnt&&t++<900){const i=id(r(N),r(N));if(!solid.has(i))s.set(i,R()<thick?2:1)}
       L.ice=[...s];L.goals.ice=[...s.values()].reduce((a,b)=>a+b,0);return s.size};
     const addOrder=(ncol,base)=>{const cols=[];while(cols.length<ncol){const c=r(L.nCol);if(!cols.includes(c))cols.push(c)}
-      L.goals.colors={};cols.forEach(c=>L.goals.colors[c]=Math.round(base+D*2.2+(ncol===1?6:0)))};
-    let mv=0;
-    if(n===1){L.goals.colors={0:12};mv=22}
-    else if(n===2){addIce(10);mv=22}
-    else if(type==='order'){const nc=w===1?1:(R()<.5?1:2);addOrder(nc,10);mv=20+nc*2;
-      if(w>=2&&R()<.45){const kd=w>=5?pick(['line','ring','fish','bomb']):pick(['line','ring','fish']);L.goals.specials={[kd]:kd==='bomb'?1:kd==='ring'||kd==='fish'?1+Math.floor(D/6):2+Math.floor(D/5)};mv+=3}}
-    else if(type==='ice'){const c=addIce(Math.min(40,10+Math.round(D*3)+idx));mv=14+Math.ceil(c*.55)+Math.ceil(L.goals.ice-c)*.5}
-    else if(type==='drop'){L.goals.drop=Math.min(5,2+Math.floor(D/3));mv=16+L.goals.drop*5}
-    else{const c=addIce(Math.min(24,6+Math.round(D*1.6)));mv=18+Math.ceil(c*.4);
-      if(R()<.5){addOrder(1,8);mv+=4}else{L.goals.drop=2;mv+=8}}
-    mv-=Math.min(4,Math.floor(D/3));mv+=Math.floor((L.obs.length+L.mm.length)/3);if(hard)mv=Math.round(mv*.85);
-    L.moves=Math.max(12,Math.round(mv));
-    const gsum=(L.goals.ice||0)+(L.goals.drop||0)*12+Object.values(L.goals.colors||{}).reduce((a,b)=>a+b,0)+Object.values(L.goals.specials||{}).reduce((a,b)=>a+b*8,0);
-    L.t2=gsum*25+L.moves*120;L.t3=gsum*25+L.moves*200;
+      L.goals.colors={};cols.forEach(c=>L.goals.colors[c]=sc(base+I*4))};
+    if(n===1){L.goals.colors={0:sc(15)}}
+    else if(n===2){addIce(12)}
+    else if(type==='order'){const nc=w<=1?1:(R()<.55?1:2);addOrder(nc,nc===1?20:13);
+      if(w>=2&&R()<.35){const kd=w>=5?pick(['line','ring','fish','bomb']):pick(['line','ring','fish']);L.goals.specials={[kd]:kd==='bomb'?1:kd==='line'?sc(2+I/2):sc(1+I/3)}}}
+    else if(type==='ice')addIce(Math.min(45,14+Math.round(I*7)));
+    else if(type==='drop')L.goals.drop=Math.min(6,sc(1+I/1.2));
+    else{addIce(Math.min(25,8+Math.round(I*4)));if(R()<.5)addOrder(1,12);else L.goals.drop=Math.min(5,sc(1+I/2))}
+    // coups : table d'équilibrage (simulations), sinon estimation
+    const gsum=(L.goals.ice||0)+(L.goals.drop||0)*10+Object.values(L.goals.colors||{}).reduce((a,b)=>a+b,0)+Object.values(L.goals.specials||{}).reduce((a,b)=>a+b*8,0);
+    const base={order:22,ice:26,drop:24,mixed:28}[type]+(intro?4:0)-(hard?3:0)+(n<=3?4:0);
+    L.moves=opt.moves||(cal?cal[0]:base);
+    L.t2=cal?cal[2]:gsum*25+L.moves*120;L.t3=cal?cal[3]:gsum*25+L.moves*200;L.baseMoves=base;
     return L}
   const rc=()=>rnd(lv.nCol);
 
@@ -1120,7 +1132,7 @@ const Candies=(()=>{
       if(k.lk){k.lk=false;fx.push({t:'unlock',r,c,age:0});return}
       if(k.s==='w'&&trig.has(i)){k.s='w2';fx.push({t:'made',r,c,age:0});return}
       if(lv.goals.colors&&lv.goals.colors[k.c]!=null)prog.colors[k.c]=(prog.colors[k.c]||0)+1;
-      if(k.key){fx.push({t:'keyfly',r,c,age:0});setTimeout(openChest,0)}
+      if(k.key){fx.push({t:'keyfly',r,c,age:0});(SIM?pendingChest++:setTimeout(openChest,0))}
       fx.push({t:'pop',r,c,k,age:0});g[r][c]=null});
     gemCells.forEach(i=>{const[r,c]=RC(i);nb4(r,c).forEach(([a,b])=>{const o=g[a][b];if(o&&(o.o||o.mm))damage(id(a,b),hits)})});
     creates.forEach(x=>{const[r,c]=RC(x.i);if(!g[r][c]||isGem(g[r][c])){g[r][c]=mk(x.c,x.s,r);
@@ -1154,7 +1166,7 @@ const Candies=(()=>{
     if(inMove){inMove=false;if(!done()){endMove();if(over)return}}
     state='idle';idle=0;hint=null;
     if(done()&&!over){
-      if(moves>0&&phase!=='done'){if(phase!=='final'){phase='final';finalT=.6;fx.push({t:'txt',s:'Explosion finale !',age:0})}return}
+      if(moves>0&&phase!=='done'){if(phase!=='final'){phase='final';doneLeft=moves;finalT=.6;fx.push({t:'txt',s:'Explosion finale !',age:0})}return}
       const sp=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=g[r][c];if(free(k)&&k.s)sp.push(id(r,c))}
       if(sp.length){phase='done';clear(new Set(sp),[]);return}
       win();return}
@@ -1219,25 +1231,25 @@ const Candies=(()=>{
     if(G.ice)o.push(ch('<span class="gice"></span>',prog.ice,G.ice));
     if(G.drop)o.push(ch('<img alt="" src="gems/cherry.png">',prog.drop,G.drop));
     return o.join('')}
-  function hud(){$('#cdy-goals').innerHTML=chips();$('#cdy-v2').textContent=moves;
+  function hud(){if(SIM)return;$('#cdy-goals').innerHTML=chips();$('#cdy-v2').textContent=moves;
     const max=lv.t3*1.15,p=Math.min(1,score/max);$('#cdy-sfill').style.width=(p*100)+'%';
     $('#cdy-m2').style.left=(lv.t2/max*100)+'%';$('#cdy-m3').style.left=(lv.t3/max*100)+'%';
     $('#cdy-m2').classList.toggle('on',score>=lv.t2);$('#cdy-m3').classList.toggle('on',score>=lv.t3);
     $('#cdy-slbl').textContent='Niv. '+lv.n+(lv.hard?' · difficile':'')+' · '+score.toLocaleString('fr-FR')+' pts'}
 
   /* ---------- Fin de niveau ---------- */
-  function showOver(title,sub,st,canNext,again){
+  function showOver(title,sub,st,canNext,again){if(SIM)return;
     $('#cdy-ot').textContent=title;$('#cdy-os').textContent=sub;
     const se=$('#cdy-stars');if(st){se.innerHTML='★'.repeat(st)+'<span class="off">'+'★'.repeat(3-st)+'</span>';se.hidden=false}else se.hidden=true;
     $('#cdy-nextlvl').hidden=!canNext;$('#cdy-again').textContent=again;boostUI();
     if(!st)setTimeout(()=>{if(over)$('#cdy-over').hidden=false},500)}
-  function win(){over=true;phase=null;const st=score>=lv.t3?3:score>=lv.t2?2:1;window._duel&&window._duel.report('cdy',lv.n,'stars',st);
+  function win(){if(SIM){over=true;phase=null;simWin=true;return}over=true;phase=null;const st=score>=lv.t3?3:score>=lv.t2?2:1;window._duel&&window._duel.report('cdy',lv.n,'stars',st);
     stars[lv.n-1]=Math.max(stars[lv.n-1]||0,st);store.set('bb.cdyStars',stars);const gifts=award();
     const nx=lv.n+1,canNext=nx<=unlockedMax();
     $('#cdy-nextlvl').textContent=canNext?'Continuer : niveau '+nx:'Voir la carte';$('#cdy-nextlvl').dataset.go=canNext?'next':'map';
     Celebrate.run('fireworks','Bravo !!',()=>{if(over)$('#cdy-over').hidden=false});
     showOver('Niveau '+lv.n+' réussi !','Score '+score.toLocaleString('fr-FR')+(gifts.length?' · 🎁 bonus gagné : '+gifts.join(', '):''),st,true,'Rejouer')}
-  function lose(){over=true;showOver('Raté !','Plus de coups. Essaie encore, ou utilise un bonus.',0,false,'Réessayer')}
+  function lose(){if(SIM){over=true;return}over=true;showOver('Raté !','Plus de coups. Essaie encore, ou utilise un bonus.',0,false,'Réessayer')}
 
   function startLevel(n){cur=n;store.set('bb.cdySel',n);lv=genLevel(n);score=0;moves=lv.moves;cascade=1;over=false;sel=null;ptr=null;fx=[];inMove=false;shadowHit=false;shuf=0;phase=null;tool=null;idle=0;hint=null;
     prog={ice:0,drop:0,colors:{},specials:{}};
@@ -1261,7 +1273,7 @@ const Candies=(()=>{
       const ts=totalStars(),req=gateReq(w),locked=w>1&&ts<req;
       h+=`<div class="wtitle" style="top:${Ht-pos[f]+HEAD*.62}px;--wc:${wi.col}">Monde ${w} · ${wi.name}${locked?`<small>🔒 ${req} ★ requises · tu en as ${ts}</small>`:wi.feat&&w>1?`<small>Nouveau : ${FEATNAME[wi.feat]}</small>`:''}</div>`}
     for(let n=1;n<=total;n++){const{w,idx}=worldOf(n),x=W/2+Math.sin(n*.85)*W*.3,yy=Ht-pos[n];pts.push(x.toFixed(0)+','+yy.toFixed(0));
-      const st=stars[n-1]||0,lock=n>um,curN=n===um,hard=w>=2&&(idx+1)%5===0;
+      const st=stars[n-1]||0,lock=n>um,curN=n===um,hard=isHard(w,idx);
       h+=`<button class="node${lock?' lock':''}${curN&&!stars[n-1]?' cur':''}${hard?' hard':''}" data-n="${n}" style="left:${x}px;top:${yy}px;--wc:${wInfo(w).col}" ${lock?'disabled':''}>${lock?'🔒':n}<span class="st">${st?'★'.repeat(st)+'<em>'+'★'.repeat(3-st)+'</em>':''}</span></button>`}
     mapIn.style.height=Ht+'px';
     mapIn.innerHTML=`<svg class="mpath" width="${W}" height="${Ht}"><polyline points="${pts.join(' ')}" /></svg>`+h;
@@ -1387,6 +1399,39 @@ const Candies=(()=>{
   $('#cdy-nextlvl').onclick=()=>{if($('#cdy-nextlvl').dataset.go==='next')startLevel(lv.n+1);else openMap()};
   cur=Math.min(Math.max(1,store.get('bb.cdySel',1)),unlockedMax());
   startLevel(cur);
+  /* ---------- Simulation (équilibrage) ---------- */
+  function botPick(){const cands=[];const G=lv.goals;
+    const run=(r,c,dr,dc,col)=>{let n=0,y=r+dr,x=c+dc;while(y>=0&&x>=0&&y<N&&x<N&&colAt(y,x)===col){n++;y+=dr;x+=dc}return n};
+    const evalCell=(r,c)=>{const col=colAt(r,c);if(col<0)return 0;const h=1+run(r,c,0,-1,col)+run(r,c,0,1,col),v=1+run(r,c,-1,0,col)+run(r,c,1,0,col);
+      let sq=false;for(const[dr,dc]of[[-1,-1],[-1,1],[1,-1],[1,1]]){const a=r+dr,b=c+dc;if(a>=0&&b>=0&&a<N&&b<N&&colAt(a,b)===col&&colAt(a,c)===col&&colAt(r,b)===col)sq=true}
+      if(h<3&&v<3&&!sq)return 0;let s=(h>=3?h:0)+(v>=3?v:0)+(sq?4:0);
+      if(h>=5||v>=5)s+=30;else if(h>=3&&v>=3)s+=15;else if(h===4||v===4)s+=8;else if(sq)s+=6;
+      const i=id(r,c);if(ice[i])s+=3*(h>=3?h:3);if(G.colors&&G.colors[col]!=null&&(prog.colors[col]||0)<G.colors[col])s+=2*Math.max(h>=3?h:0,v>=3?v:0,sq?4:0);
+      if(G.drop)s+=r*.4;nb4(r,c).forEach(([a,b])=>{const o=g[a][b];if(o&&(o.o&&o.o!=='hole'||o.mm))s+=2});return s};
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=g[r][c];if(!canSwap(k))continue;
+      for(const[dr,dc]of[[0,1],[1,0]]){const rr=r+dr,cc=c+dc;if(rr>=N||cc>=N)continue;const o=g[rr][cc];if(!canSwap(o))continue;let s=0;
+        if((k.s==='b'&&!o.ing)||(o.s==='b'&&!k.ing))s=45;else if(k.s&&o.s&&!k.ing&&!o.ing)s=40;
+        else{swapG([r,c],[rr,cc]);s=evalCell(r,c)+evalCell(rr,cc);swapG([r,c],[rr,cc])}
+        if(s>0){s+=Math.random()*1.5;cands.push([s,[[r,c],[rr,cc]]])}}}
+    if(!cands.length)return null;cands.sort((x,y)=>y[0]-x[0]);const k=Math.random();return cands[k<.55?0:k<.85?Math.min(1,cands.length-1):Math.min(2,cands.length-1)][1]}
+  function resolve(){for(let it=0;it<3000;it++){
+      if(state==='pop'){anim=null;gravity()}
+      else if(state==='fall'){for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=g[r][c];if(k)k.y=r}settle()}
+      else if(state==='idle'&&phase==='final'){if(moves>0){const cand=[];for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=g[r][c];if(free(k)&&!k.s&&!k.lk)cand.push([r,c])}
+          moves--;if(cand.length){const[r,c]=cand[rnd(cand.length)];g[r][c].s=Math.random()<.5?'h':'v'}}else{phase='done';settle()}}
+      else break;
+      if(pendingChest){pendingChest--;openChest()}}}
+  function simGame(n,maxMoves,scale){SIM=true;lv=genLevel(n,{scale});lv.moves=maxMoves;score=0;moves=maxMoves;cascade=1;over=false;fx=[];inMove=false;shadowHit=false;shuf=0;phase=null;tool=null;
+    prog={ice:0,drop:0,colors:{},specials:{}};hole=new Array(N*N).fill(false);lv.holes.forEach(i=>hole[i]=true);
+    for(let c=0;c<N;c++){let r=N-1;while(r>0&&hole[id(r,c)])r--;exitRow[c]=r}
+    ice=new Array(N*N).fill(0);lv.ice.forEach(([i,v])=>ice[i]=v);fresh();let t=0;while(!hasMove()&&t++<20)fresh();state='fall';resolve();
+    simWin=false;doneLeft=null;pendingChest=0;let fails=0;
+    for(let step=0;step<maxMoves*3&&!over;step++){if(moves<=0)break;const mv=botPick();if(!mv){shuffle(true);resolve();continue}
+      swapG(mv[0],mv[1]);g[mv[0][0]][mv[0][1]].y=mv[0][0];g[mv[1][0]][mv[1][1]].y=mv[1][0];afterSwap(mv[0],mv[1],false);fx=[];
+      if(state==='anim'){swapG(mv[0],mv[1]);anim=null;state='idle';if(++fails>20)break;continue}resolve()}
+    const res={win:simWin,used:simWin?maxMoves-(doneLeft||0):null,score};SIM=false;return res}
+  window._gemsSim=(n,games,maxMoves,scale)=>{const out=[];for(let i=0;i<games;i++)out.push(simGame(n,maxMoves,scale));return out};
+  window._gemsInfo=n=>{const L=genLevel(n);return{base:L.baseMoves,w:L.w,idx:L.idx,hard:L.hard,type:L.type,nCol:L.nCol,goals:L.goals,obs:L.obs.length,mm:L.mm.length,holes:L.holes.length,moves:L.moves}};
   return{frame,resize,enter:openMap,sub:()=>'Niveau '+unlockedMax()+' · ★ '+totalStars()}
 })();
 
