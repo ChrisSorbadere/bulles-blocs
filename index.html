@@ -714,8 +714,11 @@ const Bubbles=(()=>{
   lvlSel.onchange=()=>{lvl=+lvlSel.value;store.set('bb.bubLvl',lvl);
     best=store.get('bb.bubBest.'+lvl,0);dims();resize();reset();lvlSel.blur()};
   lvlUI();
+  function save(){if(over)return null;if(shot)return undefined;return{lvl,grid,parity,cur,nxt,score,shots}}
+  function load(o){if(!(o.lvl>=0&&o.lvl<4)||!Array.isArray(o.grid))return;if(o.lvl!==lvl){lvl=o.lvl;store.set('bb.bubLvl',lvl);best=store.get('bb.bubBest.'+lvl,0);dims();lvlUI()}
+    grid=o.grid;parity=o.parity;cur=o.cur;nxt=o.nxt;score=o.score;shots=o.shots||0;over=false;shot=null;fx=[];slide=0;aim=null;hud();$('#bub-over').hidden=true}
   reset();
-  return{frame,resize}
+  return{frame,resize,save,load}
 })();
 
 /* ================= BLOCS ================= */
@@ -904,8 +907,12 @@ const Blocks=(()=>{
   selEl.onchange=()=>{choose(selEl.value);selEl.blur()};
   $('#blk-new').onclick=reset;$('#blk-again').onclick=reset;
   $('#blk-nextlvl').onclick=()=>choose(String(lv.n+1));
+  function save(){if(over)return null;if(drag)return undefined;return{sel,col,gem,ice,tray,next,score,combo,since,moves,got}}
+  function load(o){if(!Array.isArray(o.col)||o.col.length!==N*N)return;if(o.sel!=='c'&&!(o.sel>=1&&o.sel<=unlocked()))return;
+    sel=o.sel;store.set('bb.blkSel',sel);lv=isAdv()?genLevel(sel):null;col=o.col;gem=o.gem;ice=o.ice;tray=o.tray;next=o.next;
+    score=o.score;combo=o.combo;since=o.since;moves=o.moves;got=o.got;over=false;fx=[];hover=null;hud();drawTray();hideOver();fillSel()}
   reset();
-  return{frame,resize,drawTray}
+  return{frame,resize,drawTray,save,load}
 })();
 
 /* ================= GEMMES ================= */
@@ -957,7 +964,7 @@ const Candies=(()=>{
     ['XXXXXXXXX','XXXXXXXXX','XXXXXXXXX','.XXXXXXX.','.XXXXXXX.','.XXXXXXX.','XXXXXXXXX','XXXXXXXXX','XXXXXXXXX']];
   const CAL={1:[26,4.3,24350,31800],2:[26,5.2,19150,29500],3:[28,5.2,22750,38350],4:[26,3,20700,35150],5:[22,2.5,24250,31350],6:[22,2,17000,22600],7:[26,3,20200,35700],8:[22,2,18350,31150],9:[22,2.5,21300,33550],10:[22,2.5,23350,32500],11:[30,5.2,23400,36900],12:[22,2.5,20050,34150],13:[26,2.5,15700,24000],14:[26,4.3,23700,42400],15:[19,2.5,23750,31400],16:[22,2,12550,20450],17:[26,5.2,20850,32850],18:[22,2,20250,28900],19:[19,2,18100,27550],20:[24,5.2,24300,38050],21:[34,0.5,15650,32200],22:[22,2.5,15100,19700],23:[26,2.5,20400,26450],24:[22,2,13500,18600],25:[26,3,22000,36350],26:[22,2.5,22900,37750],27:[19,5.2,20650,29750],28:[22,2.5,24050,30900],29:[24,0.65,16450,30300],30:[22,2.5,19200,28950],31:[24,5.2,20000,35500],32:[22,3,23400,32100],33:[22,5.2,22550,34750],34:[19,5.2,27500,36200],35:[22,3,22250,35700],36:[30,2,23900,37350],37:[26,1.3,21650,37700],38:[24,0.65,21100,31950],39:[26,1,22800,37850],40:[22,3,21950,33700],41:[26,1,21750,38250],42:[19,2.5,31100,37700],43:[26,1.3,15950,27400],44:[28,0.8,24050,30550],45:[26,1.3,12000,22500],46:[26,3.6,31800,42500],47:[24,0.8,20450,31050],48:[22,1,9350,12550],49:[23,1.6,21300,30300],50:[24,0.65,22800,37600],51:[14,5.2,208000,508800],52:[27,0.5,18500,26300],53:[26,2,26150,38550],54:[22,1.6,15650,22500],55:[22,2.5,21300,33800],56:[22,2,22200,34700],57:[25,3.6,33750,43900],58:[24,1,18500,30500],59:[22,2.5,20550,30300],60:[24,1,21550,32450],61:[22,1.6,12300,15000],62:[26,2,21100,33300],63:[28,2,37800,44250],64:[21,5.2,25200,36650],65:[28,2,26650,39800],66:[26,2,23200,35100],67:[22,2.5,21550,30950],68:[22,1.6,11100,15950],69:[27,0.5,23900,35650],70:[14,5.2,222100,515850],71:[24,0.5,11250,18450],72:[26,0.5,8500,9950],73:[22,2,18150,22200],74:[12,5.2,193900,423950],75:[22,1.6,16400,30800],76:[12,5.2,155300,402900],77:[22,1.3,13800,17900],78:[22,1.3,11450,17650],79:[19,1.3,14200,19350],80:[26,1.6,27100,33750],81:[26,2.5,23600,35450],82:[24,0.5,16350,35650],83:[14,5.2,241150,549400],84:[27,0.5,21800,34300],85:[26,1,18850,29600],86:[28,2.5,24750,37950],87:[11,5.2,275400,536000],88:[22,1.6,18200,24900],89:[12,5.2,196150,449250],90:[12,5.2,215800,502900],91:[12,5.2,152450,474250],92:[22,2.5,25500,37800],93:[26,1.3,23650,33650],94:[19,2,25600,40750],95:[22,2.5,25200,38200],96:[30,2,28550,39550],97:[29,0.5,14000,19600],98:[22,1.6,18750,26700],99:[26,1.3,25700,35100],100:[26,1,25000,39250],101:[26,1,23550,32100],102:[23,2.5,21250,30200],103:[12,5.2,213050,543500],104:[28,3,31650,37200],105:[28,1.3,20250,32850],106:[12,5.2,220550,390200],107:[26,3.6,30500,35250],108:[12,5.2,272500,637600],109:[27,0.5,10200,13000],110:[24,0.65,27350,43000],111:[33,0.5,23300,40200],112:[32,0.5,20300,28200],113:[27,0.5,22100,41200],114:[22,2,24100,33000],115:[26,0.8,14400,21100],116:[22,1.6,20400,26050],117:[19,1.6,20650,27600],118:[12,5.2,215950,550350],119:[32,0.5,17350,26750],120:[22,5.2,25300,36900],121:[28,0.8,20350,29350],122:[28,1,20900,30250],123:[28,2.5,31800,45050],124:[19,1,12850,18400],125:[12,5.2,148000,462800],126:[26,1,25100,37650],127:[26,0.5,15400,22400],128:[22,1.3,13750,20800],129:[26,1,24450,37150],130:[26,2,27800,38100],131:[14,5.2,55900,98950],132:[21,1,29900,51450],133:[22,5.2,97900,149500],134:[28,1,24200,35600],135:[26,2.5,29700,40050],136:[24,5.2,32050,48150],137:[22,2,28100,51400],138:[26,1.6,31800,39750],139:[11,5.2,182050,525200],140:[22,1.3,19700,24100],141:[12,5.2,260350,667100],142:[16,5.2,201500,479600],143:[26,0.8,27200,37550],144:[26,1,22850,30300],145:[12,5.2,267400,497350],146:[22,0.8,12500,24200],147:[11,5.2,290650,511500],148:[27,0.5,23900,36950],149:[26,0.8,25450,39650],150:[38,0.5,12250,18600],151:[12,5.2,270500,549600],152:[12,5.2,208750,625300],153:[24,1,25500,32700],154:[11,5.2,177500,474250],155:[26,1.3,22800,29450],156:[16,5.2,243950,527350],157:[39,0.5,22250,37400],158:[22,1.6,17800,29000],159:[12,5.2,299350,736900],160:[12,5.2,192600,307950],161:[26,1.6,20700,30000],162:[19,2,30000,41900],163:[12,5.2,228900,441100],164:[26,5.2,30500,49800],165:[26,1.6,27500,34500],166:[22,2,24600,32000],167:[28,1,21300,33850],168:[27,0.5,25900,35900],169:[19,2,28150,40450],170:[22,2.5,29300,38100],171:[26,0.5,10800,15350],172:[22,1.6,23650,34450],173:[26,1.3,25350,42500],174:[24,1,26350,35700],175:[22,1,11050,16450],176:[22,2.5,32600,39150],177:[23,1,28200,40900],178:[26,1,25000,35600],179:[26,1.3,28750,39500],180:[26,0.5,12250,18200]};
   const isHard=(w,idx)=>w>=2&&(idx===sizeOf(w)-2||idx===Math.floor(sizeOf(w)/2)-1);
-  let SIM=false,simWin=false,doneLeft=null,pendingChest=0;
+  let playing=false,SIM=false,simWin=false,doneLeft=null,pendingChest=0;
 
   let stars=store.get('bb.cdyStars',[]);if(!Array.isArray(stars))stars=[];
   if(!store.get('bb.cdyV2',false)){stars=[];store.set('bb.cdyStars',stars);store.set('bb.cdyV2',true)}
@@ -1251,7 +1258,7 @@ const Candies=(()=>{
     showOver('Niveau '+lv.n+' réussi !','Score '+score.toLocaleString('fr-FR')+(gifts.length?' · 🎁 bonus gagné : '+gifts.join(', '):''),st,true,'Rejouer')}
   function lose(){if(SIM){over=true;return}over=true;showOver('Raté !','Plus de coups. Essaie encore, ou utilise un bonus.',0,false,'Réessayer')}
 
-  function startLevel(n){cur=n;store.set('bb.cdySel',n);lv=genLevel(n);score=0;moves=lv.moves;cascade=1;over=false;sel=null;ptr=null;fx=[];inMove=false;shadowHit=false;shuf=0;phase=null;tool=null;idle=0;hint=null;
+  function startLevel(n,keep){cur=n;store.set('bb.cdySel',n);if(!SIM&&!keep){store.set('bb.save.cdy',null);playing=true}lv=genLevel(n);score=0;moves=lv.moves;cascade=1;over=false;sel=null;ptr=null;fx=[];inMove=false;shadowHit=false;shuf=0;phase=null;tool=null;idle=0;hint=null;
     prog={ice:0,drop:0,colors:{},specials:{}};
     hole=new Array(N*N).fill(false);lv.holes.forEach(i=>hole[i]=true);
     for(let c=0;c<N;c++){let r=N-1;while(r>0&&hole[id(r,c)])r--;exitRow[c]=r}
@@ -1398,7 +1405,7 @@ const Candies=(()=>{
   $('#cdy-mapb').onclick=openMap;$('#cdy-tomap').onclick=openMap;
   $('#cdy-nextlvl').onclick=()=>{if($('#cdy-nextlvl').dataset.go==='next')startLevel(lv.n+1);else openMap()};
   cur=Math.min(Math.max(1,store.get('bb.cdySel',1)),unlockedMax());
-  startLevel(cur);
+  startLevel(cur,true);
   /* ---------- Simulation (équilibrage) ---------- */
   function botPick(){const cands=[];const G=lv.goals;
     const run=(r,c,dr,dc,col)=>{let n=0,y=r+dr,x=c+dc;while(y>=0&&x>=0&&y<N&&x<N&&colAt(y,x)===col){n++;y+=dr;x+=dc}return n};
@@ -1432,7 +1439,14 @@ const Candies=(()=>{
     const res={win:simWin,used:simWin?maxMoves-(doneLeft||0):null,score};SIM=false;return res}
   window._gemsSim=(n,games,maxMoves,scale)=>{const out=[];for(let i=0;i<games;i++)out.push(simGame(n,maxMoves,scale));return out};
   window._gemsInfo=n=>{const L=genLevel(n);return{base:L.baseMoves,w:L.w,idx:L.idx,hard:L.hard,type:L.type,nCol:L.nCol,goals:L.goals,obs:L.obs.length,mm:L.mm.length,holes:L.holes.length,moves:L.moves}};
-  return{frame,resize,enter:openMap,sub:()=>'Niveau '+unlockedMax()+' · ★ '+totalStars()}
+  function save(){if(!lv||over)return null;if(state!=='idle'||phase||SIM)return undefined;return{n:cur,g,ice,score,moves,prog,shuf}}
+  function load(o){if(!(o.n>=1&&o.n<=unlockedMax())||!Array.isArray(o.g))return;cur=o.n;lv=genLevel(o.n);
+    hole=new Array(N*N).fill(false);lv.holes.forEach(i=>hole[i]=true);for(let c=0;c<N;c++){let r=N-1;while(r>0&&hole[id(r,c)])r--;exitRow[c]=r}
+    g=o.g;for(let r=0;r<N;r++)for(let c=0;c<N;c++){const k=g[r][c];if(k)k.y=r}ice=o.ice;score=o.score;moves=o.moves;prog=o.prog;shuf=o.shuf||0;
+    cascade=1;over=false;sel=null;ptr=null;fx=[];inMove=false;shadowHit=false;phase=null;tool=null;idle=0;hint=null;anim=null;state='idle';
+    $('#cdy-over').hidden=true;mapEl.hidden=true;playing=true;hud();boostUI()}
+  const enter=()=>{if(playing&&lv&&!over&&mapEl.hidden)return;openMap()};
+  return{frame,resize,enter,save,load,sub:()=>'Niveau '+unlockedMax()+' · ★ '+totalStars()}
 })();
 
 /* ================= SOLITAIRE ================= */
@@ -1444,6 +1458,8 @@ const Solitaire=(()=>{
   let W=300,H=400,cw=40,ch=57,gap=4,cache={};
   let cards=[],stock=[],waste=[],found=[[],[],[],[]],tab=[[],[],[],[],[],[],[]];
   let draw3=store.get('bb.solDraw',1)===3,hist=[],undoLeft=UNDO_MAX,moves=0,t0=0,elapsed=0,over=false,drag=null,ptr=null,auto=false,autoT=0,shake=null;
+  let hidAt=0;function pause(){if(t0&&!over&&!hidAt)hidAt=performance.now()}function resume(){if(hidAt){if(t0)t0+=performance.now()-hidAt;hidAt=0}}
+  const elNow=()=>t0?((hidAt||performance.now())-t0)/1000:0,setEl=e=>{t0=e>0?performance.now()-e*1000:0;elapsed=e||0;hidAt=t0?performance.now():0};
   const bestKey=()=>'bb.solBest'+(draw3?3:1);
   const fmt=s=>{s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 
@@ -1601,8 +1617,17 @@ const Solitaire=(()=>{
   drawSel.value=draw3?'3':'1';
   drawSel.onchange=()=>{draw3=drawSel.value==='3';store.set('bb.solDraw',draw3?3:1);drawSel.blur();newGame()};
   Celebrate.setCards(()=>{const c={s:rnd(4),r:1+rnd(13),up:true};const w=Math.min(64,innerWidth*.15);return{img:sprite(c,Math.round(w),Math.round(w*1.42)),w:Math.round(w),h:Math.round(w*1.42)}});
+  const ix=c=>c.s*13+c.r-1,px=a=>a.map(ix),ux=a=>a.map(i=>cards[i]);
+  function save(){if(over)return null;if(drag||auto)return undefined;
+    return{d:draw3?3:1,u:cards.map(c=>c.up?1:0),st:px(stock),w:px(waste),f:found.map(px),t:tab.map(px),
+      h:hist.map(h=>({st:px(h.stock),w:px(h.waste),f:h.found.map(px),t:h.tab.map(px),u:h.ups.map(b=>b?1:0),m:h.moves})),ul:undoLeft,m:moves,el:elNow()}}
+  function load(o){if(!Array.isArray(o.u)||o.u.length!==52)return;draw3=o.d===3;drawSel.value=draw3?'3':'1';store.set('bb.solDraw',draw3?3:1);
+    cards=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)cards.push({s,r,up:false,x:0,y:0,tx:0,ty:0});cards.forEach((c,i)=>c.up=!!o.u[i]);
+    stock=ux(o.st);waste=ux(o.w);found=o.f.map(ux);tab=o.t.map(ux);
+    hist=(o.h||[]).map(h=>({stock:ux(h.st),waste:ux(h.w),found:h.f.map(ux),tab:h.t.map(ux),ups:h.u.map(b=>!!b),moves:h.m}));
+    undoLeft=o.ul;moves=o.m;over=false;drag=null;ptr=null;auto=false;setEl(o.el);geom();cards.forEach(c=>{c.x=colX(0);c.y=topY()});$('#sol-time').textContent=fmt(elapsed);ui()}
   newGame();
-  return{frame,resize}
+  return{frame,resize,save,load,pause,resume}
 })();
 
 /* ================= SUDOKU ================= */
@@ -1611,6 +1636,8 @@ const Sudoku=(()=>{
   const CLUES=[40,33,28,24];
   let lvl=store.get('bb.sdkLvl',0);if(!(lvl>=0&&lvl<4))lvl=0;
   let sol=[],puz=[],val=[],notes=[],sel=-1,noteMode=false,errors=0,hints=3,t0=0,elapsed=0,over=false,size=297,cell=33,glow=[];
+  let hidAt=0;function pause(){if(t0&&!over&&!hidAt)hidAt=performance.now()}function resume(){if(hidAt){if(t0)t0+=performance.now()-hidAt;hidAt=0}}
+  const elNow=()=>t0?((hidAt||performance.now())-t0)/1000:0,setEl=e=>{t0=e>0?performance.now()-e*1000:0;elapsed=e||0;hidAt=t0?performance.now():0};
   const fmt=s=>{s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
   function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
   const R_=i=>Math.floor(i/9),C_=i=>i%9,B_=i=>Math.floor(R_(i)/3)*3+Math.floor(C_(i)/3);
@@ -1688,8 +1715,11 @@ const Sudoku=(()=>{
   new ResizeObserver(resize).observe(stage);
   lvlSel.value=String(lvl);lvlSel.onchange=()=>{lvl=+lvlSel.value;store.set('bb.sdkLvl',lvl);lvlSel.blur();newGame()};
   $('#sdk-new').onclick=newGame;
+  function save(){if(over)return null;return{lvl,sol,puz,val,notes,errors,hints,el:elNow()}}
+  function load(o){if(!(o.lvl>=0&&o.lvl<4)||!Array.isArray(o.val)||o.val.length!==81)return;lvl=o.lvl;lvlSel.value=String(lvl);store.set('bb.sdkLvl',lvl);
+    sol=o.sol;puz=o.puz;val=o.val;notes=o.notes;errors=o.errors;hints=o.hints;sel=-1;over=false;glow=[];setEl(o.el);ui()}
   buildPad();newGame();
-  return{frame,resize,sub:()=>{const b=store.get('bb.sdkBest'+lvl,0);return(['Facile','Moyen','Difficile','Expert'][lvl])+(b?' · record '+fmt(b):'')}}
+  return{frame,resize,save,load,pause,resume,sub:()=>{const b=store.get('bb.sdkBest'+lvl,0);return(['Facile','Moyen','Difficile','Expert'][lvl])+(b?' · record '+fmt(b):'')}}
 })();
 
 /* ================= DÉMINEUR ================= */
@@ -1699,6 +1729,8 @@ const Mines=(()=>{
   const NUMC=['','#5aa8ff','#4fd67a','#ff6b6b','#c58bff','#ffb03a','#4fe0d8','#eef2ff','#9aa3c0'];
   let lvl=store.get('bb.mnsLvl',0);if(!(lvl>=0&&lvl<3))lvl=0;
   let C,R,M,mine,rev,flag,adj,first,over,won,t0,elapsed,flagMode=false,cell=30,ox=0,oy=0,W=300,H=400,boom=-1,press=null,fx=[];
+  let hidAt=0;function pause(){if(t0&&!over&&!hidAt)hidAt=performance.now()}function resume(){if(hidAt){if(t0)t0+=performance.now()-hidAt;hidAt=0}}
+  const elNow=()=>t0?((hidAt||performance.now())-t0)/1000:0,setEl=e=>{t0=e>0?performance.now()-e*1000:0;elapsed=e||0;hidAt=t0?performance.now():0};
   const fmt=s=>{s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
   const nb=i=>{const r=Math.floor(i/C),c=i%C,o=[];for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){if(!dr&&!dc)continue;const rr=r+dr,cc=c+dc;if(rr>=0&&cc>=0&&rr<R&&cc<C)o.push(rr*C+cc)}return o};
   function newGame(){({c:C,r:R,m:M}=LV[lvl]);const n=C*R;mine=new Array(n).fill(false);rev=new Array(n).fill(false);flag=new Array(n).fill(false);adj=new Array(n).fill(0);
@@ -1773,8 +1805,11 @@ const Mines=(()=>{
   new ResizeObserver(resize).observe(stage);
   lvlSel.value=String(lvl);lvlSel.onchange=()=>{lvl=+lvlSel.value;store.set('bb.mnsLvl',lvl);lvlSel.blur();newGame()};
   modeBtn.onclick=()=>{flagMode=!flagMode;ui()};$('#mns-new').onclick=newGame;
+  function save(){if(over||first)return null;return{lvl,mine,rev,flag,adj,el:elNow()}}
+  function load(o){if(!(o.lvl>=0&&o.lvl<3)||!Array.isArray(o.mine))return;lvl=o.lvl;lvlSel.value=String(lvl);store.set('bb.mnsLvl',lvl);({c:C,r:R,m:M}=LV[lvl]);
+    if(o.mine.length!==C*R)return;mine=o.mine;rev=o.rev;flag=o.flag;adj=o.adj;first=false;over=false;won=false;boom=-1;press=null;fx=[];setEl(o.el);resize();ui()}
   newGame();
-  return{frame,resize,sub:()=>{const b=store.get('bb.mnsBest'+lvl,0);return(['Facile','Moyen','Difficile'][lvl])+(b?' · record '+fmt(b):'')}}
+  return{frame,resize,save,load,pause,resume,sub:()=>{const b=store.get('bb.mnsBest'+lvl,0);return(['Facile','Moyen','Difficile'][lvl])+(b?' · record '+fmt(b):'')}}
 })();
 
 /* ================= DUEL ================= */
@@ -1840,7 +1875,7 @@ const Duel=(()=>{
   async function sync(){await push();await pull()}
   function newRound(){Celebrate.ask('Nouvelle manche ?','Le Duel repart à zéro pour '+me()+' et '+other()+'. Vos records personnels dans les jeux sont conservés.','Commencer','Annuler',async()=>{
       S=empty(Date.now());save();render();await push()},null)}
-  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|season)/;
+  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|season|save)/;
   async function wipe(wid,mine){
     Object.keys(localStorage).forEach(k=>{if(GAME_KEYS.test(k))try{localStorage.removeItem(k)}catch(e){}});
     store.set('bb.wipe',wid);S=empty(wid);save();if(mine)await push();location.reload()}
@@ -1982,13 +2017,18 @@ const PlayTime=(()=>{
 /* ================= Navigation ================= */
 const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines};
 let active='home';
-function show(t){active=t;PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';for(const x in GAMES)$('#g-'+x).hidden=t!==x;if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
+function show(t){if(t!==active&&GAMES[active]){Saver.one(active);GAMES[active].pause&&GAMES[active].pause()}active=t;store.set('bb.last',GAMES[t]?t:'home');if(GAMES[t]&&GAMES[t].resume)GAMES[t].resume();PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';for(const x in GAMES)$('#g-'+x).hidden=t!==x;if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
   if(t==='home'){Home.refresh();Duel.sync();$('#time-sub').textContent='Aujourd’hui : '+PlayTime.todayTxt()+' · bilans de Chris et Blanca'}else{store.set('bb.tab',t);requestAnimationFrame(()=>GAMES[t].resize());if(GAMES[t].enter)GAMES[t].enter()}}
 $$('.tile').forEach(b=>b.onclick=()=>show(b.dataset.g));
 $$('.homeb').forEach(b=>b.onclick=()=>show('home'));
 $('#duel-tile').onclick=()=>show('duel');$('#lang-chip').textContent=I18N.lang==='en'?'EN':'FR';$('#lang-chip').onclick=()=>I18N.set(I18N.lang==='en'?'fr':'en');$('#time-tile').onclick=()=>show('times');$('#who-chip').onclick=()=>Duel.askWho(true);
-show('home');Duel.askWho(false);
+const Saver={one(k){const G=GAMES[k];if(!G||!G.save)return;try{const o=G.save();if(o!==undefined)store.set('bb.save.'+k,o)}catch(e){}}};
+for(const k in GAMES){const o=store.get('bb.save.'+k,null);if(o&&GAMES[k].load)try{GAMES[k].load(o)}catch(e){store.set('bb.save.'+k,null)}}
+{const L=store.get('bb.last','home');show(GAMES[L]&&store.get('bb.save.'+L,null)?L:'home')}Duel.askWho(false);
+setInterval(()=>{if(GAMES[active]&&document.visibilityState==='visible')Saver.one(active)},2000);
+document.addEventListener('visibilitychange',()=>{const G=GAMES[active];if(!G)return;if(document.visibilityState==='hidden'){Saver.one(active);G.pause&&G.pause()}else G.resume&&G.resume()});
+addEventListener('pagehide',()=>{if(GAMES[active])Saver.one(active)});
 setInterval(()=>PlayTime.tick(!!GAMES[active]&&document.visibilityState==='visible'&&!Celebrate.active(),active),1000);
 let last=performance.now();
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;
