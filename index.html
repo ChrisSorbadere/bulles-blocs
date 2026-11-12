@@ -21,6 +21,14 @@
   color-scheme:dark;
 }
 [hidden]{display:none!important}
+.gstatus{flex:none;text-align:center;font-size:.88rem;color:var(--gold);min-height:1.25em;margin:0;line-height:1.25}
+.binfo{flex:none;display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--muted)}
+.binfo span.on{color:var(--gold);font-weight:700}
+.bctl{flex:none;display:flex;align-items:center;gap:8px}
+.bctl .btn{margin:0;min-width:46px;padding:9px 0;touch-action:none}
+.pow{flex:1;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);position:relative;overflow:hidden;touch-action:none;cursor:pointer}
+.pow i{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#4fd67a,#ffe14d 60%,#ff5a5a)}
+.pow span{position:absolute;inset:0;display:grid;place-items:center;font-size:.8rem;color:var(--ink);pointer-events:none;text-shadow:0 1px 2px #000}
 html{height:100%;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 *,*::before,*::after{box-sizing:inherit}
 body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--display);
@@ -202,6 +210,8 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
       <button class="tile" data-g="sol"><canvas class="ticon" data-i="sol"></canvas><span class="tname">Solitaire</span><span class="tsub" id="sub-sol"></span></button>
       <button class="tile" data-g="sdk"><canvas class="ticon" data-i="sdk"></canvas><span class="tname">Sudoku</span><span class="tsub" id="sub-sdk"></span></button>
       <button class="tile" data-g="mns"><canvas class="ticon" data-i="mns"></canvas><span class="tname">Démineur</span><span class="tsub" id="sub-mns"></span></button>
+      <button class="tile" data-g="dam"><canvas class="ticon" data-i="dam"></canvas><span class="tname">Dames</span><span class="tsub" id="sub-dam"></span></button>
+      <button class="tile" data-g="bil"><canvas class="ticon" data-i="bil"></canvas><span class="tname">Billard</span><span class="tsub" id="sub-bil"></span></button>
     </div>
   </section>
 
@@ -315,6 +325,33 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
     <p class="hint">Touche pour creuser · appui long (ou mode 🚩) pour poser un drapeau</p>
   </section>
 
+  <section id="g-dam" class="game" hidden>
+    <div class="hud">
+      <button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button>
+      <div class="stat"><span class="lbl">Blancs</span><span id="dam-w" class="val">20</span></div>
+      <div class="stat best"><span class="lbl">Noirs</span><span id="dam-b" class="val">20</span></div>
+      <select id="dam-mode" class="sel" aria-label="Mode de jeu"><option value="0">Facile</option><option value="1">Moyen</option><option value="2">Difficile</option><option value="3">À deux</option></select>
+      <button id="dam-undo" class="btn ico" aria-label="Annuler le coup" title="Annuler le coup">↶</button>
+      <button id="dam-new" class="btn ico" aria-label="Nouvelle partie" title="Nouvelle partie">↻</button>
+    </div>
+    <p class="gstatus" id="dam-status"></p>
+    <div class="stage" id="dam-stage"><canvas id="dam-cv"></canvas></div>
+    <p class="hint">Touche un pion, puis la case d’arrivée · les prises sont obligatoires</p>
+  </section>
+
+  <section id="g-bil" class="game" hidden>
+    <div class="hud">
+      <button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button>
+      <div class="stat"><span class="lbl">Billard</span><span class="val">8</span></div>
+      <select id="bil-mode" class="sel" aria-label="Mode de jeu"><option value="0">Facile</option><option value="1">Moyen</option><option value="2">Difficile</option><option value="3">À deux</option></select>
+      <button id="bil-new" class="btn ico" aria-label="Nouvelle partie" title="Nouvelle partie">↻</button>
+    </div>
+    <div class="binfo" id="bil-info"></div>
+    <div class="stage" id="bil-stage"><canvas id="bil-cv"></canvas></div>
+    <p class="gstatus" id="bil-status"></p>
+    <div class="bctl"><button class="btn ico" id="bil-l" aria-label="Viser à gauche" title="Viser à gauche">◀</button><div class="pow" id="bil-pow"><i id="bil-powfill"></i><span>Puissance : glisse puis lâche</span></div><button class="btn ico" id="bil-r" aria-label="Viser à droite" title="Viser à droite">▶</button></div>
+  </section>
+
   <section id="times" class="home" hidden>
     <div class="maphead"><button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button><div class="mtitle">Temps de jeu</div></div>
     <div id="tstats"></div>
@@ -392,8 +429,15 @@ const I18N=(()=>{
     'Coffres : ramasse les clés (aligne-les) pour les ouvrir et libérer un bonus.':'Chests: collect the keys (match them) to open them and free a bonus.',
     'Nouveau plateau : les jetons glissent par-dessus les trous.':'New board: tokens slide over the holes.',
     'Temps de jeu des 14 derniers jours':'Play time over the last 14 days','Pioche 1':'Draw 1','Pioche 3':'Draw 3',
-    'Meilleur temps · pioche 1':'Best time · draw 1','Meilleur temps · pioche 3':'Best time · draw 3'};
-  for(const[f,e]of Object.entries(LV)){D['Record '+f]='Best '+e;D['Meilleur temps '+f]='Best time '+e}
+    'Meilleur temps · pioche 1':'Best time · draw 1','Meilleur temps · pioche 3':'Best time · draw 3',
+    'Dames':'Checkers','Billard':'Pool','À deux':'Two players','Blancs':'White','Noirs':'Black','Annuler le coup':'Undo move','Partie nulle':'Draw',
+    '25 coups de dames sans prise : match nul. On rejoue ?':'25 king moves without a capture: it’s a draw. Play again?','Victoire !':'Victory!','Perdu':'Lost',
+    'L’ordinateur a gagné cette fois. Une revanche ?':'The computer won this time. Rematch?','Revanche':'Rematch','Tu as gagné !':'You won!',
+    'L’ordinateur a gagné':'The computer won','L’ordinateur réfléchit…':'The computer is thinking…','À toi de jouer':'Your move','Nouvelle partie ?':'New game?',
+    'La partie en cours sera abandonnée.':'The current game will be abandoned.','Revoir la table':'Review table','L’ordinateur joue…':'The computer is playing…',
+    'Touche un pion, puis la case d’arrivée · les prises sont obligatoires':'Tap a piece, then its destination · captures are compulsory',
+    'Puissance : glisse puis lâche':'Power: slide, then release','Viser à gauche':'Aim left','Viser à droite':'Aim right'};
+  for(const[f,e]of Object.entries(LV)){D['Record '+f]='Best '+e;D['Meilleur temps '+f]='Best time '+e;D['Victoires '+f]='Wins '+e}
   const WORLD={'Vallée des Cœurs':'Heart Valley','Prairie des Étoiles':'Star Meadow','Baie de la Lune':'Moon Bay','Forêt des Feuilles':'Leaf Forest',
     'Lac des Gouttes':'Droplet Lake','Pics Améthyste':'Amethyst Peaks','Spirales de Réglisse':'Licorice Spirals','Île aux Trésors':'Treasure Island','Jardin Arc-en-ciel':'Rainbow Garden'};
   const FEAT={'pierres et double glace':'stones and double ice','roches d’ombre et marmelade':'shadow rocks and marmalade','tourbillons de réglisse':'licorice swirls',
@@ -424,6 +468,17 @@ const I18N=(()=>{
     [/En (\d+) coups et (.+)\. Une nouvelle donne \?/g,'In $1 moves and $2. A new deal?'],[/^En (.+)\. Une nouvelle grille \?/g,'In $1. A new grid?'],
     [/⏱ (.+) de jeu aujourd’hui/g,'⏱ $1 of play today'],[/Déjà (\d+) heures? de jeu/g,(m,a)=>'Already '+pl(a,'hour')+' of play'],
     [/Score ([\d\s ]+)/g,'Score $1'],[/ pts/g,' pts'],
+    [/Tu as battu l’ordinateur \(niveau (\S+)\)\. On rejoue \?/g,(m,a)=>'You beat the computer ('+(LV[a]||a)+' level). Play again?'],
+    [/^(Blancs|Noirs) gagnent !/g,(m,a)=>(a==='Blancs'?'White':'Black')+' wins!'],[/Les (blancs|noirs) ont gagné( !)?/g,(m,a,b)=>(a==='blancs'?'White':'Black')+' won'+(b?'!':'')],
+    [/^(Blancs|Noirs) à jouer/g,(m,a)=>(a==='Blancs'?'White':'Black')+' to play'],[/ · prise obligatoire \(la plus grande : (\d+) pions\)/g,' · capture required (largest: $1 pieces)'],
+    [/ · prise obligatoire/g,' · capture required'],[/^À toi/g,'Your turn'],[/^À (\S+) · /g,'$1’s turn · '],[/^À (\S+)$/g,'$1’s turn'],
+    [/ · bille en main : déplace la blanche/g,' · ball in hand: move the cue ball'],[/ \(derrière la ligne\)/g,' (behind the line)'],[/ · casse !/g,' · break!'],[/ · vise la noire/g,' · aim for the 8 ball'],
+    [/ · pleines/g,' · solids'],[/ · rayées/g,' · stripes'],[/ : pleines$/g,': solids'],[/ : rayées$/g,': stripes'],
+    [/Faute : /g,'Foul: '],[/bille blanche empochée/gi,'cue ball potted'],[/aucune bille touchée/gi,'no ball hit'],[/mauvaise bille touchée en premier/gi,'wrong ball hit first'],
+    [/la noire touchée en premier/gi,'8 ball hit first'],[/ en empochant la noire/g,' while potting the 8 ball'],[/Noire empochée trop tôt/g,'8 ball potted too early'],
+    [/\. Bille en main pour (\S+)\./g,'. Ball in hand for $1.'],[/L’ordinateur a empoché la noire\. /g,'The computer potted the 8 ball. '],
+    [/Une revanche \?/g,'Rematch?'],[/Une autre partie \?/g,'Another game?'],[/(\S+) gagne !/g,'$1 wins!'],[/(\S+) a gagné !/g,'$1 won!'],
+    [/^Toi\b/g,'You'],[/^Ordi\b/g,'CPU'],[/ (\d+) victoires?$/g,(m,a)=>' '+a+' win'+(+a>1?'s':'')],
     [/Marteau/g,'Hammer'],[/Échange libre/g,'Free swap'],[/\+5 coups/g,'+5 moves'],[/Mélange/g,'Shuffle']];
   const WRE=new RegExp(Object.keys(WORLD).join('|'),'g'),FRE=new RegExp('\\b('+Object.keys(FEAT).join('|')+')\\b','g'),CRE=new RegExp(' ('+Object.keys(COLN).join('|')+')$','g');
   const memo=new Map();
@@ -1834,12 +1889,13 @@ const Duel=(()=>{
   function report(k,v,kind,x){if(!v)return;
     if(kind==='hi'){if(v>(S.v[k]||0)){S.v[k]=v;save()}}
     else if(kind==='lo'){if(!S.v[k]||v<S.v[k]){S.v[k]=v;save()}}
+    else if(kind==='inc'){S.v[k]=(S.v[k]||0)+v;save()}
     else if(kind==='set'){if(!S[k].includes(v)){S[k].push(v);save()}}
     else if(kind==='stars'){if((S.cdy[v]||0)<x){S.cdy[v]=x;save()}}}
   window._duel={report};
   function summary(){const V=S.v,cv=Object.values(S.cdy);
     return{play:window._play?window._play.export():null,sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
-      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0)}}
+      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0)}}
   const LV4=['Facile','Moyen','Difficile','Expert'];
   const ROWS=[
     ['Bulles',LV4.map((n,i)=>['Record '+n.toLowerCase(),d=>d.bub&&d.bub[i],'hi'])],
@@ -1847,7 +1903,9 @@ const Duel=(()=>{
     ['Gemmes',[['Niveaux réussis',d=>d.cdyL,'hi'],['Étoiles',d=>d.cdyS,'hi']]],
     ['Solitaire',[['Meilleur temps · pioche 1',d=>d.sol&&d.sol[0],'lo'],['Meilleur temps · pioche 3',d=>d.sol&&d.sol[1],'lo']]],
     ['Sudoku',LV4.map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.sdk&&d.sdk[i],'lo'])],
-    ['Démineur',LV4.slice(0,3).map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.mns&&d.mns[i],'lo'])]];
+    ['Démineur',LV4.slice(0,3).map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.mns&&d.mns[i],'lo'])],
+    ['Dames',LV4.slice(0,3).map((n,i)=>['Victoires '+n.toLowerCase(),d=>d.dam&&d.dam[i],'hi'])],
+    ['Billard',LV4.slice(0,3).map((n,i)=>['Victoires '+n.toLowerCase(),d=>d.bil&&d.bil[i],'hi'])]];
   let remote=store.get('bb.duelCache',{}),status='';
   async function push(){if(!SYNC_URL||!me())return;try{
       await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:SECRET,p:me(),d:summary()})})}catch(e){}}
@@ -1875,7 +1933,7 @@ const Duel=(()=>{
   async function sync(){await push();await pull()}
   function newRound(){Celebrate.ask('Nouvelle manche ?','Le Duel repart à zéro pour '+me()+' et '+other()+'. Vos records personnels dans les jeux sont conservés.','Commencer','Annuler',async()=>{
       S=empty(Date.now());save();render();await push()},null)}
-  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|season|save)/;
+  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|damWins|bilWins|season|save)/;
   async function wipe(wid,mine){
     Object.keys(localStorage).forEach(k=>{if(GAME_KEYS.test(k))try{localStorage.removeItem(k)}catch(e){}});
     store.set('bb.wipe',wid);S=empty(wid);save();if(mine)await push();location.reload()}
@@ -1912,7 +1970,16 @@ const Home=(()=>{
         else{const gr=g.createLinearGradient(x,y,x+s,y+s);gr.addColorStop(0,'#4a5fb0');gr.addColorStop(1,'#26347a');g.fillStyle=gr;g.fill()}}
       const fx=o+s/2,fy=o+s*.8;g.fillStyle='#d9dbe8';g.fillRect(fx-1.5,fy-s*.6,3,s*.6);g.fillStyle='#ff4d5e';g.beginPath();g.moveTo(fx+1.5,fy-s*.6);g.lineTo(fx+s*.3,fy-s*.47);g.lineTo(fx+1.5,fy-s*.34);g.fill();
       const cx=o+s*1.5,cy=o+s/2,r=s*.2;g.strokeStyle='#0b0f22';g.lineWidth=2;g.beginPath();for(let k=0;k<4;k++){const an=k*Math.PI/4;g.moveTo(cx-Math.cos(an)*r*1.6,cy-Math.sin(an)*r*1.6);g.lineTo(cx+Math.cos(an)*r*1.6,cy+Math.sin(an)*r*1.6)}g.stroke();
-      g.fillStyle='#0b0f22';g.beginPath();g.arc(cx,cy,r,0,7);g.fill()}};
+      g.fillStyle='#0b0f22';g.beginPath();g.arc(cx,cy,r,0,7);g.fill()},
+    dam(g,S){const o=S*.12,c=(S-2*o)/4;for(let a=0;a<4;a++)for(let b=0;b<4;b++){g.fillStyle=(a+b)%2?'#9b6a43':'#ecd6ad';g.fillRect(o+a*c,o+b*c,c,c)}
+      const pc=(x,y,w,k)=>{const r=c*.4;for(let t=k?1:0;t>=0;t--){const yy=y-t*r*.3;const gr=g.createRadialGradient(x-r*.3,yy-r*.35,r*.1,x,yy,r);if(w){gr.addColorStop(0,'#fffaf0');gr.addColorStop(1,'#bba77f')}else{gr.addColorStop(0,'#6b5a52');gr.addColorStop(1,'#120c0a')}
+        g.fillStyle=gr;g.beginPath();g.arc(x,yy,r,0,7);g.fill()}if(k){g.fillStyle='#ffc54d';g.beginPath();g.arc(x,y-r*.3,r*.22,0,7);g.fill()}};
+      pc(o+c*1.5,o+c*.5,false,false);pc(o+c*3.5,o+c*.5,false,false);pc(o+c*2.5,o+c*1.5,false,true);pc(o+c*.5,o+c*3.5,true,false);pc(o+c*1.5,o+c*2.5,true,false)},
+    bil(g,S){const o=S*.1;rr(g,o,o,S-2*o,S-2*o,S*.1);g.fillStyle='#7a4422';g.fill();rr(g,o+S*.07,o+S*.07,S-2*o-S*.14,S-2*o-S*.14,S*.05);g.fillStyle='#1a9058';g.fill();
+      g.fillStyle='#050505';[[o+S*.08,o+S*.08],[S-o-S*.08,o+S*.08],[o+S*.08,S-o-S*.08],[S-o-S*.08,S-o-S*.08]].forEach(([x,y])=>{g.beginPath();g.arc(x,y,S*.055,0,7);g.fill()});
+      const bl=(x,y,c,n,st)=>{const r=S*.085;g.fillStyle=st?'#f6f3ea':c;g.beginPath();g.arc(x,y,r,0,7);g.fill();if(st){g.save();g.beginPath();g.arc(x,y,r,0,7);g.clip();g.fillStyle=c;g.fillRect(x-r,y-r*.5,2*r,r);g.restore()}
+        if(n){g.fillStyle='#fff';g.beginPath();g.arc(x,y,r*.45,0,7);g.fill()}const gr=g.createRadialGradient(x-r*.4,y-r*.4,1,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.7)');gr.addColorStop(.3,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(0,0,0,.3)');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,7);g.fill()};
+      bl(S*.5,S*.38,'#151515',8);bl(S*.4,S*.3,'#f5c518',1);bl(S*.6,S*.3,'#d8342f',3,true);bl(S*.45,S*.47,'#2f5fd8',2,true);bl(S*.58,S*.48,'#1f9a4c',6);bl(S*.5,S*.72,'#ffffff',0)}};
   function draw(){$$('.ticon').forEach(c=>{const S=72,k=DPR();c.width=S*k;c.height=S*k;const g=c.getContext('2d');g.setTransform(k,0,0,k,0,0);g.clearRect(0,0,S,S);ICON[c.dataset.i](g,S)})}
   function subs(fmt){const t=s=>{s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
     const bl=store.get('bb.bubLvl',0);$('#sub-bub').textContent=['Facile','Moyen','Difficile','Expert'][bl]+' · record '+store.get('bb.bubBest.'+bl,0);
@@ -1920,14 +1987,14 @@ const Home=(()=>{
     $('#sub-blk').textContent='Record '+store.get('bb.blkBest',0)+' · aventure niv. '+an;
     $('#sub-cdy').textContent=Candies.sub();
     const d=store.get('bb.solDraw',1),sb=store.get('bb.solBest'+d,0);$('#sub-sol').textContent='Pioche '+d+(sb?' · record '+t(sb):'');
-    $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub()}
+    $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub();$('#sub-dam').textContent=Dames.sub();$('#sub-bil').textContent=Pool.sub()}
   return{draw,refresh:()=>{draw();subs();$('#who-name').textContent=Duel.me()||'?'}}
 })();
 
 /* ================= TEMPS DE JEU ================= */
 const PlayTime=(()=>{
   const el=$('#ptime');
-  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur'};
+  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur',dam:'Dames',bil:'Billard'};
   const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const today=()=>dkey(new Date());
   const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
@@ -2014,8 +2081,12 @@ const PlayTime=(()=>{
   return{tick,show:v=>{el.hidden=!v;render()},export:export_,open,todayTxt:()=>fmt(day(today()).s)}
 })();
 
+</script>
+<script src="dames.js"></script>
+<script src="billard.js"></script>
+<script>
 /* ================= Navigation ================= */
-const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines};
+const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines,dam:Dames,bil:Pool};
 let active='home';
 function show(t){if(t!==active&&GAMES[active]){Saver.one(active);GAMES[active].pause&&GAMES[active].pause()}active=t;store.set('bb.last',GAMES[t]?t:'home');if(GAMES[t]&&GAMES[t].resume)GAMES[t].resume();PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';for(const x in GAMES)$('#g-'+x).hidden=t!==x;if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
