@@ -115,12 +115,20 @@ const Pool=(()=>{
   function toTable(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left-offX)/sc,(e.clientY-r.top-offY)/sc]}
   const canPlay=()=>phase==='aim'&&!over&&!cpuTurn();
   cv.addEventListener('pointerdown',e=>{if(!canPlay())return;const[x,y]=toTable(e),c=cue();cv.setPointerCapture(e.pointerId);
-    if(bih&&Math.hypot(x-c.x,y-c.y)<R*3.2){drag={k:'ball',dx:c.x-x,dy:c.y-y};return}
-    drag={k:'aim'};ang=Math.atan2(y-c.y,x-c.x)});
-  cv.addEventListener('pointermove',e=>{if(!drag||!canPlay())return;const[x,y]=toTable(e),c=cue();
-    if(drag.k==='ball'){let nx=Math.max(R,Math.min(TW-R,x+drag.dx)),ny=Math.max(kitchen?TH*.75:R,Math.min(TH-R,y+drag.dy));if(free(nx,ny,c)){c.x=nx;c.y=ny}}
-    else ang=Math.atan2(y-c.y,x-c.x)});
+    if(bih&&Math.hypot(x-c.x,y-c.y)<Math.max(R*1.7,24/sc)){drag={k:'ball',dx:c.x-x,dy:c.y-y};return}
+    // Toucher une bille : on vise dessus. Sinon la queue se place sous le doigt (la bille part à l'opposé).
+    const hit=balls.find(o=>!o.in&&o.n!==0&&Math.hypot(x-o.x,y-o.y)<Math.max(R*1.25,13/sc));
+    if(hit)ang=Math.atan2(hit.y-c.y,hit.x-c.x);else if(Math.hypot(x-c.x,y-c.y)>R*1.2)ang=Math.atan2(c.y-y,c.x-x);
+    drag={k:'aim',lx:e.clientX,ly:e.clientY}});
+  cv.addEventListener('pointermove',e=>{if(!drag||!canPlay())return;const c=cue();
+    if(drag.k==='ball'){const[x,y]=toTable(e);let nx=Math.max(R,Math.min(TW-R,x+drag.dx)),ny=Math.max(kitchen?TH*.75:R,Math.min(TH-R,y+drag.dy));if(free(nx,ny,c)){c.x=nx;c.y=ny}return}
+    // Glisser : la queue tourne lentement autour de la blanche (réglage fin)
+    const mx=e.clientX-drag.lx,my=e.clientY-drag.ly;drag.lx=e.clientX;drag.ly=e.clientY;
+    const r=cv.getBoundingClientRect(),fx=e.clientX-r.left-X(c.x),fy=e.clientY-r.top-Y(c.y),Ld=Math.hypot(fx,fy)||1;
+    ang+=(mx*(-fy/Ld)+my*(fx/Ld))/260});
   const endDrag=()=>{drag=null};cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+  const zb=$('#bil-zoom');let zoomOn=store.get('bb.bilZoom',true);const zUI=()=>{zb.classList.toggle('on',zoomOn);zb.setAttribute('aria-pressed',zoomOn)};zUI();
+  zb.onclick=()=>{zoomOn=!zoomOn;store.set('bb.bilZoom',zoomOn);zUI()};
   let pdrag=false;
   const setPow=e=>{const r=pw.getBoundingClientRect();power=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));pwFill.style.width=(power*100)+'%'};
   pw.addEventListener('pointerdown',e=>{if(!canPlay())return;pdrag=true;pw.setPointerCapture(e.pointerId);setPow(e)});
@@ -157,14 +165,38 @@ const Pool=(()=>{
     if(n){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,r*.48,0,7);ctx.fill();ctx.fillStyle='#111';ctx.font='700 '+Math.round(r*.7)+'px Fredoka, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n,x,y+r*.04)}
     const g=ctx.createRadialGradient(x-r*.4,y-r*.45,r*.05,x,y,r*1.05);g.addColorStop(0,'rgba(255,255,255,.75)');g.addColorStop(.25,'rgba(255,255,255,.12)');g.addColorStop(1,'rgba(0,0,0,.35)');
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();ctx.globalAlpha=1}
+  /* ---------- Caméra : zoom automatique pendant la visée ---------- */
+  let base=.3,cam={x:TW/2,y:TH/2,z:1},camT={x:TW/2,y:TH/2,z:1};
+  function camTarget(){const full={x:TW/2,y:TH/2,z:1};const c=cue();
+    if(!zoomOn||phase!=='aim'||over||cpuTurn()||c.in||(drag&&drag.k==='ball'))return full;
+    const dx=Math.cos(ang),dy=Math.sin(ang),h=rayHit(c.x,c.y,dx,dy),gx=c.x+dx*h.t,gy=c.y+dy*h.t;
+    const pts=[[c.x,c.y],[gx,gy],[c.x-dx*R*5,c.y-dy*R*5]];if(h.ball){const nx=(h.ball.x-gx)/(2*R),ny=(h.ball.y-gy)/(2*R);pts.push([h.ball.x+nx*70,h.ball.y+ny*70])}
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const[x,y]of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y)}
+    x0-=R*4;y0-=R*4;x1+=R*4;y1+=R*4;
+    let z=Math.min(W*.9/((x1-x0)*base),H*.9/((y1-y0)*base));z=Math.max(1,Math.min(2.4,z));
+    const vw=W/(2*base*z),vh=H/(2*base*z),cl=(v,a,b)=>a>b?(a+b)/2:Math.max(a,Math.min(b,v));
+    return{x:cl((x0+x1)/2,-RAIL+vw,TW+RAIL-vw),y:cl((y0+y1)/2,-RAIL+vh,TH+RAIL-vh),z}}
+  function setView(v){sc=base*v.z;offX=W/2-v.x*sc;offY=H/2-v.y*sc}
   function frame(dt){
     if(phase==='moving'){acc+=Math.min(dt,.05);let mv=true;while(acc>=DT){acc-=DT;mv=step(balls,EV);if(!mv)break}if(!mv){acc=0;resolve()}}
     if(phase==='cpu'&&cpuPlan){const P=cpuPlan;P.t+=dt;let da=P.a-P.a0;while(da>Math.PI)da-=2*Math.PI;while(da<-Math.PI)da+=2*Math.PI;
       const u=Math.min(1,P.t/.8);ang=P.a0+da*(u<.5?2*u*u:1-Math.pow(-2*u+2,2)/2);power=P.t>.9?Math.min(P.p,(P.t-.9)/.7*P.p):0;pwFill.style.width=(power*100)+'%';
       if(P.t>1.9){cpuPlan=null;phase='aim';shoot(P.a,P.p)}}
     fx=fx.filter(f=>(f.age+=dt)<.6);
+    if(!drag||drag.k==='ball')camT=camTarget();
+    const kk=Math.min(1,dt*(phase==='moving'?3:5));cam.x+=(camT.x-cam.x)*kk;cam.y+=(camT.y-cam.y)*kk;cam.z+=(camT.z-cam.z)*kk;setView(cam);
     const k=DPR();ctx.setTransform(k,0,0,k,0,0);ctx.clearRect(0,0,W,H);
-    const rr=RAIL*sc;
+    const c=cue(),aiming=((phase==='aim'&&!over&&!cpuTurn())||phase==='cpu')&&!c.in;
+    let A=null;if(aiming){const dx=Math.cos(ang),dy=Math.sin(ang),h=rayHit(c.x,c.y,dx,dy);A={dx,dy,h,gx:c.x+dx*h.t,gy:c.y+dy*h.t}}
+    scene(A);
+    // Loupe sur le point d'impact
+    if(A&&A.h.ball&&phase==='aim'){const lr=Math.min(56,W*.15),gxs=X(A.gx),lx=gxs<W/2?W-lr-8:lr+8,ly=lr+8;
+      const s0=sc,o0=offX,o1=offY;sc=Math.max(s0*2.2,base*6);offX=lx-A.gx*sc;offY=ly-A.gy*sc;
+      ctx.save();ctx.beginPath();ctx.arc(lx,ly,lr,0,7);ctx.clip();ctx.fillStyle='#0b1a12';ctx.fillRect(lx-lr,ly-lr,2*lr,2*lr);scene(A,true);ctx.restore();
+      ctx.strokeStyle='#ffc54d';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(lx,ly,lr,0,7);ctx.stroke();sc=s0;offX=o0;offY=o1}
+    const pt=balls.filter(b=>b.in&&b.n),rs=Math.min(9,W*.022);pt.forEach((b,i)=>drawBall(b,rs+4,H-rs-4-i*rs*2.2,rs,.95));
+    if(msg&&phase!=='moving'&&performance.now()-msgT>6000&&!over){msg='';ui()}}
+  function scene(A,lens){const rr=RAIL*sc,c=cue();
     const wood=ctx.createLinearGradient(X(-RAIL),0,X(TW+RAIL),0);wood.addColorStop(0,'#5b3218');wood.addColorStop(.5,'#8a4f27');wood.addColorStop(1,'#5b3218');
     ctx.fillStyle=wood;ctx.beginPath();ctx.roundRect?ctx.roundRect(X(-RAIL),Y(-RAIL),(TW+2*RAIL)*sc,(TH+2*RAIL)*sc,rr*.6):ctx.rect(X(-RAIL),Y(-RAIL),(TW+2*RAIL)*sc,(TH+2*RAIL)*sc);ctx.fill();
     ctx.fillStyle='#0f5a37';ctx.fillRect(X(-R*.6),Y(-R*.6),(TW+1.2*R)*sc,(TH+1.2*R)*sc);
@@ -174,28 +206,26 @@ const Pool=(()=>{
     for(const f of[.25,.5,.75]){for(const y of[-RAIL/2,TH+RAIL/2]){ctx.beginPath();ctx.arc(X(TW*f),Y(y),Math.max(1.5,2.5*sc),0,7);ctx.fill()}}
     ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(X(0),Y(TH*.75));ctx.lineTo(X(TW),Y(TH*.75));ctx.stroke();
     ctx.fillStyle='rgba(255,255,255,.25)';ctx.beginPath();ctx.arc(X(TW/2),Y(TH*.25),2,0,7);ctx.fill();
-    for(const[px,py,pr]of POCK){const mid=py===TH/2;ctx.fillStyle='#050505';ctx.beginPath();ctx.arc(X(mid?(px<0?-R*.5:TW+R*.5):px),Y(py),(mid?1.55:1.75)*R*sc,0,7);ctx.fill()}
-    fx.forEach(f=>{ctx.strokeStyle=f.c;ctx.globalAlpha=1-f.age/.6;ctx.lineWidth=3;ctx.beginPath();ctx.arc(X(f.x),Y(f.y),R*sc*(1.2+f.age*2.5),0,7);ctx.stroke();ctx.globalAlpha=1});
-    const c=cue();
-    const aiming=(phase==='aim'&&!over&&!cpuTurn())||phase==='cpu';
-    if(aiming&&!c.in){const dx=Math.cos(ang),dy=Math.sin(ang),h=rayHit(c.x,c.y,dx,dy),gx=c.x+dx*h.t,gy=c.y+dy*h.t;
+    for(const[px,py]of POCK){const mid=py===TH/2;ctx.fillStyle='#050505';ctx.beginPath();ctx.arc(X(mid?(px<0?-R*.5:TW+R*.5):px),Y(py),(mid?1.55:1.75)*R*sc,0,7);ctx.fill()}
+    if(!lens)fx.forEach(f=>{ctx.strokeStyle=f.c;ctx.globalAlpha=1-f.age/.6;ctx.lineWidth=3;ctx.beginPath();ctx.arc(X(f.x),Y(f.y),R*sc*(1.2+f.age*2.5),0,7);ctx.stroke();ctx.globalAlpha=1});
+    if(A){const{dx,dy,h,gx,gy}=A;
       ctx.setLineDash([6,6]);ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(c.x),Y(c.y));ctx.lineTo(X(gx),Y(gy));ctx.stroke();ctx.setLineDash([]);
-      ctx.strokeStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.arc(X(gx),Y(gy),R*sc,0,7);ctx.stroke();
-      if(h.ball){const nx=(h.ball.x-gx)/(2*R),ny=(h.ball.y-gy)/(2*R),L=90+120*(1-Math.abs(nx*dx+ny*dy))*0;
+      ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=lens?2:1.5;ctx.beginPath();ctx.arc(X(gx),Y(gy),R*sc,0,7);ctx.stroke();
+      if(h.ball){const nx=(h.ball.x-gx)/(2*R),ny=(h.ball.y-gy)/(2*R),L=90;
         ctx.strokeStyle='rgba(255,230,120,.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X(h.ball.x),Y(h.ball.y));ctx.lineTo(X(h.ball.x+nx*L),Y(h.ball.y+ny*L));ctx.stroke();
         const dot=dx*nx+dy*ny,tx=dx-dot*nx,ty=dy-dot*ny,tl=Math.hypot(tx,ty);if(tl>.05){ctx.strokeStyle='rgba(255,255,255,.4)';ctx.beginPath();ctx.moveTo(X(gx),Y(gy));ctx.lineTo(X(gx+tx/tl*55*tl),Y(gy+ty/tl*55*tl));ctx.stroke()}}
       else{let rx=dx,ry=dy;if(Math.abs(gx-R)<.5||Math.abs(gx-TW+R)<.5)rx=-rx;else ry=-ry;ctx.strokeStyle='rgba(255,255,255,.35)';ctx.beginPath();ctx.moveTo(X(gx),Y(gy));ctx.lineTo(X(gx+rx*70),Y(gy+ry*70));ctx.stroke()}}
     for(const b of balls){if(b.in)continue;drawBall(b,X(b.x),Y(b.y),R*sc)}
-    if(bih&&phase==='aim'&&!cpuTurn()&&!over){ctx.strokeStyle='rgba(255,197,77,'+(.5+.3*Math.sin(performance.now()/200))+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(c.x),Y(c.y),R*sc*2,0,7);ctx.stroke()}
-    if(aiming&&!c.in){const dx=Math.cos(ang),dy=Math.sin(ang),back=R*1.4+power*70,len=330;ctx.lineCap='round';
+    if(A&&h_contact(A)){const{h,gx,gy}=A,mx=(gx+h.ball.x)/2,my=(gy+h.ball.y)/2;ctx.fillStyle='#ff4d5e';ctx.beginPath();ctx.arc(X(mx),Y(my),Math.max(2,R*sc*.16),0,7);ctx.fill()}
+    if(!lens&&bih&&phase==='aim'&&!cpuTurn()&&!over){ctx.strokeStyle='rgba(255,197,77,'+(.5+.3*Math.sin(performance.now()/200))+')';ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(c.x),Y(c.y),R*sc*1.8,0,7);ctx.stroke()}
+    if(A&&!lens){const{dx,dy}=A,back=R*1.4+power*70,len=330;ctx.lineCap='round';
       const sx=c.x-dx*back,sy=c.y-dy*back,ex=c.x-dx*(back+len),ey=c.y-dy*(back+len);
       ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=7*sc+2;ctx.beginPath();ctx.moveTo(X(sx)+3,Y(sy)+4);ctx.lineTo(X(ex)+3,Y(ey)+4);ctx.stroke();
       const g=ctx.createLinearGradient(X(sx),Y(sy),X(ex),Y(ey));g.addColorStop(0,'#f3efe4');g.addColorStop(.03,'#f3efe4');g.addColorStop(.035,'#2a63c9');g.addColorStop(.06,'#2a63c9');g.addColorStop(.065,'#e8c98f');g.addColorStop(.7,'#c08b4e');g.addColorStop(.72,'#222');g.addColorStop(1,'#3b2414');
-      ctx.strokeStyle=g;ctx.lineWidth=6*sc+2;ctx.beginPath();ctx.moveTo(X(sx),Y(sy));ctx.lineTo(X(ex),Y(ey));ctx.stroke();ctx.lineCap='butt'}
-    const pt=balls.filter(b=>b.in&&b.n);ctx.globalAlpha=.9;pt.forEach((b,i)=>drawBall(b,X(-RAIL/2)+0,Y(TH*.04)+i*R*sc*2.1,R*sc*.8));ctx.globalAlpha=1;
-    if(msg&&phase!=='moving'&&performance.now()-msgT>6000&&!over){msg='';ui()}}
-  function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;W=w;H=h;sc=Math.min(w/(TW+2*RAIL+4),h/(TH+2*RAIL+4));
-    offX=(w-TW*sc)/2;offY=(h-TH*sc)/2;cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*DPR());cv.height=Math.round(H*DPR())}
+      ctx.strokeStyle=g;ctx.lineWidth=6*sc+2;ctx.beginPath();ctx.moveTo(X(sx),Y(sy));ctx.lineTo(X(ex),Y(ey));ctx.stroke();ctx.lineCap='butt'}}
+  const h_contact=A=>A&&A.h.ball;
+  function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;W=w;H=h;base=Math.min(w/(TW+2*RAIL+4),h/(TH+2*RAIL+4));setView(cam);
+    cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*DPR());cv.height=Math.round(H*DPR())}
   new ResizeObserver(resize).observe(stage);
 
   /* ---------- Son ---------- */
