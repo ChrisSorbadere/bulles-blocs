@@ -22,6 +22,41 @@
 }
 [hidden]{display:none!important}
 .gstatus{flex:none;text-align:center;font-size:.88rem;color:var(--gold);min-height:1.25em;margin:0;line-height:1.25}
+.sel+.sel{margin-left:0}
+.ysheet{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
+.yrow{display:grid;grid-template-columns:1fr repeat(var(--cols,1),minmax(54px,70px));gap:4px;align-items:center;padding:1px 6px;border-radius:8px;background:var(--panel)}
+.yrow>span:first-child{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.yrow small{font-size:.6rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.yhead{background:transparent}.yhead b{text-align:center;color:var(--muted);font-size:.85rem}.yhead b.on{color:var(--gold)}
+.yv,.ye,.yp{text-align:center;font-weight:700;height:27px;display:grid;place-items:center;border-radius:7px}
+.yv.last{color:var(--gold)}
+.yp{border:1px dashed var(--gold);background:rgba(255,197,77,.12);color:var(--gold);font:700 .95rem var(--display);cursor:pointer;padding:0}
+.yp.zero{border-color:var(--line);color:var(--muted);background:transparent}
+.ysub{background:transparent;font-size:.72rem;color:var(--muted)}.ysub span{text-align:center}.ysub span:first-child{text-align:left}
+.ytot{background:var(--tab)}.ytot b{text-align:center;font-size:1.1rem;color:var(--gold)}.ytot span{font-weight:700}
+.ydice{flex:none;display:flex;justify-content:center;gap:10px;padding-top:6px}
+.die{width:52px;height:52px;border-radius:12px;background:linear-gradient(145deg,#fff,#d9dce8);border:2px solid transparent;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:6px;box-shadow:0 4px 0 #8e94ab;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.die i{display:block;border-radius:50%;margin:2px}.die i.p{background:#1d2340}
+.die.held{border-color:var(--gold);transform:translateY(-7px);box-shadow:0 7px 0 #b8892a,0 0 14px rgba(255,197,77,.65)}
+.die.spin{animation:dspin .12s linear infinite}.die.idle{opacity:.5}
+@keyframes dspin{0%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}100%{transform:rotate(-10deg)}}
+.btn.yroll{flex:none;margin:2px auto 0;padding:11px 24px;font-size:1rem;background:var(--gold);color:#1a1300;border:0;min-width:230px}
+.btn.yroll:disabled{background:var(--tab);color:var(--muted)}
+.mgrid{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px}
+.mrow{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:min(310px,80vw,calc((100vh - 380px)*.83))}
+.mt{aspect-ratio:1;display:grid;place-items:center;font-size:1.6rem;font-weight:700;border:2px solid var(--line);border-radius:8px;background:var(--panel)}
+.mt.fill{border-color:#8e9bcc;animation:mpop .12s}
+.mt.t0{background:#3a4166;border-color:#3a4166}.mt.t1{background:#d6a531;border-color:#d6a531;color:#1a1300}.mt.t2{background:#3fa35c;border-color:#3fa35c}
+.mt.flip{animation:mflip .55s both}
+@keyframes mflip{0%{transform:rotateX(0);background:var(--panel);border-color:#8e9bcc;color:var(--ink)}49%{background:var(--panel);border-color:#8e9bcc;color:var(--ink)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+@keyframes mpop{0%{transform:scale(.88)}100%{transform:scale(1)}}
+.mrow.shake{animation:mshk .4s}
+@keyframes mshk{20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.mkb{flex:none;display:flex;flex-direction:column;gap:6px;padding-bottom:4px}
+.krow{display:flex;gap:4px;justify-content:center}
+.key{flex:1;max-width:40px;height:50px;border:0;border-radius:7px;background:#4a5585;color:var(--ink);font:700 1.05rem var(--display);cursor:pointer;padding:0;touch-action:manipulation}
+.key.wide{max-width:62px;flex:1.5;font-size:.85rem}
+.key.k0{background:#262c48;color:#6f789e}.key.k1{background:#d6a531;color:#1a1300}.key.k2{background:#3fa35c}
 .binfo{flex:none;display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--muted)}
 .binfo span.on{color:var(--gold);font-weight:700}
 .bctl{flex:none;display:flex;align-items:center;gap:8px}
@@ -212,6 +247,8 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
       <button class="tile" data-g="mns"><canvas class="ticon" data-i="mns"></canvas><span class="tname">Démineur</span><span class="tsub" id="sub-mns"></span></button>
       <button class="tile" data-g="dam"><canvas class="ticon" data-i="dam"></canvas><span class="tname">Dames</span><span class="tsub" id="sub-dam"></span></button>
       <button class="tile" data-g="bil"><canvas class="ticon" data-i="bil"></canvas><span class="tname">Billard</span><span class="tsub" id="sub-bil"></span></button>
+      <button class="tile" data-g="yam"><canvas class="ticon" data-i="yam"></canvas><span class="tname">Yams</span><span class="tsub" id="sub-yam"></span></button>
+      <button class="tile" data-g="mot"><canvas class="ticon" data-i="mot"></canvas><span class="tname">Mots</span><span class="tsub" id="sub-mot"></span></button>
     </div>
   </section>
 
@@ -353,6 +390,31 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
     <div class="bctl"><button class="btn ico" id="bil-l" aria-label="Viser à gauche" title="Viser à gauche">◀</button><div class="pow" id="bil-pow"><i id="bil-powfill"></i><span>Puissance : glisse puis lâche</span></div><button class="btn ico" id="bil-r" aria-label="Viser à droite" title="Viser à droite">▶</button></div>
   </section>
 
+  <section id="g-yam" class="game" hidden>
+    <div class="hud">
+      <button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button>
+      <div class="stat"><span class="lbl">Total</span><span id="yam-tot" class="val">0</span></div>
+      <select id="yam-mode" class="sel" aria-label="Mode de jeu"><option value="0">Solo</option><option value="1">Contre l’ordi</option><option value="2">À deux</option></select>
+      <button id="yam-new" class="btn ico" aria-label="Nouvelle partie" title="Nouvelle partie">↻</button>
+    </div>
+    <div class="ysheet" id="yam-sheet"></div>
+    <p class="gstatus" id="yam-status"></p>
+    <div class="ydice" id="yam-dice"></div>
+    <button class="btn yroll" id="yam-roll">🎲 Lancer</button>
+  </section>
+
+  <section id="g-mot" class="game" hidden>
+    <div class="hud">
+      <button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button>
+      <select id="mot-lang" class="sel" aria-label="Langue des mots"></select>
+      <select id="mot-mode" class="sel" aria-label="Mode"><option value="day">Mot du jour</option><option value="free">Partie libre</option></select>
+      <button id="mot-new" class="btn ico" aria-label="Nouveau mot" title="Nouveau mot">↻</button>
+    </div>
+    <p class="gstatus" id="mot-msg"></p>
+    <div class="mgrid" id="mot-grid"></div>
+    <div class="mkb" id="mot-kb"></div>
+  </section>
+
   <section id="times" class="home" hidden>
     <div class="maphead"><button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button><div class="mtitle">Temps de jeu</div></div>
     <div id="tstats"></div>
@@ -437,7 +499,19 @@ const I18N=(()=>{
     'L’ordinateur a gagné':'The computer won','L’ordinateur réfléchit…':'The computer is thinking…','À toi de jouer':'Your move','Nouvelle partie ?':'New game?',
     'La partie en cours sera abandonnée.':'The current game will be abandoned.','Revoir la table':'Review table','L’ordinateur joue…':'The computer is playing…',
     'Touche un pion, puis la case d’arrivée · les prises sont obligatoires':'Tap a piece, then its destination · captures are compulsory',
-    'Puissance : glisse puis lâche':'Power: slide, then release','Viser à gauche':'Aim left','Zoom automatique':'Auto zoom','Viser à droite':'Aim right'};
+    'Puissance : glisse puis lâche':'Power: slide, then release',
+    'Yams':'Yatzy','Mots':'Words','As':'Aces','Deux':'Twos','Trois':'Threes','Quatre':'Fours','Cinq':'Fives','Six':'Sixes','Brelan':'Three of a kind','Carré':'Four of a kind',
+    'Full':'Full house','Petite suite':'Small straight','Grande suite':'Large straight','Chance':'Chance','Total':'Total','Solo':'Solo','Contre l’ordi':'Vs computer',
+    '3 dés identiques : total des dés':'3 of a kind: sum of dice','4 dés identiques : total des dés':'4 of a kind: sum of dice','3 + 2 identiques : 25 points':'3 + 2 of a kind: 25 points',
+    '4 dés qui se suivent : 30 points':'4 in a row: 30 points','5 dés qui se suivent : 40 points':'5 in a row: 40 points','5 dés identiques : 50 points':'5 of a kind: 50 points','Total des dés':'Sum of dice',
+    '🎲 Lancer':'🎲 Roll','Choisis une case':'Pick a box','lance les dés':'roll the dice','choisis une case':'pick a box',
+    'touche les dés à garder, puis relance ou choisis une case':'tap dice to keep, then reroll or pick a box','Partie terminée':'Game over','Revoir la feuille':'Review sheet',
+    'Égalité':'Tie','Égalité !':'Tie!','Partie finie !':'Game over!','Yams !':'Yatzy!','Barrer':'Cross out','Cette case vaudra 0 point.':'This box will score 0.',
+    'Record de points':'Best score','Victoires contre l’ordi':'Wins vs computer','Mots du jour trouvés':'Daily words found','Mots trouvés en partie libre':'Words found in free play',
+    'Mot du jour':'Word of the day','Partie libre':'Free play','Nouveau mot':'New word','Nouveau mot ?':'New word?','Le mot en cours sera abandonné.':'The current word will be abandoned.',
+    'Il manque des lettres':'Not enough letters','Ce mot n’est pas dans la liste':'Not in the word list','Valider':'Enter','Effacer':'Delete','Langue des mots':'Word language','Mode':'Mode',
+    'Fermer':'Close','Incroyable !':'Incredible!','Trouvé !':'Found it!','Un autre mot ?':'Another word?',
+    'Liste de mots indisponible hors ligne. Ouvre ce jeu une fois avec une connexion.':'Word list unavailable offline. Open this game once with a connection.','Viser à gauche':'Aim left','Zoom automatique':'Auto zoom','Viser à droite':'Aim right'};
   for(const[f,e]of Object.entries(LV)){D['Record '+f]='Best '+e;D['Meilleur temps '+f]='Best time '+e;D['Victoires '+f]='Wins '+e}
   const WORLD={'Vallée des Cœurs':'Heart Valley','Prairie des Étoiles':'Star Meadow','Baie de la Lune':'Moon Bay','Forêt des Feuilles':'Leaf Forest',
     'Lac des Gouttes':'Droplet Lake','Pics Améthyste':'Amethyst Peaks','Spirales de Réglisse':'Licorice Spirals','Île aux Trésors':'Treasure Island','Jardin Arc-en-ciel':'Rainbow Garden'};
@@ -480,6 +554,17 @@ const I18N=(()=>{
     [/\. Bille en main pour (\S+)\./g,'. Ball in hand for $1.'],[/L’ordinateur a empoché la noire\. /g,'The computer potted the 8 ball. '],
     [/Une revanche \?/g,'Rematch?'],[/Une autre partie \?/g,'Another game?'],[/(\S+) gagne !/g,'$1 wins!'],[/(\S+) a gagné !/g,'$1 won!'],
     [/^Toi\b/g,'You'],[/^Ordi\b/g,'CPU'],[/ (\d+) victoires?$/g,(m,a)=>' '+a+' win'+(+a>1?'s':'')],
+    [/^Total des (\d)$/g,'Sum of $1s'],[/🎲 Relancer \((\d)\)/g,'🎲 Reroll ($1)'],[/ · lance les dés/g,' · roll the dice'],
+    [/ · touche les dés à garder, puis relance ou choisis une case/g,' · tap dice to keep, then reroll or pick a box'],[/ · choisis une case/g,' · pick a box'],
+    [/^Barrer « (.+) » \?$/g,(m,a)=>'Cross out “'+(D[a]||a)+'”?'],[/^Nouveau record : (\d+) points !$/g,'New record: $1 points!'],[/^(\d+) points$/g,'$1 points'],
+    [/^Record : (\d+) points\. Une autre partie \?$/g,'Best: $1 points. Another game?'],[/^(\d+) à (\d+) contre l’ordinateur\. Une revanche \?$/g,'$1 to $2 against the computer. Rematch?'],
+    [/^(\d+) à (\d+) pour l’ordinateur\. Une revanche \?$/g,'$1 to $2 for the computer. Rematch?'],[/^(\d+) à (\d+)\. Une revanche \?$/g,'$1 to $2. Rematch?'],[/^(\d+) à (\d+)\. Une autre partie \?$/g,'$1 to $2. Another game?'],
+    [/Mot du jour trouvé en (\d+) essais? · prochain mot demain/g,(m,a)=>'Word of the day found in '+a+' guess'+(+a>1?'es':'')+' · new word tomorrow'],
+    [/Le mot du jour était (\S+) · prochain mot demain/g,'The word of the day was $1 · new word tomorrow'],[/^Trouvé en (\d+) essais?( !)?$/g,(m,a,b)=>'Found in '+a+' guess'+(+a>1?'es':'')+(b?'!':'')],
+    [/^Série : (\d+) jours? · (\d+) mots? du jour trouvés?\. Une partie libre \?$/g,(m,a,b)=>'Streak: '+a+' day'+(+a>1?'s':'')+' · '+b+' daily word'+(+b>1?'s':'')+' found. Free play?'],
+    [/^Le mot était (\S+)\. Un nouveau mot demain\. Une partie libre \?$/g,'The word was $1. New word tomorrow. Free play?'],[/^Le mot était (\S+)\. Un autre mot \?$/g,'The word was $1. Another word?'],[/^Le mot était (\S+)$/g,'The word was $1'],
+    [/ · mot du jour/g,' · word of the day'],[/ · trouvé ✓/g,' · solved ✓'],[/ · raté$/g,' · missed'],[/ · série (\d+)/g,' · streak $1'],[/^Contre l’ordi/g,'Vs computer'],
+    [/^Dé (\d)( \(gardé\))?$/g,(m,a,b)=>'Die '+a+(b?' (kept)':'')],
     [/Marteau/g,'Hammer'],[/Échange libre/g,'Free swap'],[/\+5 coups/g,'+5 moves'],[/Mélange/g,'Shuffle']];
   const WRE=new RegExp(Object.keys(WORLD).join('|'),'g'),FRE=new RegExp('\\b('+Object.keys(FEAT).join('|')+')\\b','g'),CRE=new RegExp(' ('+Object.keys(COLN).join('|')+')$','g');
   const memo=new Map();
@@ -1896,7 +1981,7 @@ const Duel=(()=>{
   window._duel={report};
   function summary(){const V=S.v,cv=Object.values(S.cdy);
     return{play:window._play?window._play.export():null,sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
-      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0)}}
+      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0),yamS:V.yamS||0,yamW:V.yamW||0,motD:V.motD||0,motL:V.motL||0}}
   const LV4=['Facile','Moyen','Difficile','Expert'];
   const ROWS=[
     ['Bulles',LV4.map((n,i)=>['Record '+n.toLowerCase(),d=>d.bub&&d.bub[i],'hi'])],
@@ -1906,7 +1991,9 @@ const Duel=(()=>{
     ['Sudoku',LV4.map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.sdk&&d.sdk[i],'lo'])],
     ['Démineur',LV4.slice(0,3).map((n,i)=>['Meilleur temps '+n.toLowerCase(),d=>d.mns&&d.mns[i],'lo'])],
     ['Dames',LV4.slice(0,3).map((n,i)=>['Victoires '+n.toLowerCase(),d=>d.dam&&d.dam[i],'hi'])],
-    ['Billard',LV4.slice(0,3).map((n,i)=>['Victoires '+n.toLowerCase(),d=>d.bil&&d.bil[i],'hi'])]];
+    ['Billard',LV4.slice(0,3).map((n,i)=>['Victoires '+n.toLowerCase(),d=>d.bil&&d.bil[i],'hi'])],
+    ['Yams',[['Record de points',d=>d.yamS,'hi'],['Victoires contre l’ordi',d=>d.yamW,'hi']]],
+    ['Mots',[['Mots du jour trouvés',d=>d.motD,'hi'],['Mots trouvés en partie libre',d=>d.motL,'hi']]]];
   let remote=store.get('bb.duelCache',{}),status='';
   async function push(){if(!SYNC_URL||!me())return;try{
       await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:SECRET,p:me(),d:summary()})})}catch(e){}}
@@ -1934,7 +2021,7 @@ const Duel=(()=>{
   async function sync(){await push();await pull()}
   function newRound(){Celebrate.ask('Nouvelle manche ?','Le Duel repart à zéro pour '+me()+' et '+other()+'. Vos records personnels dans les jeux sont conservés.','Commencer','Annuler',async()=>{
       S=empty(Date.now());save();render();await push()},null)}
-  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|damWins|bilWins|season|save)/;
+  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|damWins|bilWins|yamBest|yamWins|motDay|motStats|season|save)/;
   async function wipe(wid,mine){
     Object.keys(localStorage).forEach(k=>{if(GAME_KEYS.test(k))try{localStorage.removeItem(k)}catch(e){}});
     store.set('bb.wipe',wid);S=empty(wid);save();if(mine)await push();location.reload()}
@@ -1980,7 +2067,12 @@ const Home=(()=>{
       g.fillStyle='#050505';[[o+S*.08,o+S*.08],[S-o-S*.08,o+S*.08],[o+S*.08,S-o-S*.08],[S-o-S*.08,S-o-S*.08]].forEach(([x,y])=>{g.beginPath();g.arc(x,y,S*.055,0,7);g.fill()});
       const bl=(x,y,c,n,st)=>{const r=S*.085;g.fillStyle=st?'#f6f3ea':c;g.beginPath();g.arc(x,y,r,0,7);g.fill();if(st){g.save();g.beginPath();g.arc(x,y,r,0,7);g.clip();g.fillStyle=c;g.fillRect(x-r,y-r*.5,2*r,r);g.restore()}
         if(n){g.fillStyle='#fff';g.beginPath();g.arc(x,y,r*.45,0,7);g.fill()}const gr=g.createRadialGradient(x-r*.4,y-r*.4,1,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.7)');gr.addColorStop(.3,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(0,0,0,.3)');g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,7);g.fill()};
-      bl(S*.5,S*.38,'#151515',8);bl(S*.4,S*.3,'#f5c518',1);bl(S*.6,S*.3,'#d8342f',3,true);bl(S*.45,S*.47,'#2f5fd8',2,true);bl(S*.58,S*.48,'#1f9a4c',6);bl(S*.5,S*.72,'#ffffff',0)}};
+      bl(S*.5,S*.38,'#151515',8);bl(S*.4,S*.3,'#f5c518',1);bl(S*.6,S*.3,'#d8342f',3,true);bl(S*.45,S*.47,'#2f5fd8',2,true);bl(S*.58,S*.48,'#1f9a4c',6);bl(S*.5,S*.72,'#ffffff',0)},
+    yam(g,S){const die=(x,y,s,rot,v)=>{g.save();g.translate(x,y);g.rotate(rot);rr(g,-s/2,-s/2,s,s,s*.2);const gr=g.createLinearGradient(-s/2,-s/2,s/2,s/2);gr.addColorStop(0,'#ffffff');gr.addColorStop(1,'#cfd3e2');g.fillStyle=gr;g.fill();
+        g.fillStyle='#1d2340';const P={3:[[-1,-1],[0,0],[1,1]],5:[[-1,-1],[1,-1],[0,0],[-1,1],[1,1]],6:[[-1,-1],[1,-1],[-1,0],[1,0],[-1,1],[1,1]]}[v];P.forEach(([a,b])=>{g.beginPath();g.arc(a*s*.27,b*s*.27,s*.085,0,7);g.fill()});g.restore()};
+      die(S*.36,S*.4,S*.4,-.25,5);die(S*.64,S*.62,S*.4,.2,6)},
+    mot(g,S){const s=S*.27,y=S*.36;[['M','#3fa35c'],['O','#d6a531'],['T','#3a4166']].forEach(([l,c],i)=>{const x=S*.08+i*(s+S*.03);rr(g,x,y,s,s,s*.18);g.fillStyle=c;g.fill();
+        g.fillStyle=c==='#d6a531'?'#1a1300':'#fff';g.font='700 '+Math.round(s*.62)+'px Fredoka, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(l,x+s/2,y+s/2+1)})}};
   function draw(){$$('.ticon').forEach(c=>{const S=72,k=DPR();c.width=S*k;c.height=S*k;const g=c.getContext('2d');g.setTransform(k,0,0,k,0,0);g.clearRect(0,0,S,S);ICON[c.dataset.i](g,S)})}
   function subs(fmt){const t=s=>{s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
     const bl=store.get('bb.bubLvl',0);$('#sub-bub').textContent=['Facile','Moyen','Difficile','Expert'][bl]+' · record '+store.get('bb.bubBest.'+bl,0);
@@ -1988,14 +2080,14 @@ const Home=(()=>{
     $('#sub-blk').textContent='Record '+store.get('bb.blkBest',0)+' · aventure niv. '+an;
     $('#sub-cdy').textContent=Candies.sub();
     const d=store.get('bb.solDraw',1),sb=store.get('bb.solBest'+d,0);$('#sub-sol').textContent='Pioche '+d+(sb?' · record '+t(sb):'');
-    $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub();$('#sub-dam').textContent=Dames.sub();$('#sub-bil').textContent=Pool.sub()}
+    $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub();$('#sub-dam').textContent=Dames.sub();$('#sub-bil').textContent=Pool.sub();$('#sub-yam').textContent=Yams.sub();$('#sub-mot').textContent=Words.sub()}
   return{draw,refresh:()=>{draw();subs();$('#who-name').textContent=Duel.me()||'?'}}
 })();
 
 /* ================= TEMPS DE JEU ================= */
 const PlayTime=(()=>{
   const el=$('#ptime');
-  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur',dam:'Dames',bil:'Billard'};
+  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur',dam:'Dames',bil:'Billard',yam:'Yams',mot:'Mots'};
   const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const today=()=>dkey(new Date());
   const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
@@ -2085,9 +2177,11 @@ const PlayTime=(()=>{
 </script>
 <script src="dames.js"></script>
 <script src="billard.js"></script>
+<script src="yams.js"></script>
+<script src="mots.js"></script>
 <script>
 /* ================= Navigation ================= */
-const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines,dam:Dames,bil:Pool};
+const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines,dam:Dames,bil:Pool,yam:Yams,mot:Words};
 let active='home';
 function show(t){if(t!==active&&GAMES[active]){Saver.one(active);GAMES[active].pause&&GAMES[active].pause()}active=t;store.set('bb.last',GAMES[t]?t:'home');if(GAMES[t]&&GAMES[t].resume)GAMES[t].resume();PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';for(const x in GAMES)$('#g-'+x).hidden=t!==x;if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
