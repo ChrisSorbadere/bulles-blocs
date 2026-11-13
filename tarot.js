@@ -215,7 +215,7 @@ const Tarot=(()=>{
     ctx.fillStyle='#fff';ctx.font='700 13px Fredoka, sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
     if(D.taker===0&&D.phase!=='bid'){ctx.fillStyle='#ffc54d';ctx.fillText('★ '+CONTRACTS[D.contract],8,8)}
     if(D.phase==='play'||D.phase==='end'){ctx.fillStyle='rgba(255,255,255,.75)';ctx.font='600 11px Fredoka, sans-serif';ctx.textAlign='right';ctx.fillText((EN()?'Taker: ':'Preneur : ')+fmtP(D.pts[0])+' pts',W-8,8)}}
-  function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;W=w;H=h;cw=Math.min(54,Math.floor(w/8.2),Math.floor(h/12));ch=Math.round(cw*1.5);
+  function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;W=w;H=h;cw=Math.min(60,Math.floor(w/7.4),Math.floor(h/10));ch=Math.round(cw*1.5);
     cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*DPR());cv.height=Math.round(H*DPR())}
   new ResizeObserver(resize).observe(stage);
   let AC=null;
