@@ -108,21 +108,23 @@ const Trace=(()=>{
   let stars=store.get('bb.trcStars',[]);if(!Array.isArray(stars))stars=[];
   const unlocked=()=>{let n=1;while(stars[n-1])n++;return Math.min(n,LV.length)};
   let cur=Math.min(store.get('bb.trcSel',1),unlocked())||1,lv=null,strokes=[],drawing=null,S=null,phase='draw',W=300,H=300,sc=20,ox=0,oy=0,acc=0,hintT=0,ready=false;
-  const inkMax=()=>lv.ink||(SOL[cur]?Math.max(SOL[cur].len*2.2,SOL[cur].len+4,6):9);
+  let unlim=!!store.get('bb.trcUnlim',false);
+  const inkMax=()=>unlim?1e9:lv.ink||(SOL[cur]?Math.max(SOL[cur].len*2.2,SOL[cur].len+4,6):9);
   const inkUsed=()=>strokes.reduce((a,s)=>a+inkLen(s),0)+(drawing?inkLen(drawing):0);
   function start(n,keep){cur=n;store.set('bb.trcSel',n);lv=LV[n-1];if(!keep)strokes=[];drawing=null;S=null;phase='draw';ov.hidden=true;hintT=0;
     say(objective()+' · '+(lv.m==='d'?'tes traits tombent':'tes traits restent fixes'));fillSel();ui();if(!keep)store.set('bb.save.trc',null)}
   function objective(){if(lv.k==='water'&&lv.tap[3]!=='water')return KIND2[lv.tap[3]==='bubble'?'water':'sand'];return KIND[lv.k]}
   function say(t){msgEl.textContent=t}
-  function ui(){const m=inkMax(),u=inkUsed();$('#trc-inkv').textContent=Math.max(0,Math.round((1-u/m)*100))+' %';$('#trc-inkbar').style.width=Math.max(0,(1-u/m)*100)+'%';
+  function ui(){const m=inkMax(),u=inkUsed();$('#trc-inkv').textContent=unlim?'∞':Math.max(0,Math.round((1-u/m)*100))+' %';$('#trc-inkbar').style.width=unlim?'100%':Math.max(0,(1-u/m)*100)+'%';
+    const ub=$('#trc-unl');ub.textContent=unlim?'♾️':'🖋️';ub.classList.toggle('on',unlim);ub.title=unlim?'Encre illimitée (1 étoile max)':'Encre limitée';
     goBtn.textContent=phase==='draw'?'▶ Lancer':phase==='run'?'⏹ Arrêter':'↻ Recommencer';goBtn.disabled=phase==='draw'&&!strokes.length&&lv.k!=='meet'}
   function fillSel(){const u=unlocked();let h='';for(let n=Math.max(u,cur);n>=1;n--)h+=`<option value="${n}">Niveau ${n}${stars[n-1]?' '+'★'.repeat(stars[n-1]):''}</option>`;lvlSel.innerHTML=h;lvlSel.value=String(cur)}
   function launch(){if(!P)return;S=build(lv,strokes,false);phase='run';acc=0;ui();snd(0);store.set('bb.save.trc',{n:cur,strokes})}
   function finish(win){phase='end';ui();
-    if(win){const used=inkUsed(),best=SOL[cur]?SOL[cur].len:used,st=used<=Math.max(best*1.6,best+1.5)?3:used<=best*2.6+1?2:1,old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.trcStars',stars)}
+    if(win){const used=inkUsed(),best=SOL[cur]?SOL[cur].len:used,st=unlim?1:used<=Math.max(best*1.6,best+1.5)?3:used<=best*2.6+1?2:1,old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.trcStars',stars)}
       window._duel&&window._duel.report('trcL',unlocked()-(unlocked()===LV.length&&stars[LV.length-1]?0:1),'hi');window._duel&&window._duel.report('trcS',stars.reduce((a,b)=>a+(b||0),0),'hi');
       store.set('bb.save.trc',null);snd(1);
-      Celebrate.run(st===3?'fireworks':'confetti','Réussi !',()=>{ov.innerHTML=`<div class="card bsum"><h2>Réussi !</h2><div class="bst">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><p>Encre utilisée : ${Math.round(used/inkMax()*100)} %${st<3?' · moins d’encre pour plus d’étoiles':''}</p>
+      Celebrate.run(st===3?'fireworks':'confetti','Réussi !',()=>{ov.innerHTML=`<div class="card bsum"><h2>Réussi !</h2><div class="bst">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><p>${unlim?'Encre illimitée : 1 étoile au plus. Rejoue en encre limitée 🖋️ pour en gagner 3.':'Encre utilisée : '+Math.round(used/inkMax()*100)+' %'+(st<3?' · moins d’encre pour plus d’étoiles':'')}</p>
         <div class="brow">${cur<LV.length?'<button class="btn" id="trc-next">Niveau suivant</button>':''}<button class="btn alt" id="trc-again">Rejouer</button></div></div>`;ov.hidden=false;
         const nx=$('#trc-next');if(nx)nx.onclick=()=>start(cur+1);$('#trc-again').onclick=()=>start(cur)})}
     else{snd(2);ov.innerHTML=`<div class="card bsum"><h2>Raté…</h2><p>${lv.k==='water'?'Le verre n’est pas assez rempli.':lv.k==='protect'?'L’œuf s’est cassé !':lv.k==='meet'?'Les balles ne se sont pas touchées.':'La balle n’est pas dans le panier.'}</p>
@@ -141,6 +143,7 @@ const Trace=(()=>{
   goBtn.onclick=()=>{if(phase==='draw')launch();else if(phase==='run'){S=null;phase='draw';ui()}else{ov.hidden=true;S=null;phase='draw';ui()}};
   $('#trc-undo').onclick=()=>{if(phase!=='draw')return;strokes.pop();ui()};
   $('#trc-reset').onclick=()=>start(cur);
+  $('#trc-unl').onclick=()=>{if(phase!=='draw')return;unlim=!unlim;store.set('bb.trcUnlim',unlim);if(!unlim&&inkUsed()>inkMax()){strokes=[];say('Encre limitée : ton dessin dépassait, il a été effacé')}else say(unlim?'Encre illimitée : tu peux dessiner autant que tu veux, mais 1 étoile au plus':'Encre limitée : jusqu’à 3 étoiles selon l’encre utilisée');ui()};
   $('#trc-hint').onclick=()=>{if(SOL[cur]){hintT=4;say('Indice : un début de solution en pointillés')}else say('Pas d’indice pour ce niveau')};
   lvlSel.onchange=()=>{lvlSel.blur();start(+lvlSel.value)};
 

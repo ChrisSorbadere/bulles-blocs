@@ -151,6 +151,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
 .hud .sel{padding:7px 4px;font-size:.82rem}
 .hud .homeb{margin-left:0;flex:none;display:grid;place-items:center;padding:7px 9px;min-width:36px}
 .hud .ico{min-width:36px;padding:7px 8px}
+#g-trc .hud .ico{min-width:34px;padding:7px 6px}
 .pad{flex:none;display:flex;flex-direction:column;gap:6px}
 .padnums{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:4px}
 .pn{font:inherit;color:var(--ink);background:var(--tab);border:1px solid var(--line);border-radius:10px;padding:6px 0 3px;display:flex;flex-direction:column;align-items:center;line-height:1;cursor:pointer}
@@ -483,6 +484,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
       <div class="stat"><span class="lbl">Armée</span><span id="bat-bud" class="val">0</span></div>
       <div class="stat best"><span class="lbl">Pièces</span><span id="bat-coins" class="val">0</span></div>
       <select id="bat-lvl" class="sel" aria-label="Niveau"></select>
+      <button id="bat-clear" class="btn ico" aria-label="Tout effacer" title="Tout effacer">🗑️</button>
       <button id="bat-shop" class="btn ico" aria-label="Améliorations" title="Améliorations">🛠️</button>
     </div>
     <p class="gstatus" id="bat-msg"></p>
@@ -495,6 +497,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
       <button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button>
       <div class="stat"><span class="lbl">Encre</span><span id="trc-inkv" class="val">100 %</span></div>
       <select id="trc-lvl" class="sel" aria-label="Niveau"></select>
+      <button id="trc-unl" class="btn ico" aria-label="Encre limitée ou illimitée" title="Encre limitée">🖋️</button>
       <button id="trc-hint" class="btn ico" aria-label="Indice" title="Indice">💡</button>
       <button id="trc-undo" class="btn ico" aria-label="Effacer le dernier trait" title="Effacer le dernier trait">↶</button>
       <button id="trc-reset" class="btn ico" aria-label="Recommencer le niveau" title="Recommencer le niveau">↻</button>
@@ -611,7 +614,15 @@ const I18N=(()=>{
     'Interdit : on ne peut pas écarter un roi ni un bout':'Not allowed: you can’t discard a king or an oudler','Écarte d’abord tes cartes de couleur (atouts seulement si nécessaire)':'Discard suit cards first (trumps only if necessary)',
     'Choisis 6 cartes pour ton écart (ni roi, ni bout)':'Pick 6 cards to discard (no kings, no oudlers)','Carte interdite : il faut fournir, couper ou monter':'Not allowed: follow suit, trump or overtrump',
     'Tout le monde passe : on redistribue.':'Everyone passes: redeal.','Partie reprise':'Game resumed','Donnes gagnées comme preneur':'Deals won as taker','Parties gagnées':'Games won','Meilleur score de partie':'Best game score',
-    'Batailles':'Battles','Trace':'Draw','Encre':'Ink','Indice':'Hint','Effacer le dernier trait':'Erase last line','Recommencer le niveau':'Restart level','▶ Lancer':'▶ Go','⏹ Arrêter':'⏹ Stop','↻ Recommencer':'↻ Restart',
+    'Batailles':'Battles','Plan':'Plan','Retirer':'Undo','Terminé':'Done','✅ Terminé':'✅ Done','Marche forcée':'Forced march','Tout effacer ?':'Clear everything?','Ton armée et ses plans seront retirés du terrain.':'Your army and its plans will be removed.','Effacer':'Clear',
+    'Touche d’abord une de tes unités pour choisir son groupe':'First tap one of your units to choose its group','Pas d’étape ici':'No waypoint here','8 étapes au maximum':'8 steps at most',
+    'Plan : touche une de tes unités pour choisir son groupe, puis la carte pour ses étapes':'Plan: tap one of your units to choose its group, then the map for its waypoints',
+    'Le groupe tiendra cette position jusqu’à l’arrivée de l’ennemi, puis attaquera':'The group will hold this position until the enemy arrives, then attack',
+    'Marche forcée : le groupe ignore l’ennemi jusqu’à la fin de son chemin':'Forced march: the group ignores the enemy until the end of its path','Le groupe se battra s’il croise l’ennemi en chemin':'The group will fight if it meets the enemy on the way',
+    'Essaie l’outil 🗺️ Plan : envoie un groupe contourner l’ennemi, attends le bon moment, puis frappe de flanc ou de dos.':'Try the 🗺️ Plan tool: send a group round the enemy, wait for the right moment, then strike the flank or rear.','Trace':'Draw','Encre':'Ink','Indice':'Hint','Encre limitée ou illimitée':'Limited or unlimited ink','Encre illimitée (1 étoile max)':'Unlimited ink (1 star max)','Encre limitée':'Limited ink',
+    'Encre illimitée : 1 étoile au plus. Rejoue en encre limitée 🖋️ pour en gagner 3.':'Unlimited ink: 1 star at most. Replay with limited ink 🖋️ to earn 3.',
+    'Encre limitée : ton dessin dépassait, il a été effacé':'Limited ink: your drawing was too long, it has been cleared','Encre illimitée : tu peux dessiner autant que tu veux, mais 1 étoile au plus':'Unlimited ink: draw as much as you like, but 1 star at most',
+    'Encre limitée : jusqu’à 3 étoiles selon l’encre utilisée':'Limited ink: up to 3 stars depending on the ink used','Effacer le dernier trait':'Erase last line','Recommencer le niveau':'Restart level','▶ Lancer':'▶ Go','⏹ Arrêter':'⏹ Stop','↻ Recommencer':'↻ Restart',
     'Remplis le verre':'Fill the glass','Amène la balle dans le panier':'Get the ball into the basket','Fais se toucher les deux balles':'Make the two balls touch','Protège l’œuf des cailloux':'Protect the egg from the stones',
     'Remplis le récipient avec les bulles':'Fill the container with bubbles','Remplis le verre de sable':'Fill the glass with sand','Réussi !':'Done!','Raté…':'Missed…','Modifier mon dessin':'Edit my drawing','Tout effacer':'Clear all',
     'Le verre n’est pas assez rempli.':'The glass is not full enough.','L’œuf s’est cassé !':'The egg broke!','Les balles ne se sont pas touchées.':'The balls didn’t touch.','La balle n’est pas dans le panier.':'The ball isn’t in the basket.',
@@ -699,7 +710,8 @@ const I18N=(()=>{
     [/^Il te manquait (.+)\. On réessaie \?$/g,(m,a)=>'You still needed '+a.replace(/rouges/g,'red').replace(/jaunes/g,'yellow').replace(/verts/g,'green').replace(/bleus/g,'blue').replace(/violets/g,'purple').replace(/ancres?/g,'anchor(s)').replace(/glaces?/g,'ice')+'. Try again?'],
     [/^(\d+) points · record (\d+)\. Une nouvelle partie \?$/g,'$1 points · best $2. A new game?'],[/ · tuile (\d+)/g,' · tile $1'],
     [/^Donne (\d+) sur (\d+)$/g,'Deal $1 of $2'],[/^Nouvelle unité : (\S+)/g,(m,a)=>'New unit: '+(D[a]||a)],[/^Ennemis éliminés : (\d+) % · Armée conservée : (\d+) %$/g,'Enemies defeated: $1% · Army kept: $2%'],
-    [/^Vétérans · /g,'Veterans · '],[/ · tes traits tombent$/g,' · your lines fall'],[/ · tes traits restent fixes$/g,' · your lines stay put'],[/^Encre utilisée : (\d+) %( · moins d’encre pour plus d’étoiles)?$/g,(m,a,b)=>'Ink used: '+a+'%'+(b?' · less ink for more stars':'')],[/^Nouvelle unité : (\S+) (\S+) · (.+)$/g,(m,a,b,c)=>'New unit: '+(D[a]||a)+' '+b+' · '+(D[c]||c)],
+    [/^Vétérans · /g,'Veterans · '],[/^Groupe choisi \((\d+) unités?\) : touche la carte pour ajouter une étape$/g,(m,a)=>'Group chosen ('+a+' unit'+(+a>1?'s':'')+'): tap the map to add a waypoint'],
+    [/^Plans enregistrés : (\d+) groupes? avec une mission$/g,(m,a)=>'Plans saved: '+a+' group'+(+a>1?'s':'')+' with a mission'],[/^Attendre (\d+) s$/g,'Wait $1 s'],[/ · tes traits tombent$/g,' · your lines fall'],[/ · tes traits restent fixes$/g,' · your lines stay put'],[/^Encre utilisée : (\d+) %( · moins d’encre pour plus d’étoiles)?$/g,(m,a,b)=>'Ink used: '+a+'%'+(b?' · less ink for more stars':'')],[/^Nouvelle unité : (\S+) (\S+) · (.+)$/g,(m,a,b,c)=>'New unit: '+(D[a]||a)+' '+b+' · '+(D[c]||c)],
     [/^(\S) (Soldat|Piquier|Archer|Cavalier|Bouclier|Catapulte|Général) : (.+)$/g,(m,a,b,c)=>a+' '+D[b]+': '+(D[c]||c)],[/^Défi 🎖 : (.+?)( — (réussi !|déjà obtenu|raté))?$/g,(m,a,b,c)=>'Challenge 🎖: '+(D[a]||a)+(c?' — '+({'réussi !':'done!','déjà obtenu':'already earned','raté':'missed'})[c]:'')],
     [/^Armée conservée : (\d+) % · (\d+) s( · (\d+) en fuite)?$/g,(m,a,b,c,d)=>'Army kept: '+a+'% · '+b+' s'+(d?' · '+d+' fled':'')],[/^💡 (.+)$/g,(m,a)=>'💡 '+(D[a]||a)],
     [/📅 Défi du jour/g,'📅 Daily challenge'],[/^⬟ Niveau (\d+)/g,'⬟ Level $1'],[/ · défi ✓/g,' · challenge ✓'],[/^(\S) (Soldat|Piquier|Archer|Cavalier|Bouclier|Catapulte|Général|Géant)$/g,(m,a,b)=>a+' '+D[b]],[/^(\S) (Soldat|Piquier|Archer|Cavalier)/g,(m,a,b)=>a+' '+D[b]],[/^(Soldat|Piquier|Archer|Cavalier|Bouclier|Catapulte|Général) · /g,(m,a)=>D[a]+' · '],[/^niv\. (\d+)$/g,'lvl $1'],[/^(\S+) : (Passe|Petite|Garde sans|Garde contre|Garde)$/g,(m,a,b)=>(a==='Toi'?'You':a)+': '+D[b]],

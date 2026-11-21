@@ -35,7 +35,7 @@ const Battle=(()=>{
   const saveProg=()=>store.set('bb.batProg',prog);
   const unlocked=()=>{let n=1;while(prog.stars[n-1])n++;return n};
   let cur=store.get('bb.batSel',1);if(cur!=='D')cur=Math.min(+cur||1,unlocked());
-  let L,mine=[],phase='place',tool=0,mode='brush',shape=0,erase=false,order=0,speed=1,B=null,W=300,H=300,sc=2,ox=0,oy=0,acc=0,painting=false,lastPaint=null,gid=1,bg=null,shake=0,intro=0,lastEnd=null;
+  let plans={},planMode=false,selG=null,L,mine=[],phase='place',tool=0,mode='brush',shape=0,erase=false,order=0,speed=1,B=null,W=300,H=300,sc=2,ox=0,oy=0,acc=0,painting=false,lastPaint=null,gid=1,bg=null,shake=0,intro=0,lastEnd=null;
 
   /* ---------- Niveaux ---------- */
   function genLevel(seed,eq,daily){const R=rng(seed*7919+13),ri=k=>Math.floor(R()*k);
@@ -80,7 +80,7 @@ const Battle=(()=>{
   const DEFI={keep:'Gagner en gardant 70 % de ton armée',nocav:'Gagner sans cavaliers',budget:'Gagner en utilisant au plus 80 % du budget',time:'Gagner en moins de 50 secondes de combat',general:'Gagner avec ton général encore en vie'};
   function levelFor(n){if(n==='D'){const dn=dayNum();return genLevel(100000+dn,14+dn%22,true)}return genLevel(n,n,false)}
   function startLevel(n,keep){cur=n;store.set('bb.batSel',n);L=levelFor(n);phase='place';B=null;ov.hidden=true;erase=false;painting=false;
-    if(!keep){const a=prog.army[n];mine=a?validArmy(a):[]}
+    if(!keep){const a=prog.army[n];mine=a?validArmy(a):[];plans=JSON.parse(JSON.stringify((prog.plans||{})[n]||{}))}planMode=false;selG=null;
     bg=null;const nt=[0,1,2,3,4,5,6].find(t=>UNLOCK[t]===n);
     if(nt!=null&&nt>0)say('Nouvelle unité : '+T[nt].n+' '+T[nt].s+' · '+HELP[nt]);
     else if(L.boss)say('Niveau de boss : un Géant ⬟ mène l’armée ennemie !');
@@ -98,10 +98,15 @@ const Battle=(()=>{
   const inWater=(lv,x,y)=>lv.water.some(w=>((x-w.x)/w.rx)**2+((y-w.y)/w.ry)**2<1);
   function makeArmy(list,side,P){return list.map(u=>{const t=T[u.t],v=1+.12*(P?(P.vet[u.t]||0):0);
     return{t:u.t,side,x:u.x,y:u.y,hp:t.hp*v,max:t.hp*v,dk:v,cd:Math.random()*t.cd,tg:null,rt:0,ord:u.o||0,g:u.g||0,wp:0,mor:100,rout:0,fx:0,fy:side?1:-1,mv:0,dead:0,fade:0,flash:0,fled:0,buff:0}})}
-  function newBattle(lv,enemy,mineList,P){P=P||{vet:[0,0,0,0,0,0,0],doc:{}};const units=[...makeArmy(mineList,0,P),...makeArmy(enemy,1,null)];
+  function newBattle(lv,enemy,mineList,P,PL){P=P||{vet:[0,0,0,0,0,0,0],doc:{}};const units=[...makeArmy(mineList,0,P),...makeArmy(enemy,1,null)];
+    // plans de mission : chaque groupe suit ses étapes en gardant sa formation
+    const bp={};if(PL)for(const g in PL){const pl=PL[g];if(!pl||!pl.steps||!pl.steps.length)continue;const mem=units.filter(u=>u.side===0&&String(u.g)===String(g));if(!mem.length)continue;
+      const cx=mem.reduce((a,u)=>a+u.x,0)/mem.length,cy=mem.reduce((a,u)=>a+u.y,0)/mem.length;
+      for(const u of mem){let ox=u.x-cx,oy=u.y-cy;const l=Math.hypot(ox,oy);if(l>9){ox*=9/l;oy*=9/l}u.off=[ox,oy];u.pk='0:'+g;u.ord=0}
+      bp['0:'+g]={steps:pl.steps,march:!!pl.march,si:0,t:0}}
     // vitesse de groupe : un groupe marche au pas de son unité la plus lente
     const gs={};for(const u of units){const k=u.side+':'+u.g;gs[k]=Math.min(gs[k]??99,T[u.t].spd)}for(const u of units)u.gs=u.g?gs[u.side+':'+u.g]:T[u.t].spd;
-    return{units,proj:[],fx:[],t:0,over:0,P,rally:P.doc&&P.doc.second?2:1,rallyT:0,start:[mineList.length,enemy.length],val:[used(mineList),used(enemy)],
+    return{units,plans:bp,proj:[],fx:[],t:0,over:0,P,rally:P.doc&&P.doc.second?2:1,rallyT:0,start:[mineList.length,enemy.length],val:[used(mineList),used(enemy)],
       kills:[new Array(8).fill(0),new Array(8).fill(0)],lost:[new Array(8).fill(0),new Array(8).fill(0)],fledN:[0,0]}}
   const CS=4,GX=Math.ceil(FW/CS)+1,GY=Math.ceil(FH/CS)+1;
   function simStep(b,lv,dt){b.t+=dt;const U=b.units,grid=new Array(GX*GY),P=b.P,doc=P.doc||{};
@@ -110,6 +115,12 @@ const Battle=(()=>{
       for(let gy=y0;gy<=y1;gy++)for(let gx=x0;gx<=x1;gx++){const c=grid[gx+gy*GX];if(c)for(const o of c)f(o)}};
     const alive=[[],[]];for(const u of U)if(!u.dead)alive[u.side].push(u);
     if(!alive[0].length||!alive[1].length||b.t>150){b.over=1;return}
+    for(const key in b.plans){const pl=b.plans[key];if(pl.si>=pl.steps.length)continue;const mem=alive[0].filter(u=>u.pk===key&&!u.rout);if(!mem.length){pl.si=pl.steps.length;continue}
+      const st=pl.steps[pl.si];let foe=false;const rad=st.k==='hold'?22:9;
+      if(!pl.march||st.k==='hold')for(const u of mem){near(u.x,u.y,rad,o=>{if(!foe&&o.side===1&&!o.dead&&(o.x-u.x)**2+(o.y-u.y)**2<rad*rad)foe=true});if(foe)break}
+      if(foe){pl.si=pl.steps.length;continue}
+      if(st.k==='go'){const ok=mem.filter(u=>Math.hypot(st.x+u.off[0]-u.x,st.y+u.off[1]-u.y)<2.2).length;if(ok>=mem.length*.7){pl.si++;pl.t=0}}
+      else if(st.k==='wait'){pl.t+=dt;if(pl.t>=st.s){pl.si++;pl.t=0}}}
     const gens=[alive[0].filter(u=>u.t===6),alive[1].filter(u=>u.t===6)];
     const auraR=s=>T[6].aura*(s===0&&doc.banner?1.5:1);
     const nearGen=u=>gens[u.side].some(g=>(g.x-u.x)**2+(g.y-u.y)**2<auraR(u.side)**2);
@@ -134,6 +145,14 @@ const Battle=(()=>{
         if(!best)for(const o of alive[1-u.side]){const d=(o.x-u.x)**2+(o.y-u.y)**2;if(d<bd){bd=d;best=o}}
         u.tg=best}
       const g=u.tg;if(!g)continue;let dx=g.x-u.x,dy=g.y-u.y,d=Math.hypot(dx,dy)||.01;
+      // plan de mission
+      const pl=u.pk&&b.plans[u.pk];let stay=false;
+      if(pl&&pl.si<pl.steps.length){const st=pl.steps[pl.si];
+        if(st.k==='go'){let tx=st.x+u.off[0],ty2=st.y+u.off[1];
+          if(lv.river){const ry=lv.river.y,sd=Math.sign(u.y-ry),de=Math.sign(ty2-ry);if(sd&&de&&sd!==de&&!lv.river.br.some(br=>Math.abs(u.x-br.x)<br.w/2-1)){let bb=lv.river.br[0];for(const br of lv.river.br)if(Math.abs(br.x-u.x)+Math.abs(br.x-tx)<Math.abs(bb.x-u.x)+Math.abs(bb.x-tx))bb=br;tx=bb.x;ty2=ry}}
+          const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>.4){let sp=u.gs*(u.buff>0?1.25:1);if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;const m=Math.min(dd,sp*dt);u.x+=ddx/dd*m;u.y+=ddy/dd*m;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt}
+          continue}
+        stay=true}
       // ordres
       if(u.ord===1&&(d<22||b.t>30||(b.lastHit!=null&&b.t-b.lastHit>6)))u.ord=0;
       if(u.ord===4&&(b.t>15||(b.lastHit!=null&&b.t-b.lastHit>6)||alive[u.side].length<b.start[u.side]*.6||d<16))u.ord=0;
@@ -153,7 +172,7 @@ const Battle=(()=>{
           if(ty.splash){near(g.x,g.y,ty.splash,o=>{if(o.side!==u.side&&!o.dead&&o!==g&&(o.x-g.x)**2+(o.y-g.y)**2<ty.splash**2)hurt(o,dm*.6,u,false)});b.fx.push({k:'ring',x:g.x,y:g.y,t:0,r:ty.splash,c:u.side});b.shake=Math.max(b.shake||0,.15)}
           hurt(g,dm,u,false)}
         u.fx=-(u.x-g.x)/d;u.fy=-(u.y-g.y)/d;if(u.hp<=0)kill(u,g);continue}
-      if(u.ord===1||u.ord===4)continue;
+      if(stay||u.ord===1||u.ord===4)continue;
       // destination : cible, point de contournement ou pont
       let tx=g.x,ty2=g.y;
       if(u.ord===2||u.ord===3){const sx=(u.ord===2)!==(u.side===1)?6:FW-6,path=u.side===0?[[sx,80],[sx,EZ-8]]:[[sx,70],[sx,ZY+8]];
@@ -198,9 +217,15 @@ const Battle=(()=>{
     else if(shape===1){const c=Math.ceil(Math.sqrt(N));for(let i=0;i<N;i++)pts.push([(i%c-(c-1)/2)*sp,Math.floor(i/c)*sp])}
     else{let i=0;for(let r=0;i<N;r++)for(let c=0;c<=r&&i<N;c++,i++)pts.push([(c-r/2)*sp,r*sp])}
     let k=0;for(const[dx,dy]of pts)if(addUnit(x+dx,y+dy))k++;if(!k)say('Pas de place ici');else gid++;snd(0);tools()}
+  function cleanPlans(){for(const g in plans)if(!mine.some(u=>String(u.g)===String(g))||!plans[g].steps.length)delete plans[g]}
   function eraseAt(x,y){const n=mine.length;mine=mine.filter(u=>(u.x-x)**2+(u.y-y)**2>9);if(mine.length!==n)tools()}
   const toField=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left-ox)/sc,(e.clientY-r.top-oy)/sc]};
   cv.addEventListener('pointerdown',e=>{if(phase!=='place'||!ov.hidden)return;const[x,y]=toField(e);cv.setPointerCapture(e.pointerId);
+    if(planMode){let best=null,bd=25;for(const u of mine){const d=(u.x-x)**2+(u.y-y)**2;if(d<bd){bd=d;best=u}}
+      if(best&&String(best.g)!==String(selG)){selG=best.g;const n=mine.filter(u=>String(u.g)===String(selG)).length;say('Groupe choisi ('+n+' unité'+(n>1?'s':'')+') : touche la carte pour ajouter une étape');snd(0);tools();return}
+      if(selG==null){say('Touche d’abord une de tes unités pour choisir son groupe');return}
+      if(x<1||x>FW-1||y<1||y>FH-1||L.rocks.some(r=>Math.hypot(x-r.x,y-r.y)<r.r)){say('Pas d’étape ici');return}
+      const pl=plans[selG]||(plans[selG]={steps:[],march:false});if(pl.steps.length>=8){say('8 étapes au maximum');return}pl.steps.push({k:'go',x:Math.round(x*10)/10,y:Math.round(y*10)/10});snd(0);tools();return}
     if(erase){painting=true;eraseAt(x,y);return}
     if(mode==='block'){block(x,y);return}
     painting=true;lastPaint=[x,y];if(addUnit(x,y)){snd(0);tools()}});
@@ -211,8 +236,8 @@ const Battle=(()=>{
   const endPaint=()=>{if(painting&&!erase)gid++;painting=false};cv.addEventListener('pointerup',endPaint);cv.addEventListener('pointercancel',endPaint);
 
   /* ---------- Combat ---------- */
-  function fight(){if(!mine.length){say('Place au moins une unité');return}prog.army[cur]=mine.map(u=>({...u}));prog.lastArmy=prog.army[cur];saveProg();store.set('bb.save.bat',{n:cur,units:mine});
-    B=newBattle(L,L.enemy,mine,prog);phase='fight';acc=0;intro=1.3;say('');tools();snd(2)}
+  function fight(){if(!mine.length){say('Place au moins une unité');return}cleanPlans();prog.army[cur]=mine.map(u=>({...u}));prog.lastArmy=prog.army[cur];prog.plans=prog.plans||{};prog.plans[cur]=JSON.parse(JSON.stringify(plans));prog.lastPlans=prog.plans[cur];saveProg();store.set('bb.save.bat',{n:cur,units:mine,plans});planMode=false;selG=null;
+    cleanPlans();B=newBattle(L,L.enemy,mine,prog,plans);phase='fight';acc=0;intro=1.3;say('');tools();snd(2)}
   function endBattle(){phase='done';const r=result(B),n=cur;let gain=0,st=0,med=false;
     if(r.win){st=r.keep>=.6?3:r.keep>=.3?2:1;
       const d=L.defi;med=d==='keep'?r.keep>=.7:d==='nocav'?!mine.some(u=>u.t===3):d==='budget'?used()<=budget()*.8:d==='time'?r.t<=50:d==='general'?r.genAlive:false;
@@ -229,7 +254,7 @@ const Battle=(()=>{
     if(cnt(2)>=e*.25&&!my(3)&&!my(4))out.push('Leurs archers te déciment : envoie des cavaliers par un flanc ou avance derrière des boucliers.');
     if(cnt(1)>=e*.3&&my(3)>=N*.3)out.push('Tes cavaliers s’empalent sur les piquiers : utilise soldats et archers contre eux.');
     if(B.fledN[0]>=B.start[0]*.15)out.push('Ton armée a fui : garde ton général près du front, ou utilise le Ralliement 📯 au bon moment.');
-    if(!mine.some(u=>u.o>=2))out.push('Essaie de prendre l’ennemi de flanc (ordres ↖️ ↗️) : les attaques de côté et de dos font bien plus mal.');
+    if(!mine.some(u=>u.o>=2)&&!Object.keys(plans).length)out.push('Essaie l’outil 🗺️ Plan : envoie un groupe contourner l’ennemi, attends le bon moment, puis frappe de flanc ou de dos.');
     if(mine.every(u=>u.g===mine[0].g)&&mine.some(u=>u.t===3))out.push('Un groupe avance au pas de son unité la plus lente : place tes cavaliers à part pour qu’ils chargent vite.');
     return out.slice(0,2)}
   function showEnd(win,st,gain,r,med){lastEnd=[win,st,gain,r,med];const rows=[0,1,2,3,4,5,6,7].filter(t=>B.lost[0][t]||B.lost[1][t]||mine.some(u=>u.t===t)||L.enemy.some(u=>u.t===t));
@@ -258,11 +283,15 @@ const Battle=(()=>{
   function fillSel(){const u=unlocked();let h=`<option value="D">📅 Défi du jour${prog.daily===dkey()?' ✓':''}</option>`;
     for(let n=Math.max(u,cur==='D'?1:cur);n>=1;n--)h+=`<option value="${n}">${n%10===0?'⬟ ':''}Niveau ${n}${prog.stars[n-1]?' '+'★'.repeat(prog.stars[n-1]):''}${prog.med[n-1]?' 🎖':''}</option>`;lvlSel.innerHTML=h;lvlSel.value=String(cur)}
   function tools(){hud();let h='';
-    if(phase==='place'){const vis=[0,1,2,3,4,5,6].filter(t=>canUse(t)||t===[0,1,2,3,4,5,6].find(x=>!canUse(x)));
+    if(phase==='place'&&planMode){const pl=selG!=null&&plans[selG],has=pl&&pl.steps.length,last=has&&pl.steps[pl.steps.length-1];
+      h+=`<div class="brow"><button class="btn bt" data-w="1"${selG==null?' disabled':''}>⏳<small>Attendre ${last&&last.k==='wait'?last.s+5:5} s</small></button><button class="btn bt" data-h="1"${selG==null||last&&last.k==='hold'?' disabled':''}>🛡️<small>Tenir</small></button>
+        <button class="btn bt${pl&&pl.march?' on':''}" data-mf="1"${selG==null?' disabled':''}>🏃<small>Marche forcée</small></button></div>
+        <div class="brow"><button class="btn bt" data-u="1"${has?'':' disabled'}>↩️<small>Retirer</small></button><button class="btn bt" data-x="1"${has?'':' disabled'}>🧹<small>Effacer</small></button><button class="btn bfight" data-done="1">✅ Terminé</button></div>`}
+    else if(phase==='place'){const vis=[0,1,2,3,4,5,6].filter(t=>canUse(t)||t===[0,1,2,3,4,5,6].find(x=>!canUse(x)));
       h+='<div class="brow">'+vis.map(i=>{const t=T[i],ok=canUse(i);return`<button class="btn bt${tool===i&&!erase?' on':''}" data-t="${i}"${ok?'':' disabled'}><b>${t.s}</b><small>${ok?t.n+' · '+t.cost:'niv. '+UNLOCK[i]}</small></button>`}).join('')+'</div>';
       h+=`<div class="brow"><button class="btn bt${mode==='brush'&&!erase?' on':''}" data-m="brush">✏️<small>Pinceau</small></button><button class="btn bt${mode==='block'&&!erase?' on':''}" data-m="block">▦<small>${SHAPES[shape]}</small></button>
         <button class="btn bt${erase?' on':''}" data-e="1">🧽<small>Gomme</small></button><button class="btn bt on2" data-o="1">${ORD[order][0]}<small>${ORD[order][1]}</small></button>
-        <button class="btn bt" data-l="1"${prog.lastArmy?'':' disabled'}>↺<small>Dernière</small></button><button class="btn bt" data-c="1">🗑️<small>Vider</small></button><button class="btn bfight" data-f="1"${mine.length?'':' disabled'}>Combat !</button></div>`}
+        <button class="btn bt" data-l="1"${prog.lastArmy?'':' disabled'}>↺<small>Dernière</small></button><button class="btn bt${planMode?' on':''}" data-p="1">🗺️<small>Plan</small></button><button class="btn bfight" data-f="1"${mine.length?'':' disabled'}>Combat !</button></div>`}
     else if(phase==='fight'){h+=`<div class="brow">${[1,2,3].map(s=>`<button class="btn bt${speed===s?' on':''}" data-s="${s}">×${s}</button>`).join('')}<button class="btn bt brally" data-r="1"${B&&B.rally>0?'':' disabled'}>📯<small>Ralliement${B&&B.rally>1?' ×'+B.rally:''}</small></button><button class="btn bt" data-q="1">🏳️<small>Abandonner</small></button></div>`}
     toolsEl.innerHTML=h;
     toolsEl.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{tool=+b.dataset.t;erase=false;say(T[tool].s+' '+T[tool].n+' : '+HELP[tool]);tools()});
@@ -270,8 +299,15 @@ const Battle=(()=>{
     const q=s=>toolsEl.querySelector(s);
     if(q('[data-e]'))q('[data-e]').onclick=()=>{erase=!erase;tools()};
     if(q('[data-o]'))q('[data-o]').onclick=()=>{order=(order+1)%5;say(['Les prochaines unités avanceront vers l’ennemi','Les prochaines unités tiendront leur position jusqu’à l’arrivée de l’ennemi','Les prochaines unités contourneront par la gauche avant d’attaquer','Les prochaines unités contourneront par la droite avant d’attaquer','Les prochaines unités attendront 15 secondes en réserve'][order]);tools()};
-    if(q('[data-l]'))q('[data-l]').onclick=()=>{mine=validArmy(prog.lastArmy||[]);say(mine.length?'Dernière armée replacée (ce qui rentre dans le budget et le terrain)':'Rien à replacer ici');tools()};
-    if(q('[data-c]'))q('[data-c]').onclick=()=>{mine=[];tools()};
+    if(q('[data-l]'))q('[data-l]').onclick=()=>{mine=validArmy(prog.lastArmy||[]);plans=JSON.parse(JSON.stringify(prog.lastPlans||{}));say(mine.length?'Dernière armée replacée (ce qui rentre dans le budget et le terrain)':'Rien à replacer ici');tools()};
+    if(q('[data-p]'))q('[data-p]').onclick=()=>{planMode=true;erase=false;selG=null;say('Plan : touche une de tes unités pour choisir son groupe, puis la carte pour ses étapes');tools()};
+    if(q('[data-done]'))q('[data-done]').onclick=()=>{planMode=false;selG=null;cleanPlans();say('Plans enregistrés : '+Object.keys(plans).length+' groupe'+(Object.keys(plans).length>1?'s':'')+' avec une mission');tools()};
+    const cp=()=>plans[selG]||(plans[selG]={steps:[],march:false});
+    if(q('[data-w]'))q('[data-w]').onclick=()=>{const pl=cp(),l=pl.steps[pl.steps.length-1];if(l&&l.k==='wait'){l.s=Math.min(60,l.s+5)}else if(pl.steps.length<8)pl.steps.push({k:'wait',s:5});tools()};
+    if(q('[data-h]'))q('[data-h]').onclick=()=>{const pl=cp();if(pl.steps.length<8)pl.steps.push({k:'hold'});say('Le groupe tiendra cette position jusqu’à l’arrivée de l’ennemi, puis attaquera');tools()};
+    if(q('[data-mf]'))q('[data-mf]').onclick=()=>{const pl=cp();pl.march=!pl.march;say(pl.march?'Marche forcée : le groupe ignore l’ennemi jusqu’à la fin de son chemin':'Le groupe se battra s’il croise l’ennemi en chemin');tools()};
+    if(q('[data-u]'))q('[data-u]').onclick=()=>{const pl=cp();pl.steps.pop();tools()};
+    if(q('[data-x]'))q('[data-x]').onclick=()=>{delete plans[selG];tools()};
     if(q('[data-f]'))q('[data-f]').onclick=fight;
     toolsEl.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{speed=+b.dataset.s;tools()});
     if(q('[data-r]'))q('[data-r]').onclick=()=>{if(rally(B)){snd(1);say('Ralliement ! Ton armée reprend courage');tools()}};
@@ -307,6 +343,14 @@ const Battle=(()=>{
     if(phase==='place'||!B){for(const u of L.enemy){ctx.fillStyle='rgba(0,0,0,.3)';shapeAt(ctx,u.t,X(u.x)+1,Y(u.y)+1.5,s*T[u.t].r);ctx.fillStyle=COL[1];shapeAt(ctx,u.t,X(u.x),Y(u.y),s*T[u.t].r)}
       const OC=['#4aa8ff','#9fd0ff','#5fd6c2','#5fd6c2','#9a8cff'];
       for(const u of mine){ctx.fillStyle='rgba(0,0,0,.3)';shapeAt(ctx,u.t,X(u.x)+1,Y(u.y)+1.5,s*T[u.t].r);ctx.fillStyle=OC[u.o||0];shapeAt(ctx,u.t,X(u.x),Y(u.y),s*T[u.t].r)}
+      // plans de mission
+      for(const g in plans){const mem=mine.filter(u=>String(u.g)===String(g));const pl=plans[g];if(!mem.length||!pl.steps.length)continue;const sel=String(g)===String(selG);
+        let px=mem.reduce((a,u)=>a+u.x,0)/mem.length,py=mem.reduce((a,u)=>a+u.y,0)/mem.length,n=0;ctx.strokeStyle=sel?'#ffc54d':'rgba(255,197,77,.55)';ctx.lineWidth=sel?2.5:2;ctx.setLineDash(pl.march?[]:[6,5]);
+        const lab=(x,y,t)=>{ctx.font='700 11px Fredoka, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';const w=ctx.measureText(t).width+8;ctx.fillStyle='rgba(20,24,40,.85)';ctx.fillRect(X(x)-w/2,Y(y)-26,w,14);ctx.fillStyle='#ffc54d';ctx.fillText(t,X(x),Y(y)-19)};
+        for(const st of pl.steps){if(st.k==='go'){n++;ctx.beginPath();ctx.moveTo(X(px),Y(py));ctx.lineTo(X(st.x),Y(st.y));ctx.stroke();const a=Math.atan2(st.y-py,st.x-px);ctx.save();ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(X(st.x),Y(st.y));ctx.lineTo(X(st.x)-Math.cos(a-.4)*9,Y(st.y)-Math.sin(a-.4)*9);ctx.moveTo(X(st.x),Y(st.y));ctx.lineTo(X(st.x)-Math.cos(a+.4)*9,Y(st.y)-Math.sin(a+.4)*9);ctx.stroke();
+            ctx.fillStyle=sel?'#ffc54d':'rgba(255,197,77,.75)';ctx.beginPath();ctx.arc(X(st.x),Y(st.y),7,0,7);ctx.fill();ctx.fillStyle='#1a1300';ctx.font='700 10px Fredoka, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(n,X(st.x),Y(st.y)+.5);ctx.restore();px=st.x;py=st.y}
+          else lab(px,py-(st.k==='hold'?0:0),st.k==='wait'?'⏳ '+st.s+' s':'🛡️')}ctx.setLineDash([])}
+      if(planMode&&selG!=null)for(const u of mine)if(String(u.g)===String(selG)){ctx.strokeStyle='#ffc54d';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(X(u.x),Y(u.y),s*T[u.t].r+3,0,7);ctx.stroke()}
       // flèches d'ordres : une par groupe
       const gs={};for(const u of mine)if(u.o>=2)(gs[u.g]||(gs[u.g]=[])).push(u);ctx.strokeStyle='rgba(95,214,194,.7)';ctx.lineWidth=2;ctx.setLineDash([4,4]);
       for(const g in gs){const a=gs[g],cx=a.reduce((x,u)=>x+u.x,0)/a.length,cy=a.reduce((x,u)=>x+u.y,0)/a.length,side=a[0].o===2?6:FW-6;ctx.beginPath();ctx.moveTo(X(cx),Y(cy));ctx.lineTo(X(side),Y(80));ctx.lineTo(X(side),Y(EZ-4));ctx.stroke()}ctx.setLineDash([]);
@@ -335,8 +379,9 @@ const Battle=(()=>{
     notes.forEach(([f,d])=>{const o=AC.createOscillator(),v=AC.createGain(),s=t0+d;o.type=k===2?'sawtooth':'triangle';o.frequency.value=f;v.gain.setValueAtTime(.0001,s);v.gain.exponentialRampToValueAtTime(k===0?.03:.07,s+.01);v.gain.exponentialRampToValueAtTime(.0001,s+.18);o.connect(v).connect(AC.destination);o.start(s);o.stop(s+.22)})}catch(e){}}
   lvlSel.onchange=()=>{const v=lvlSel.value;lvlSel.blur();startLevel(v==='D'?'D':+v)};
   $('#bat-shop').onclick=()=>{if(phase==='fight')return;shop()};
-  function save(){if(phase!=='place'||!mine.length)return null;return{n:cur,units:mine}}
-  function load(o){if(!(o.n==='D'||o.n>=1&&o.n<=unlocked())||!Array.isArray(o.units))return;startLevel(o.n,true);mine=validArmy(o.units);tools()}
+  $('#bat-clear').onclick=()=>{if(phase!=='place')return;if(!mine.length)return;Celebrate.ask('Tout effacer ?','Ton armée et ses plans seront retirés du terrain.','Effacer','Annuler',()=>{mine=[];plans={};selG=null;tools()},null)};
+  function save(){if(phase!=='place'||!mine.length)return null;return{n:cur,units:mine,plans}}
+  function load(o){if(!(o.n==='D'||o.n>=1&&o.n<=unlocked())||!Array.isArray(o.units))return;startLevel(o.n,true);mine=validArmy(o.units);plans=o.plans||{};tools()}
   startLevel(cur);
   return{frame,resize,save,load,pause(){},resume(){},sub:()=>'Niveau '+unlocked()+' · ★ '+prog.stars.reduce((a,b)=>a+(b||0),0)+(prog.daily===dkey()?' · défi ✓':'')}
 })();
