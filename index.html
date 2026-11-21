@@ -71,7 +71,8 @@
 .btools .bt.on{background:#2a4a85;border-color:#4aa8ff}.btools .bt.on small{color:var(--ink)}
 .btools .bfight{flex:1.4;margin:0;background:var(--gold);color:#1a1300;border:0;font-weight:700;font-size:1rem}.btools .bfight:disabled{background:var(--tab);color:var(--muted)}
 .bsum{max-width:94%}.bsum .bst{font-size:2rem;color:var(--gold);letter-spacing:4px}.bsum .bcoin{color:var(--gold);font-weight:700;font-size:1.1rem}.bsum .brow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.bshop{border-collapse:collapse;font-size:.85rem}.bshop td{padding:4px 5px;text-align:left}.bshop .btn{margin:0;padding:6px 9px;font-size:.78rem;background:var(--gold);color:#1a1300;border:0}.bshop .btn:disabled{background:var(--tab);color:var(--muted)}
+.bshop{border-collapse:collapse;font-size:.85rem}.bshop td{padding:4px 5px;text-align:left}.bshop small{display:block;font-size:.68rem;color:var(--muted)}.brep td{text-align:center}.brep td:first-child{text-align:left}.btip{font-size:.85rem;color:var(--ink);text-align:left}
+.bshop .btn{white-space:nowrap;margin:0;padding:6px 9px;font-size:.78rem;background:var(--gold);color:#1a1300;border:0}.bshop .btn:disabled{background:var(--tab);color:var(--muted)}
 .binfo{flex:none;display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--muted)}
 .binfo span.on{color:var(--gold);font-weight:700}
 .bctl{flex:none;display:flex;align-items:center;gap:8px}
@@ -591,7 +592,27 @@ const I18N=(()=>{
     'Interdit : on ne peut pas écarter un roi ni un bout':'Not allowed: you can’t discard a king or an oudler','Écarte d’abord tes cartes de couleur (atouts seulement si nécessaire)':'Discard suit cards first (trumps only if necessary)',
     'Choisis 6 cartes pour ton écart (ni roi, ni bout)':'Pick 6 cards to discard (no kings, no oudlers)','Carte interdite : il faut fournir, couper ou monter':'Not allowed: follow suit, trump or overtrump',
     'Tout le monde passe : on redistribue.':'Everyone passes: redeal.','Partie reprise':'Game resumed','Donnes gagnées comme preneur':'Deals won as taker','Parties gagnées':'Games won','Meilleur score de partie':'Best game score',
-    'Batailles':'Battles','Armée':'Army','Pièces':'Coins','Améliorations':'Upgrades','Soldat':'Soldier','Piquier':'Pikeman','Archer':'Archer','Cavalier':'Horseman',
+    'Batailles':'Battles','Défis du jour gagnés':'Daily challenges won','Bouclier':'Shieldman','Catapulte':'Catapult','Général':'General','Géant':'Giant','Flanc gauche':'Left flank','Flanc droit':'Right flank','Réserve':'Reserve','Dernière':'Last army','Ralliement':'Rally',
+    'polyvalent':'all-rounder','solide, il écrase les cavaliers':'sturdy, crushes horsemen','tire de loin, fragile au contact':'shoots from afar, fragile up close','rapide, charge les archers':'fast, charges archers',
+    'résiste aux flèches et protège ses voisins':'resists arrows and shields neighbours','tir lointain qui touche une zone':'long-range shot hitting an area','renforce les unités proches ; sa mort démoralise':'boosts nearby units; his death demoralises',
+    'Niveau de boss : un Géant ⬟ mène l’armée ennemie !':'Boss level: a Giant ⬟ leads the enemy army!','Défi du jour · déjà gagné aujourd’hui':'Daily challenge · already won today','Défi du jour · récompense : 30 pièces':'Daily challenge · reward: 30 coins',
+    'Gagner en gardant 70 % de ton armée':'Win keeping 70% of your army','Gagner sans cavaliers':'Win without horsemen','Gagner en utilisant au plus 80 % du budget':'Win using at most 80% of the budget',
+    'Gagner en moins de 50 secondes de combat':'Win in under 50 seconds of fighting','Gagner avec ton général encore en vie':'Win with your general still alive',
+    'Les prochaines unités avanceront vers l’ennemi':'Next units will advance on the enemy','Les prochaines unités tiendront leur position jusqu’à l’arrivée de l’ennemi':'Next units will hold their position until the enemy arrives',
+    'Les prochaines unités contourneront par la gauche avant d’attaquer':'Next units will go round the left before attacking','Les prochaines unités contourneront par la droite avant d’attaquer':'Next units will go round the right before attacking',
+    'Les prochaines unités attendront 15 secondes en réserve':'Next units will wait 15 seconds in reserve','Dernière armée replacée (ce qui rentre dans le budget et le terrain)':'Last army placed again (whatever fits the budget and terrain)',
+    'Rien à replacer ici':'Nothing to place here','Ralliement ! Ton armée reprend courage':'Rally! Your army regains courage','Tes pertes':'Your losses','Ennemis tués':'Enemies killed','Rejouer':'Play again',
+    'Le Géant écrase tout au corps à corps : harcèle-le avec archers et catapultes, et retiens-le avec des piquiers.':'The Giant crushes everything in melee: harass him with archers and catapults, and hold him with pikemen.',
+    'Beaucoup de cavaliers en face : place des piquiers devant.':'Lots of horsemen opposite: put pikemen in front.',
+    'Leurs archers te déciment : envoie des cavaliers par un flanc ou avance derrière des boucliers.':'Their archers are cutting you down: send horsemen round a flank or advance behind shieldmen.',
+    'Tes cavaliers s’empalent sur les piquiers : utilise soldats et archers contre eux.':'Your horsemen impale themselves on pikes: use soldiers and archers against them.',
+    'Ton armée a fui : garde ton général près du front, ou utilise le Ralliement 📯 au bon moment.':'Your army fled: keep your general near the front, or use the Rally 📯 at the right moment.',
+    'Essaie de prendre l’ennemi de flanc (ordres ↖️ ↗️) : les attaques de côté et de dos font bien plus mal.':'Try to take the enemy in the flank (orders ↖️ ↗️): attacks from the side and the rear hurt much more.',
+    'Un groupe avance au pas de son unité la plus lente : place tes cavaliers à part pour qu’ils chargent vite.':'A group moves at the pace of its slowest unit: place your horsemen separately so they charge fast.',
+    'Vétérans':'Veterans','· +12 % de vie et de dégâts':'· +12% health and damage','Doctrines':'Doctrines','📯 Recrutement +10 %':'📯 Recruitment +10%',
+    '🥁 Tambours':'🥁 Drums','🐎 Lances de charge':'🐎 Charging lances','🔥 Flèches enflammées':'🔥 Fire arrows','🐢 Tortue':'🐢 Tortoise','⚙️ Ingénieurs':'⚙️ Engineers','🚩 Étendard':'🚩 Standard','📯 Second ralliement':'📯 Second rally',
+    'Les pertes de moral sont réduites d’un tiers':'Morale losses reduced by a third','La charge des cavaliers fait ×2,6 au lieu de ×2':'Horsemen charge deals ×2.6 instead of ×2','Archers +20 % de dégâts':'Archers +20% damage',
+    'Les boucliers protègent plus loin et mieux':'Shieldmen protect further and better','Les catapultes tirent 25 % plus vite':'Catapults fire 25% faster','Aura du général +50 %, ralliement plus long':'General’s aura +50%, longer rally','Deux ralliements par bataille':'Two rallies per battle','Armée':'Army','Pièces':'Coins','Améliorations':'Upgrades','Soldat':'Soldier','Piquier':'Pikeman','Archer':'Archer','Cavalier':'Horseman',
     'Pinceau':'Brush','Ligne':'Line','Carré':'Square','Coin':'Wedge','Gomme':'Eraser','Tenir':'Hold','Avancer':'Advance','Vider':'Clear','Combat !':'Fight!','Abandonner':'Give up',
     'Place ton armée dans la zone bleue, puis lance le combat':'Place your army in the blue zone, then start the fight','Budget épuisé':'Army budget used up','Pas de place ici':'No room here',
     'Place au moins une unité':'Place at least one unit','Victoire !':'Victory!','Défaite':'Defeat','Niveau suivant':'Next level','Réessayer':'Try again',
@@ -654,7 +675,10 @@ const I18N=(()=>{
     [/^Il te manquait (.+)\. On réessaie \?$/g,(m,a)=>'You still needed '+a.replace(/rouges/g,'red').replace(/jaunes/g,'yellow').replace(/verts/g,'green').replace(/bleus/g,'blue').replace(/violets/g,'purple').replace(/ancres?/g,'anchor(s)').replace(/glaces?/g,'ice')+'. Try again?'],
     [/^(\d+) points · record (\d+)\. Une nouvelle partie \?$/g,'$1 points · best $2. A new game?'],[/ · tuile (\d+)/g,' · tile $1'],
     [/^Donne (\d+) sur (\d+)$/g,'Deal $1 of $2'],[/^Nouvelle unité : (\S+)/g,(m,a)=>'New unit: '+(D[a]||a)],[/^Ennemis éliminés : (\d+) % · Armée conservée : (\d+) %$/g,'Enemies defeated: $1% · Army kept: $2%'],
-    [/^Vétérans · /g,'Veterans · '],[/^(\S) (Soldat|Piquier|Archer|Cavalier)/g,(m,a,b)=>a+' '+D[b]],[/^(Soldat|Piquier|Archer|Cavalier) · /g,(m,a)=>D[a]+' · '],[/^niv\. (\d+)$/g,'lvl $1'],[/^(\S+) : (Passe|Petite|Garde sans|Garde contre|Garde)$/g,(m,a,b)=>(a==='Toi'?'You':a)+': '+D[b]],
+    [/^Vétérans · /g,'Veterans · '],[/^Nouvelle unité : (\S+) (\S+) · (.+)$/g,(m,a,b,c)=>'New unit: '+(D[a]||a)+' '+b+' · '+(D[c]||c)],
+    [/^(\S) (Soldat|Piquier|Archer|Cavalier|Bouclier|Catapulte|Général) : (.+)$/g,(m,a,b,c)=>a+' '+D[b]+': '+(D[c]||c)],[/^Défi 🎖 : (.+?)( — (réussi !|déjà obtenu|raté))?$/g,(m,a,b,c)=>'Challenge 🎖: '+(D[a]||a)+(c?' — '+({'réussi !':'done!','déjà obtenu':'already earned','raté':'missed'})[c]:'')],
+    [/^Armée conservée : (\d+) % · (\d+) s( · (\d+) en fuite)?$/g,(m,a,b,c,d)=>'Army kept: '+a+'% · '+b+' s'+(d?' · '+d+' fled':'')],[/^💡 (.+)$/g,(m,a)=>'💡 '+(D[a]||a)],
+    [/📅 Défi du jour/g,'📅 Daily challenge'],[/^⬟ Niveau (\d+)/g,'⬟ Level $1'],[/ · défi ✓/g,' · challenge ✓'],[/^(\S) (Soldat|Piquier|Archer|Cavalier|Bouclier|Catapulte|Général|Géant)$/g,(m,a,b)=>a+' '+D[b]],[/^(\S) (Soldat|Piquier|Archer|Cavalier)/g,(m,a,b)=>a+' '+D[b]],[/^(Soldat|Piquier|Archer|Cavalier|Bouclier|Catapulte|Général) · /g,(m,a)=>D[a]+' · '],[/^niv\. (\d+)$/g,'lvl $1'],[/^(\S+) : (Passe|Petite|Garde sans|Garde contre|Garde)$/g,(m,a,b)=>(a==='Toi'?'You':a)+': '+D[b]],
     [/^(\S+) prend une (Petite|Garde sans|Garde contre|Garde)/g,(m,a,b)=>(a==='Toi'?'You take':a+' takes')+' a '+D[b]],[/ · voici le chien/g,' · here is the kitty'],[/ · le chien reste au preneur/g,' · the kitty goes to the taker'],[/ · le chien va à la défense/g,' · the kitty goes to the defence'],
     [/^Écart fait · à toi de jouer( après les autres)?$/g,(m,a)=>'Discard done · your turn'+(a?' after the others':'')],[/^(\S+) a fait son écart$/g,'$1 has discarded'],
     [/^Poignée (simple|double|triple) \?$/g,(m,a)=>({simple:'Single',double:'Double',triple:'Triple'})[a]+' handful?'],
@@ -2080,7 +2104,7 @@ const Duel=(()=>{
   window._duel={report};
   function summary(){const V=S.v,cv=Object.values(S.cdy);
     return{play:window._play?window._play.export():null,sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
-      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0),yamS:V.yamS||0,yamW:V.yamW||0,motD:V.motD||0,motL:V.motL||0,dot:V.dot||0,dotS:V.dotS||0,fusS:V.fusS||0,fusT:V.fusT||0,tarT:V.tarT||0,tarP:V.tarP||0,tarB:V.tarB||0,batL:V.batL||0,batS:V.batS||0}}
+      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0),yamS:V.yamS||0,yamW:V.yamW||0,motD:V.motD||0,motL:V.motL||0,dot:V.dot||0,dotS:V.dotS||0,fusS:V.fusS||0,fusT:V.fusT||0,tarT:V.tarT||0,tarP:V.tarP||0,tarB:V.tarB||0,batL:V.batL||0,batS:V.batS||0,batD:V.batD||0}}
   const LV4=['Facile','Moyen','Difficile','Expert'];
   const ROWS=[
     ['Bulles',LV4.map((n,i)=>['Record '+n.toLowerCase(),d=>d.bub&&d.bub[i],'hi'])],
@@ -2096,7 +2120,7 @@ const Duel=(()=>{
     ['Points',[['Niveaux réussis',d=>d.dot,'hi'],['Étoiles',d=>d.dotS,'hi']]],
     ['2048',[['Record',d=>d.fusS,'hi'],['Plus grande tuile',d=>d.fusT,'hi']]],
     ['Tarot',[['Donnes gagnées comme preneur',d=>d.tarT,'hi'],['Parties gagnées',d=>d.tarP,'hi'],['Meilleur score de partie',d=>d.tarB,'hi']]],
-    ['Batailles',[['Niveaux réussis',d=>d.batL,'hi'],['Étoiles',d=>d.batS,'hi']]]];
+    ['Batailles',[['Niveaux réussis',d=>d.batL,'hi'],['Étoiles',d=>d.batS,'hi'],['Défis du jour gagnés',d=>d.batD,'hi']]]];
   let remote=store.get('bb.duelCache',{}),status='';
   async function push(){if(!SYNC_URL||!me())return;try{
       await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:SECRET,p:me(),d:summary()})})}catch(e){}}
