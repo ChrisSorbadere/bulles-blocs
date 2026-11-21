@@ -65,6 +65,13 @@
 .tbids .btn:not(.alt):not(:disabled){background:var(--gold);color:#1a1300;border:0}
 .tsum{max-width:94%;max-height:96%;overflow:auto}.tsum table{border-collapse:collapse;width:100%;font-size:.9rem;margin:4px 0}.tsum td{padding:4px 7px;text-align:right}.tsum td:first-child{text-align:left}
 .tsum tr.me{color:var(--gold)}.tsum .tdet{font-size:.78rem}.tsum h2{font-size:1.25rem}
+.btools{flex:none;display:flex;flex-direction:column;gap:5px}.btools .brow{display:flex;gap:5px}
+.btools .bt{flex:1;margin:0;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;font-size:1rem;line-height:1.1}
+.btools .bt b{font-size:1.15rem;color:#4aa8ff}.btools .bt small{font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.btools .bt.on{background:#2a4a85;border-color:#4aa8ff}.btools .bt.on small{color:var(--ink)}
+.btools .bfight{flex:1.4;margin:0;background:var(--gold);color:#1a1300;border:0;font-weight:700;font-size:1rem}.btools .bfight:disabled{background:var(--tab);color:var(--muted)}
+.bsum{max-width:94%}.bsum .bst{font-size:2rem;color:var(--gold);letter-spacing:4px}.bsum .bcoin{color:var(--gold);font-weight:700;font-size:1.1rem}.bsum .brow{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.bshop{border-collapse:collapse;font-size:.85rem}.bshop td{padding:4px 5px;text-align:left}.bshop .btn{margin:0;padding:6px 9px;font-size:.78rem;background:var(--gold);color:#1a1300;border:0}.bshop .btn:disabled{background:var(--tab);color:var(--muted)}
 .binfo{flex:none;display:flex;justify-content:space-between;gap:8px;font-size:.82rem;color:var(--muted)}
 .binfo span.on{color:var(--gold);font-weight:700}
 .bctl{flex:none;display:flex;align-items:center;gap:8px}
@@ -260,6 +267,7 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
       <button class="tile" data-g="dot"><canvas class="ticon" data-i="dot"></canvas><span class="tname">Points</span><span class="tsub" id="sub-dot"></span></button>
       <button class="tile" data-g="fus"><canvas class="ticon" data-i="fus"></canvas><span class="tname">2048</span><span class="tsub" id="sub-fus"></span></button>
       <button class="tile" data-g="tar"><canvas class="ticon" data-i="tar"></canvas><span class="tname">Tarot</span><span class="tsub" id="sub-tar"></span></button>
+      <button class="tile" data-g="bat"><canvas class="ticon" data-i="bat"></canvas><span class="tname">Batailles</span><span class="tsub" id="sub-bat"></span></button>
     </div>
   </section>
 
@@ -464,6 +472,19 @@ body.cele .stage canvas,body.cele .tray,body.cele .over{opacity:0;visibility:hid
     <div class="tpanel" id="tar-panel" hidden></div>
   </section>
 
+  <section id="g-bat" class="game" hidden>
+    <div class="hud">
+      <button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button>
+      <div class="stat"><span class="lbl">Armée</span><span id="bat-bud" class="val">0</span></div>
+      <div class="stat best"><span class="lbl">Pièces</span><span id="bat-coins" class="val">0</span></div>
+      <select id="bat-lvl" class="sel" aria-label="Niveau"></select>
+      <button id="bat-shop" class="btn ico" aria-label="Améliorations" title="Améliorations">🛠️</button>
+    </div>
+    <p class="gstatus" id="bat-msg"></p>
+    <div class="stage" id="bat-stage"><canvas id="bat-cv"></canvas><div class="over" id="bat-ov" hidden></div></div>
+    <div class="btools" id="bat-tools"></div>
+  </section>
+
   <section id="times" class="home" hidden>
     <div class="maphead"><button class="btn ico homeb" aria-label="Accueil" title="Accueil"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5.2v-6.2H9.2V21H4a1 1 0 0 1-1-1z" fill="currentColor"/></svg></button><div class="mtitle">Temps de jeu</div></div>
     <div id="tstats"></div>
@@ -570,6 +591,12 @@ const I18N=(()=>{
     'Interdit : on ne peut pas écarter un roi ni un bout':'Not allowed: you can’t discard a king or an oudler','Écarte d’abord tes cartes de couleur (atouts seulement si nécessaire)':'Discard suit cards first (trumps only if necessary)',
     'Choisis 6 cartes pour ton écart (ni roi, ni bout)':'Pick 6 cards to discard (no kings, no oudlers)','Carte interdite : il faut fournir, couper ou monter':'Not allowed: follow suit, trump or overtrump',
     'Tout le monde passe : on redistribue.':'Everyone passes: redeal.','Partie reprise':'Game resumed','Donnes gagnées comme preneur':'Deals won as taker','Parties gagnées':'Games won','Meilleur score de partie':'Best game score',
+    'Batailles':'Battles','Armée':'Army','Pièces':'Coins','Améliorations':'Upgrades','Soldat':'Soldier','Piquier':'Pikeman','Archer':'Archer','Cavalier':'Horseman',
+    'Pinceau':'Brush','Ligne':'Line','Carré':'Square','Coin':'Wedge','Gomme':'Eraser','Tenir':'Hold','Avancer':'Advance','Vider':'Clear','Combat !':'Fight!','Abandonner':'Give up',
+    'Place ton armée dans la zone bleue, puis lance le combat':'Place your army in the blue zone, then start the fight','Budget épuisé':'Army budget used up','Pas de place ici':'No room here',
+    'Place au moins une unité':'Place at least one unit','Victoire !':'Victory!','Défaite':'Defeat','Niveau suivant':'Next level','Réessayer':'Try again',
+    'Les prochaines unités tiendront leur position jusqu’à l’arrivée de l’ennemi':'Next units will hold their position until the enemy arrives','Les prochaines unités avanceront vers l’ennemi':'Next units will advance on the enemy',
+    'Vétérans : +12 % de vie et de dégâts par niveau · Recrutement : +10 % de budget d’armée':'Veterans: +12% health and damage per level · Recruitment: +10% army budget','📯 Recrutement':'📯 Recruitment',
     'Liste de mots indisponible hors ligne. Ouvre ce jeu une fois avec une connexion.':'Word list unavailable offline. Open this game once with a connection.','Viser à gauche':'Aim left','Zoom automatique':'Auto zoom','Viser à droite':'Aim right'};
   for(const[f,e]of Object.entries(LV)){D['Record '+f]='Best '+e;D['Meilleur temps '+f]='Best time '+e;D['Victoires '+f]='Wins '+e}
   const WORLD={'Vallée des Cœurs':'Heart Valley','Prairie des Étoiles':'Star Meadow','Baie de la Lune':'Moon Bay','Forêt des Feuilles':'Leaf Forest',
@@ -626,7 +653,8 @@ const I18N=(()=>{
     [/^Niveau (\d+) réussi avec (\d+) coups? d’avance\.$/g,(m,a,b)=>'Level '+a+' completed with '+b+' move'+(+b>1?'s':'')+' to spare.'],
     [/^Il te manquait (.+)\. On réessaie \?$/g,(m,a)=>'You still needed '+a.replace(/rouges/g,'red').replace(/jaunes/g,'yellow').replace(/verts/g,'green').replace(/bleus/g,'blue').replace(/violets/g,'purple').replace(/ancres?/g,'anchor(s)').replace(/glaces?/g,'ice')+'. Try again?'],
     [/^(\d+) points · record (\d+)\. Une nouvelle partie \?$/g,'$1 points · best $2. A new game?'],[/ · tuile (\d+)/g,' · tile $1'],
-    [/^Donne (\d+) sur (\d+)$/g,'Deal $1 of $2'],[/^(\S+) : (Passe|Petite|Garde sans|Garde contre|Garde)$/g,(m,a,b)=>(a==='Toi'?'You':a)+': '+D[b]],
+    [/^Donne (\d+) sur (\d+)$/g,'Deal $1 of $2'],[/^Nouvelle unité : (\S+)/g,(m,a)=>'New unit: '+(D[a]||a)],[/^Ennemis éliminés : (\d+) % · Armée conservée : (\d+) %$/g,'Enemies defeated: $1% · Army kept: $2%'],
+    [/^Vétérans · /g,'Veterans · '],[/^(\S) (Soldat|Piquier|Archer|Cavalier)/g,(m,a,b)=>a+' '+D[b]],[/^(Soldat|Piquier|Archer|Cavalier) · /g,(m,a)=>D[a]+' · '],[/^niv\. (\d+)$/g,'lvl $1'],[/^(\S+) : (Passe|Petite|Garde sans|Garde contre|Garde)$/g,(m,a,b)=>(a==='Toi'?'You':a)+': '+D[b]],
     [/^(\S+) prend une (Petite|Garde sans|Garde contre|Garde)/g,(m,a,b)=>(a==='Toi'?'You take':a+' takes')+' a '+D[b]],[/ · voici le chien/g,' · here is the kitty'],[/ · le chien reste au preneur/g,' · the kitty goes to the taker'],[/ · le chien va à la défense/g,' · the kitty goes to the defence'],
     [/^Écart fait · à toi de jouer( après les autres)?$/g,(m,a)=>'Discard done · your turn'+(a?' after the others':'')],[/^(\S+) a fait son écart$/g,'$1 has discarded'],
     [/^Poignée (simple|double|triple) \?$/g,(m,a)=>({simple:'Single',double:'Double',triple:'Triple'})[a]+' handful?'],
@@ -2052,7 +2080,7 @@ const Duel=(()=>{
   window._duel={report};
   function summary(){const V=S.v,cv=Object.values(S.cdy);
     return{play:window._play?window._play.export():null,sid:S.id,wid:store.get('bb.wipe',0),bub:[0,1,2,3].map(l=>V['bub'+l]||0),blkC:V.blkC||0,blkA:S.blkA.length,
-      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0),yamS:V.yamS||0,yamW:V.yamW||0,motD:V.motD||0,motL:V.motL||0,dot:V.dot||0,dotS:V.dotS||0,fusS:V.fusS||0,fusT:V.fusT||0,tarT:V.tarT||0,tarP:V.tarP||0,tarB:V.tarB||0}}
+      cdyL:cv.length,cdyS:cv.reduce((a,b)=>a+b,0),sol:[V.sol1||0,V.sol3||0],sdk:[0,1,2,3].map(l=>V['sdk'+l]||0),mns:[0,1,2].map(l=>V['mns'+l]||0),dam:[0,1,2].map(l=>V['dam'+l]||0),bil:[0,1,2].map(l=>V['bil'+l]||0),yamS:V.yamS||0,yamW:V.yamW||0,motD:V.motD||0,motL:V.motL||0,dot:V.dot||0,dotS:V.dotS||0,fusS:V.fusS||0,fusT:V.fusT||0,tarT:V.tarT||0,tarP:V.tarP||0,tarB:V.tarB||0,batL:V.batL||0,batS:V.batS||0}}
   const LV4=['Facile','Moyen','Difficile','Expert'];
   const ROWS=[
     ['Bulles',LV4.map((n,i)=>['Record '+n.toLowerCase(),d=>d.bub&&d.bub[i],'hi'])],
@@ -2067,7 +2095,8 @@ const Duel=(()=>{
     ['Mots',[['Mots du jour trouvés',d=>d.motD,'hi'],['Mots trouvés en partie libre',d=>d.motL,'hi']]],
     ['Points',[['Niveaux réussis',d=>d.dot,'hi'],['Étoiles',d=>d.dotS,'hi']]],
     ['2048',[['Record',d=>d.fusS,'hi'],['Plus grande tuile',d=>d.fusT,'hi']]],
-    ['Tarot',[['Donnes gagnées comme preneur',d=>d.tarT,'hi'],['Parties gagnées',d=>d.tarP,'hi'],['Meilleur score de partie',d=>d.tarB,'hi']]]];
+    ['Tarot',[['Donnes gagnées comme preneur',d=>d.tarT,'hi'],['Parties gagnées',d=>d.tarP,'hi'],['Meilleur score de partie',d=>d.tarB,'hi']]],
+    ['Batailles',[['Niveaux réussis',d=>d.batL,'hi'],['Étoiles',d=>d.batS,'hi']]]];
   let remote=store.get('bb.duelCache',{}),status='';
   async function push(){if(!SYNC_URL||!me())return;try{
       await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({k:SECRET,p:me(),d:summary()})})}catch(e){}}
@@ -2095,7 +2124,7 @@ const Duel=(()=>{
   async function sync(){await push();await pull()}
   function newRound(){Celebrate.ask('Nouvelle manche ?','Le Duel repart à zéro pour '+me()+' et '+other()+'. Vos records personnels dans les jeux sont conservés.','Commencer','Annuler',async()=>{
       S=empty(Date.now());save();render();await push()},null)}
-  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|damWins|bilWins|yamBest|yamWins|motDay|motStats|dotStars|dotSel|fusBest|fusTop|tarBest|tarWins|season|save)/;
+  const GAME_KEYS=/^bb\.(bubBest|blkBest|advStars|cdyStars|cdyBoost|cdyAward|cdySel|cdyV2|solBest|sdkBest|mnsBest|damWins|bilWins|yamBest|yamWins|motDay|motStats|dotStars|dotSel|fusBest|fusTop|tarBest|tarWins|batProg|batSel|season|save)/;
   async function wipe(wid,mine){
     Object.keys(localStorage).forEach(k=>{if(GAME_KEYS.test(k))try{localStorage.removeItem(k)}catch(e){}});
     store.set('bb.wipe',wid);S=empty(wid);save();if(mine)await push();location.reload()}
@@ -2149,6 +2178,10 @@ const Home=(()=>{
         g.fillStyle=c==='#d6a531'?'#1a1300':'#fff';g.font='700 '+Math.round(s*.62)+'px Fredoka, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(l,x+s/2,y+s/2+1)})},
     dot(g,S){const P=[[.25,.3],[.25,.55],[.5,.55],[.5,.3]],col='#45a6ff';g.strokeStyle=col;g.lineWidth=S*.07;g.lineCap='round';g.lineJoin='round';g.beginPath();P.forEach(([x,y],i)=>i?g.lineTo(S*x,S*y):g.moveTo(S*x,S*y));g.closePath();g.stroke();
       P.forEach(([x,y])=>{g.fillStyle=col;g.beginPath();g.arc(S*x,S*y,S*.08,0,7);g.fill()});[[.75,.3,'#ff5d5d'],[.75,.55,'#ffc23d'],[.25,.8,'#3fcf6e'],[.5,.8,'#b77bff'],[.75,.8,'#ff5d5d']].forEach(([x,y,c])=>{g.fillStyle=c;g.beginPath();g.arc(S*x,S*y,S*.08,0,7);g.fill()})},
+    bat(g,S){g.fillStyle='#22262f';rr(g,S*.1,S*.1,S*.8,S*.8,S*.1);g.fill();
+      for(let r=0;r<3;r++)for(let c=0;c<5;c++){g.fillStyle='#ff5d5d';g.beginPath();g.arc(S*(.26+c*.12),S*(.22+r*.09),S*.035,0,7);g.fill()}
+      for(let r=0;r<2;r++)for(let c=0;c<5;c++){g.fillStyle='#4aa8ff';g.fillRect(S*(.23+c*.12),S*(.6+r*.1),S*.06,S*.06)}
+      g.fillStyle='#4a5048';g.beginPath();g.arc(S*.22,S*.47,S*.06,0,7);g.arc(S*.78,S*.5,S*.05,0,7);g.fill()},
     tar(g,S){const cd=(x,y,r,f)=>{g.save();g.translate(x,y);g.rotate(r);rr(g,-S*.15,-S*.22,S*.3,S*.44,S*.04);g.fillStyle='#fffaf0';g.fill();g.strokeStyle='rgba(0,0,0,.2)';g.lineWidth=1;g.stroke();f();g.restore()};
       g.textAlign='center';g.textBaseline='middle';
       cd(S*.32,S*.52,-.3,()=>{g.fillStyle='#d23a3a';g.font=Math.round(S*.2)+'px sans-serif';g.fillText('♥',0,S*.02)});
@@ -2163,14 +2196,14 @@ const Home=(()=>{
     $('#sub-blk').textContent='Record '+store.get('bb.blkBest',0)+' · aventure niv. '+an;
     $('#sub-cdy').textContent=Candies.sub();
     const d=store.get('bb.solDraw',1),sb=store.get('bb.solBest'+d,0);$('#sub-sol').textContent='Pioche '+d+(sb?' · record '+t(sb):'');
-    $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub();$('#sub-dam').textContent=Dames.sub();$('#sub-bil').textContent=Pool.sub();$('#sub-yam').textContent=Yams.sub();$('#sub-mot').textContent=Words.sub();$('#sub-dot').textContent=Dots.sub();$('#sub-fus').textContent=Fusion.sub();$('#sub-tar').textContent=Tarot.sub()}
+    $('#sub-sdk').textContent=Sudoku.sub();$('#sub-mns').textContent=Mines.sub();$('#sub-dam').textContent=Dames.sub();$('#sub-bil').textContent=Pool.sub();$('#sub-yam').textContent=Yams.sub();$('#sub-mot').textContent=Words.sub();$('#sub-dot').textContent=Dots.sub();$('#sub-fus').textContent=Fusion.sub();$('#sub-tar').textContent=Tarot.sub();$('#sub-bat').textContent=Battle.sub()}
   return{draw,refresh:()=>{draw();subs();$('#who-name').textContent=Duel.me()||'?'}}
 })();
 
 /* ================= TEMPS DE JEU ================= */
 const PlayTime=(()=>{
   const el=$('#ptime');
-  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur',dam:'Dames',bil:'Billard',yam:'Yams',mot:'Mots',dot:'Points',fus:'2048',tar:'Tarot'};
+  const GN={bub:'Bulles',blk:'Blocs',cdy:'Gemmes',sol:'Solitaire',sdk:'Sudoku',mns:'Démineur',dam:'Dames',bil:'Billard',yam:'Yams',mot:'Mots',dot:'Points',fus:'2048',tar:'Tarot',bat:'Batailles'};
   const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   const today=()=>dkey(new Date());
   const parse=s=>{const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
@@ -2265,9 +2298,10 @@ const PlayTime=(()=>{
 <script src="points.js"></script>
 <script src="fusion.js"></script>
 <script src="tarot.js"></script>
+<script src="batailles.js"></script>
 <script>
 /* ================= Navigation ================= */
-const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines,dam:Dames,bil:Pool,yam:Yams,mot:Words,dot:Dots,fus:Fusion,tar:Tarot};
+const GAMES={bub:Bubbles,blk:Blocks,cdy:Candies,sol:Solitaire,sdk:Sudoku,mns:Mines,dam:Dames,bil:Pool,yam:Yams,mot:Words,dot:Dots,fus:Fusion,tar:Tarot,bat:Battle};
 let active='home';
 function show(t){if(t!==active&&GAMES[active]){Saver.one(active);GAMES[active].pause&&GAMES[active].pause()}active=t;store.set('bb.last',GAMES[t]?t:'home');if(GAMES[t]&&GAMES[t].resume)GAMES[t].resume();PlayTime.show(!!GAMES[t]);$('#home').hidden=t!=='home';$('#duel').hidden=t!=='duel';$('#times').hidden=t!=='times';for(const x in GAMES)$('#g-'+x).hidden=t!==x;if(t==='duel'){Duel.open();return}if(t==='times'){PlayTime.open();return}
   for(const x in GAMES)$('#g-'+x).hidden=t!==x;
