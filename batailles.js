@@ -245,7 +245,7 @@ const Battle=(()=>{
     T.slice(0,7).forEach((t,i)=>{const l=prog.vet[i]||0,ok=U>=UNLOCK[i];if(!ok)return;h+=`<tr><td>${t.s} ${t.n}</td><td>${'●'.repeat(l)}${'○'.repeat(3-l)}</td><td>${l<3?`<button class="btn" data-v="${i}"${prog.coins<vetCost(l)?' disabled':''}>${vetCost(l)} 🪙</button>`:'max'}</td></tr>`});
     const bl=prog.bud||0;h+=`<tr><td colspan="3"><b>Armée</b></td></tr><tr><td>📯 Recrutement +10 %</td><td>${'●'.repeat(bl)}${'○'.repeat(3-bl)}</td><td>${bl<3?`<button class="btn" data-b="1"${prog.coins<budCost(bl)?' disabled':''}>${budCost(bl)} 🪙</button>`:'max'}</td></tr>`;
     h+=`<tr><td colspan="3"><b>Doctrines</b></td></tr>`+Object.entries(DOC).map(([k,[ic,nm,ds,c]])=>`<tr><td>${ic} ${nm}<small>${ds}</small></td><td>${prog.doc[k]?'✓':''}</td><td>${prog.doc[k]?'':`<button class="btn" data-d="${k}"${prog.coins<c?' disabled':''}>${c} 🪙</button>`}</td></tr>`).join('');
-    h+=`</table><button class="btn" id="bat-close">Fermer</button></div>`;
+    h+=`</table><div class="brow"><button class="btn" id="bat-close">Fermer</button></div></div>`;
     ov.innerHTML=h;ov.hidden=false;
     ov.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const i=+b.dataset.v,l=prog.vet[i]||0;if(prog.coins<vetCost(l))return;prog.coins-=vetCost(l);prog.vet[i]=l+1;saveProg();snd(1);shop()});
     const bb=ov.querySelector('[data-b]');if(bb)bb.onclick=()=>{const l=prog.bud||0;if(prog.coins<budCost(l))return;prog.coins-=budCost(l);prog.bud=l+1;saveProg();snd(1);shop()};
