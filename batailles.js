@@ -114,10 +114,15 @@ const Battle=(()=>{
       L.waves=[{t:18+Math.floor(R2()*12),flank:sd<50?'gauche':'droit',list:c.map((u,i)=>({t:u.t,x:sd+(sd<50?1:-1)*(i%4)*2.4,y:EZ+8+Math.floor(i/4)*2.6+R2(),o:0}))}]}
     if(!boss&&eq>=10&&env!=='fort'&&mis!=='defend'&&R2()<.4){const cav=pool().filter(u=>u.t===3),grp=cav.length>=4?cav:pool().filter(u=>u.t===0).slice(0,Math.max(5,Math.round(L.enemy.length*.2)));
       if(grp.length){const sx=R2()<.5?7:FW-7,kind=R2()<.6?'flank':'wait';grp.forEach(u=>u.ep=1);L.eplan={kind,steps:kind==='flank'?[{k:'go',x:sx,y:ZY-8},{k:'go',x:sx,y:ZY+16}]:[{k:'wait',s:8+Math.floor(R2()*8)}],march:kind==='flank'}}}
+    // contrainte du niveau (à la TABS)
+    if(!boss&&eq>=6&&R2()<.32&&mis!=='escort'){const tp=types.filter(t=>t<6),opts=['budget','zone','split'];if(tp.length>=3)opts.push('only');const c=pick(opts);
+      if(c==='only'){const a=tp.filter(t=>t!==0).sort(()=>R2()-.5).slice(0,2).sort();L.cons={k:'only',ts:[0,...a].sort()}}else L.cons={k:c};
+      if(c==='budget')L.budget=Math.round(L.budget*.75)}
     // défi du niveau
-    const D=['keep','nocav','budget','time','general'];let d=D[seed%5];if(d==='nocav'&&eq<UNLOCK[3]+1)d='budget';if(d==='general'&&eq<UNLOCK[6]+1)d='time';if(boss||['hill','defend','survive','escort'].includes(mis))d=d==='time'?'keep':d;if(boss)d='keep';L.defi=d;
+    const D=['keep','nocav','budget','time','general'];let d=D[seed%5];if(d==='nocav'&&eq<UNLOCK[3]+1)d='budget';if(d==='general'&&eq<UNLOCK[6]+1)d='time';if(boss||['hill','defend','survive','escort'].includes(mis))d=d==='time'?'keep':d;if(L.cons&&(L.cons.k==='budget'&&d==='budget'||L.cons.k==='only'&&d==='nocav'))d='keep';if(boss)d='keep';L.defi=d;
     return L}
-  function misLine(){const m=MIS[L.mis||'rout'],e=ENV[L.env||'clear'];return m[0]+' '+m[1]+' : '+m[2]+(L.env&&L.env!=='clear'?' · '+e[0]+' '+e[1]+' : '+e[2]:'')}
+  function consTxt(){const c=L.cons;if(!c)return '';return c.k==='budget'?'💰 Budget réduit d’un quart':c.k==='zone'?'📏 Déploiement réduit à l’arrière':c.k==='split'?'↔️ Déploiement sur les deux ailes seulement':'🎯 Seulement '+c.ts.map(t=>T[t].n.toLowerCase()+'s').join(', ')}
+  function misLine(){const m=MIS[L.mis||'rout'],e=ENV[L.env||'clear'];return m[0]+' '+m[1]+' : '+m[2]+(L.env&&L.env!=='clear'?' · '+e[0]+' '+e[1]+' : '+e[2]:'')+(L.cons?' · '+consTxt():'')}
   const DEFI={keep:'Gagner en gardant 70 % de ton armée',nocav:'Gagner sans cavaliers',budget:'Gagner en utilisant au plus 80 % du budget',time:'Gagner en moins de 50 secondes de combat',general:'Gagner avec ton général encore en vie'};
   function levelFor(n){if(n==='D'){const dn=dayNum();return genLevel(100000+dn,14+dn%22,true)}return genLevel(n,n,false)}
   function startLevel(n,keep){cur=n;store.set('bb.batSel',n);L=levelFor(n);phase='place';B=null;ov.hidden=true;erase=false;painting=false;
@@ -131,7 +136,7 @@ const Battle=(()=>{
   const HELP=['polyvalent','solide, il écrase les cavaliers','tire de loin, fragile au contact','rapide, charge les archers','résiste aux flèches et protège ses voisins','tir lointain qui touche une zone','renforce les unités proches ; sa mort démoralise'];
   const budget=()=>Math.round(L.budget*(1+.1*(prog.bud||0)));
   const used=(a=mine)=>a.reduce((s,u)=>s+T[u.t].cost,0);
-  const canUse=t=>(L.daily?L.eq:cur)>=UNLOCK[t]||unlocked()>UNLOCK[t]&&L.daily;
+  const canUse=t=>!(L&&L.cons&&L.cons.k==='only'&&!L.cons.ts.includes(t))&&((L.daily?L.eq:cur)>=UNLOCK[t]||unlocked()>UNLOCK[t]&&L.daily);
 
   /* ---------- Simulation ---------- */
   function inTerrain(list,x,y,k='r'){for(const f of list)if(Math.hypot(x-f.x,y-f.y)<f.r)return f;return null}
@@ -282,7 +287,7 @@ const Battle=(()=>{
     return{win,keep:a.reduce((x,u)=>x+T[u.t].cost,0)/Math.max(1,b.val[0]),kills:1-e.length/Math.max(1,b.start[1]),t:b.t,genAlive:a.some(u=>u.t===6)}}
 
   /* ---------- Placement ---------- */
-  function inZone(x,y,t){const r=T[t].r;if(y<ZY+1||y>FH-2||x<2||x>FW-2)return false;for(const k of L.rocks)if(Math.hypot(x-k.x,y-k.y)<k.r+r+.2)return false;
+  function inZone(x,y,t){const r=T[t].r;if(y<ZY+1||y>FH-2||x<2||x>FW-2)return false;const ck=L.cons&&L.cons.k;if(ck==='zone'&&y<ZY+24)return false;if(ck==='split'&&x>30&&x<70)return false;for(const k of L.rocks)if(Math.hypot(x-k.x,y-k.y)<k.r+r+.2)return false;
     if(inWater(L,x,y))return false;return true}
   const freeAt=(x,y,t,arr=mine)=>arr.every(u=>(u.x-x)**2+(u.y-y)**2>=(T[u.t].r+T[t].r+.3)**2);
   function addUnit(x,y,t=tool,g=gid){if(!canUse(t))return false;if(used()+T[t].cost>budget())return false;if(t===6&&mine.some(u=>u.t===6))return false;
@@ -334,6 +339,8 @@ const Battle=(()=>{
     if(m==='general')out.push('Seul le général compte : envoie des cavaliers le chercher par un flanc avec l’outil 🗺️ Plan.');
     if(m==='cata')out.push('Les catapultes sont loin derrière : contourne la ligne ennemie avec des cavaliers.');
     if(m==='survive')out.push('Inutile de gagner : tiens 60 s. Boucliers et piquiers en ligne serrée, archers derrière.');
+    if(L.cons&&L.cons.k==='budget')out.push('Budget réduit : mise sur des unités rentables et sur le terrain (collines, forêts).');
+    if(L.cons&&(L.cons.k==='zone'||L.cons.k==='split'))out.push('Zone de déploiement réduite : utilise l’outil 🗺️ Plan pour placer tes groupes une fois la bataille lancée.');
     if(L.amb)out.push('Des ennemis se cachaient dans la forêt 🌲 : éclaire le terrain avec quelques soldats avant d’y engager ton armée.');
     if(L.waves&&L.waves[0].flank)out.push('Des renforts arrivent sur un flanc : garde une réserve ⏳ pour les recevoir.');
     if(L.eplan)out.push(L.eplan.kind==='flank'?'L’ennemi tente un contournement : protège tes flancs avec des piquiers.':'L’ennemi garde une réserve qui attaque plus tard : ne t’épuise pas trop vite.');
@@ -377,7 +384,7 @@ const Battle=(()=>{
   function mapView(r){if(phase==='fight')return;r=Math.max(0,r);const base=r*10;let lines='';
     for(let i=0;i<10;i++)for(const j of PRED[i]){const a=POS[j],b=POS[i],ok=won(base+j+1);lines+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${ok?'#ffd27a':'rgba(255,255,255,.25)'}" stroke-width="${ok?4:3}" stroke-dasharray="${ok?'':'6 6'}"/>`}
     let nodes='';for(let i=0;i<10;i++){const n=base+i+1,op=isOpen(n),l=genLevel(n,n,false),st=prog.stars[n-1]||0,[x,y]=POS[i];
-      nodes+=`<button class="bnode${l.boss?' boss':''}${st?' won':''}${n===cur?' cur':''}" style="left:${x}px;top:${y}px" data-n="${n}"${op?'':' disabled'}>${op?(l.boss?'👹':MIS[l.mis][0]):'🔒'}${op&&l.env!=='clear'?`<i>${ENV[l.env][0]}</i>`:''}<b>${n}</b><small>${'★'.repeat(st)}${prog.med[n-1]?'🎖':''}</small></button>`}
+      nodes+=`<button class="bnode${l.boss?' boss':''}${st?' won':''}${n===cur?' cur':''}" style="left:${x}px;top:${y}px" data-n="${n}"${op?'':' disabled'}>${op?(l.boss?'👹':MIS[l.mis][0]):'🔒'}${op&&l.env!=='clear'?`<i>${ENV[l.env][0]}</i>`:''}${op&&l.cons?`<i class="bc">${l.cons.k==='budget'?'💰':l.cons.k==='only'?'🎯':l.cons.k==='zone'?'📏':'↔️'}</i>`:''}<b>${n}</b><small>${'★'.repeat(st)}${prog.med[n-1]?'🎖':''}</small></button>`}
     const nextOk=isOpen(base+11),c=WORLDS[r%5];
     ov.innerHTML=`<div class="card bsum bmapc"><div class="bmh"><button class="btn ico" id="bm-prev"${r?'':' disabled'}>◀</button><h2>${RN(r)}</h2><button class="btn ico" id="bm-next"${nextOk?'':' disabled'}>▶</button></div>
       <div class="bmap" style="background:radial-gradient(circle at 50% 40%,${c[2]},${c[1]})"><svg width="300" height="380">${lines}</svg>${nodes}</div>
@@ -391,7 +398,7 @@ const Battle=(()=>{
         <button class="btn bt${pl&&pl.march?' on':''}" data-mf="1"${selG==null?' disabled':''}>🏃<small>Marche forcée</small></button></div>
         <div class="brow"><button class="btn bt" data-u="1"${has?'':' disabled'}>↩️<small>Retirer</small></button><button class="btn bt" data-x="1"${has?'':' disabled'}>🧹<small>Effacer</small></button><button class="btn bfight" data-done="1">✅ Terminé</button></div>`}
     else if(phase==='place'){const vis=[0,1,2,3,4,5,6].filter(t=>canUse(t)||t===[0,1,2,3,4,5,6].find(x=>!canUse(x)));
-      h+='<div class="brow">'+vis.map(i=>{const t=T[i],ok=canUse(i);return`<button class="btn bt${tool===i&&!erase?' on':''}" data-t="${i}"${ok?'':' disabled'}><b>${t.s}</b><small>${ok?t.n+' · '+t.cost:'niv. '+UNLOCK[i]}</small></button>`}).join('')+'</div>';
+      h+='<div class="brow">'+vis.map(i=>{const t=T[i],ok=canUse(i);return`<button class="btn bt${tool===i&&!erase?' on':''}" data-t="${i}"${ok?'':' disabled'}><b>${t.s}</b><small>${ok?t.n+' · '+t.cost:L.cons&&L.cons.k==='only'&&!L.cons.ts.includes(i)?'🚫 interdit':'niv. '+UNLOCK[i]}</small></button>`}).join('')+'</div>';
       h+=`<div class="brow"><button class="btn bt${mode==='brush'&&!erase?' on':''}" data-m="brush">✏️<small>Pinceau</small></button><button class="btn bt${mode==='block'&&!erase?' on':''}" data-m="block">▦<small>${SHAPES[shape]}</small></button>
         <button class="btn bt${erase?' on':''}" data-e="1">🧽<small>Gomme</small></button><button class="btn bt on2" data-o="1">${ORD[order][0]}<small>${ORD[order][1]}</small></button>
         <button class="btn bt" data-l="1"${prog.lastArmy?'':' disabled'}>↺<small>Dernière</small></button><button class="btn bt${planMode?' on':''}" data-p="1">🗺️<small>Plan</small></button><button class="btn bfight" data-f="1"${mine.length?'':' disabled'}>Combat !</button></div>`}
@@ -473,7 +480,7 @@ const Battle=(()=>{
     const k=DPR();ctx.setTransform(k,0,0,k,0,0);ctx.clearRect(0,0,W,H);if(!L)return;
     let sx=0,sy=0;if(B&&B.shake){sx=(Math.random()-.5)*6*B.shake/.15;sy=(Math.random()-.5)*6*B.shake/.15}ctx.translate(sx,sy);
     if(!bg)drawBg();ctx.drawImage(bg,0,0,W,H);
-    if(phase==='place'){ctx.fillStyle='rgba(74,168,255,.08)';ctx.fillRect(X(0),Y(ZY),FW*sc,(FH-ZY)*sc);ctx.strokeStyle='rgba(74,168,255,.4)';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(X(0),Y(ZY));ctx.lineTo(X(FW),Y(ZY));ctx.stroke();ctx.setLineDash([])}
+    if(phase==='place'){ctx.fillStyle='rgba(74,168,255,.08)';ctx.fillRect(X(0),Y(ZY),FW*sc,(FH-ZY)*sc);const ck=L.cons&&L.cons.k;if(ck==='zone'||ck==='split'){ctx.fillStyle='rgba(255,80,80,.16)';if(ck==='zone')ctx.fillRect(X(0),Y(ZY),FW*sc,24*sc);else ctx.fillRect(X(30),Y(ZY),40*sc,(FH-ZY)*sc)}ctx.strokeStyle='rgba(74,168,255,.4)';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(X(0),Y(ZY));ctx.lineTo(X(FW),Y(ZY));ctx.stroke();ctx.setLineDash([])}
     const s=Math.max(1.8,sc*1.05);
     drawMission();
     if(phase==='place'||!B){const ea=L.env==='night'?.12:L.env==='fog'?.3:1;ctx.globalAlpha=ea;for(const u of L.enemy){if(u.amb)continue;ctx.fillStyle='rgba(0,0,0,.3)';shapeAt(ctx,u.t,X(u.x)+1,Y(u.y)+1.5,s*T[u.t].r);ctx.fillStyle=COL[1];shapeAt(ctx,u.t,X(u.x),Y(u.y),s*T[u.t].r)}ctx.globalAlpha=1;
