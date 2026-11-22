@@ -21,7 +21,7 @@ const Battle=(()=>{
   const WORLDS=[['Plaines','#2a3326','#33402e'],['Forêts','#1f2c22','#28382b'],['Collines','#2f2f26','#3a3a2d'],['Rivières','#22303a','#2b3a44'],['Marches','#2c2a33','#36333f']];
   const PLAYER_BUDGET=n=>Math.round(24+n*4.2);
   // Force de l'armée ennemie par niveau : calée par simulation (un robot joue des dizaines de batailles par niveau)
-  const ENEMY_K={1:0.871,2:0.951,3:0.791,4:0.845,5:1.084,6:0.924,7:0.924,8:0.738,9:0.871,10:0.898,11:1.137,12:0.765,13:0.871,14:0.659,15:0.818,16:0.951,17:0.924,18:1.349,19:0.845,20:0.632,21:1.057,22:0.765,23:0.845,24:1.004,25:1.004,26:1.349,27:0.818,28:1.004,29:0.924,30:0.765,31:1.296,32:0.632,33:0.977,34:0.738,35:0.924,36:1.057,37:0.499,38:1.376,39:0.712,40:1.482};
+  const ENEMY_K={1:0.898,2:0.871,3:0.738,4:0.791,5:1.11,6:0.924,7:0.632,8:0.791,9:0.712,10:1.11,11:1.323,12:0.738,13:0.712,14:0.818,15:0.818,16:0.951,17:1.19,18:1.509,19:0.951,20:0.579,21:0.765,22:0.765,23:1.03,24:1.057,25:0.924,26:1.349,27:0.924,28:1.057,29:0.977,30:0.712,31:1.03,32:0.738,33:0.951,34:0.765,35:0.977,36:0.951,37:1.004,38:1.03,39:0.818,40:1.455,41:1.455,42:0.924,43:0.659,44:1.057,45:1.349};
   const DOC={drums:['🥁','Tambours','Les pertes de moral sont réduites d’un tiers',60],lances:['🐎','Lances de charge','La charge des cavaliers fait ×2,6 au lieu de ×2',50],
     fire:['🔥','Flèches enflammées','Archers +20 % de dégâts',70],tortue:['🐢','Tortue','Les boucliers protègent plus loin et mieux',60],
     eng:['⚙️','Ingénieurs','Les catapultes tirent 25 % plus vite',70],banner:['🚩','Étendard','Aura du général +50 %, ralliement plus long',80],second:['📯','Second ralliement','Deux ralliements par bataille',120]};
@@ -72,7 +72,7 @@ const Battle=(()=>{
     if(mis==='defend'){L.flag={x:50,y:ZY+18};clearAround(50,ZY+18,6)}
     if(mis==='escort'){L.wagon={x:20+R2()*60,y:FH-6};L.rocks=L.rocks.filter(k=>Math.abs(k.x-L.wagon.x)>k.r+4);L.water=L.water.filter(w=>Math.abs(w.x-L.wagon.x)>w.rx+4);if(L.river&&!L.river.br.some(b=>Math.abs(b.x-L.wagon.x)<3))L.river.br.push({x:L.wagon.x,w:9})}
     // armée ennemie
-    const k=ENEMY_K[eq]||(1+Math.min(.3,(eq-40)*.01));let bud=Math.round(PLAYER_BUDGET(eq)*k*(daily?1.05:1)*MK[mis]*EK[env]);
+    const k=ENEMY_K[eq]||(1+Math.min(.3,(eq-45)*.01));let bud=Math.round(PLAYER_BUDGET(eq)*k*(daily?1.05:1)*MK[mis]*EK[env]);
     const add=(t,x,y,o=0)=>{if(bud<T[t].cost||x<2||x>FW-2||y<3)return;for(const r of L.rocks)if(Math.hypot(x-r.x,y-r.y)<r.r+1.3)return;L.enemy.push({t,x,y,o});bud-=T[t].cost};
     const block=(t,cx,cy,n,cols,o=0)=>{const sp=2.6,c=cols||Math.min(16,Math.max(3,Math.ceil(Math.sqrt(n*2.5))));for(let i=0;i<n;i++)add(t,cx+(i%c-(c-1)/2)*sp,cy-Math.floor(i/c)*sp,o)};
     if(boss){const g=Math.max(1,Math.floor(eq/10));for(let i=0;i<g;i++){L.enemy.push({t:7,x:FW/2+(i-(g-1)/2)*16,y:EZ-6,o:0});bud-=T[7].cost*.6}}
