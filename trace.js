@@ -92,6 +92,7 @@ const Trace=(()=>{
   const mul=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
   function build(lv,strokes,q){const w=new P.World({gravity:V(0,-10)}),S={w,lv,R:mul(LV.indexOf(lv)*977+5),t:0,parts:[],spawned:0,sp:[0,0],taps:[lv.tap,lv.tap2].filter(Boolean),glasses:[lv.glass,lv.glass2].filter(Boolean),obs:[],reds:[],rots:[],sees:[],steam:[],res:0,hold:0,met:0,broke:0,rocks:[],rockN:0,q,pcool:new Map(),saws:[]};
     const gnd=w.createBody();
+    if(unlim)seg(gnd,-2,.05,FW+2,.05,.1,{friction:.6});
     (lv.segs||[]).forEach(s=>seg(gnd,...s,TH));(lv.boxes||[]).forEach(([x,y,bw,bh])=>gnd.createFixture(new P.Box(bw/2,bh/2,V(x+bw/2,y+bh/2),0),{friction:.4}));
     if(lv.glass&&!lv.gdyn)glassWalls(lv.glass).forEach(s=>seg(gnd,...s,.12,{friction:.2}));if(lv.glass2)glassWalls(lv.glass2).forEach(s=>seg(gnd,...s,.12,{friction:.2}));
     if(lv.gdyn){const[x,y,gw,gh]=lv.glass,b=w.createBody({type:'dynamic',position:V(x+gw/2,y)}),o={density:1.5,friction:.3,userData:'glass'};
@@ -108,7 +109,7 @@ const Trace=(()=>{
     (lv.obs||[]).forEach(([x,y,r])=>S.obs.push(mk(x,y,r,'obs')));
     if(lv.ball)S.ball=mk(...lv.ball,'ball');if(lv.ball2)S.ball2=mk(...lv.ball2,'ball2');
     if(lv.egg){const b=w.createBody({type:'dynamic',position:V(...lv.egg)});b.createFixture(new P.Circle(.42),{density:1,friction:.9,userData:'egg'});S.egg=b}
-    strokes.forEach((st,si)=>{if(st.length<2)return;const dyn=lv.m==='d'||lv.m==='x'&&si>0;const b=w.createBody({type:dyn?'dynamic':'static'});
+    strokes.forEach((st,si)=>{if(st.length<2)return;const dyn=unlim||lv.m==='d'||lv.m==='x'&&si>0;const b=w.createBody({type:dyn?'dynamic':'static'});
       for(let i=1;i<st.length;i++)seg(b,st[i-1][0],st[i-1][1],st[i][0],st[i][1],.14,{density:1,friction:.5});
       for(const p of st)b.createFixture(new P.Circle(.07,V(p[0],p[1])),{density:1,friction:.5})});
     w.on('begin-contact',c=>{const a=c.getFixtureA().getUserData(),b=c.getFixtureB().getUserData();
@@ -129,13 +130,13 @@ const Trace=(()=>{
     w.step(DT,S.q?4:8,S.q?2:3);
     if(lv.heat)S.parts=S.parts.filter(b=>{const p=b.getPosition();for(const[hx,hy,hw,hh]of lv.heat)if(p.x>hx-.2&&p.x<hx+hw+.2&&p.y>hy-.2&&p.y<hy+hh+.25){w.destroyBody(b);if(S.steam.length<40)S.steam.push([p.x,p.y,0]);return false}return true});
     // résultat
-    if(S.res)return;const k=lv.k;
+    if(S.res)return;const k=lv.k,FL=unlim?.5:-2;
     if(k==='water'){const endT=2.2+2.5;if(S.t>endT&&Math.round(S.t*4)!==Math.round((S.t-DT)*4)){if(fills(S).every(f=>f>=1))S.res=1}
       if(S.t>endT+4)S.res=-1}
-    else if(k==='ball'){const p=S.ball.getPosition(),[x,y,bw,bh]=lv.basket;if(p.x>x&&p.x<x+bw&&p.y>y&&p.y<y+bh){S.hold+=DT;if(S.hold>.5)S.res=1}else S.hold=0;if(p.y<-2||S.t>14)S.res=-1}
-    else if(k==='meet'){if(S.met)S.res=1;else if(S.t>14||S.ball.getPosition().y<-2&&S.ball2.getPosition().y<-2)S.res=-1}
-    else if(k==='clear'){if(S.reds.every(b=>b.getPosition().y<-.5))S.res=1;else if(S.t>14)S.res=-1}
-    else if(k==='star'){const p=S.ball.getPosition(),[sx,sy,sr]=lv.star;if((p.x-sx)**2+(p.y-sy)**2<(sr+lv.ball[2])**2)S.res=1;else if(p.y<-2||S.t>14)S.res=-1}
+    else if(k==='ball'){const p=S.ball.getPosition(),[x,y,bw,bh]=lv.basket;if(p.x>x&&p.x<x+bw&&p.y>y&&p.y<y+bh){S.hold+=DT;if(S.hold>.5)S.res=1}else S.hold=0;if(p.y<FL||S.t>14)S.res=-1}
+    else if(k==='meet'){if(S.met)S.res=1;else if(S.t>14||S.ball.getPosition().y<FL&&S.ball2.getPosition().y<FL)S.res=-1}
+    else if(k==='clear'){if(S.reds.every(b=>b.getPosition().y<(unlim?1.2:-.5)))S.res=1;else if(S.t>14)S.res=-1}
+    else if(k==='star'){const p=S.ball.getPosition(),[sx,sy,sr]=lv.star;if((p.x-sx)**2+(p.y-sy)**2<(sr+lv.ball[2])**2)S.res=1;else if(p.y<FL||S.t>14)S.res=-1}
     else if(k==='stay'){const p=S.ball.getPosition(),[zx,zy,zw,zh]=lv.zone;if(p.x<zx||p.x>zx+zw||p.y<zy||p.y>zy+zh)S.res=-1;else if(S.t>=(lv.T||5))S.res=1}
     else if(k==='protect'){if(S.broke||S.egg.getPosition().y<-1)S.res=-1;else if(S.t>=lv.rocks[3]+1.5)S.res=1}}
   function fillNow(S){return S.lv.k==='water'?Math.min(...fills(S))*.5:0}
@@ -162,7 +163,7 @@ const Trace=(()=>{
   const EX=38,inkMax=()=>unlim?1e9:lv.ink||(SOL[cur]?cur>EX?Math.max(SOL[cur].len*1.7,SOL[cur].len+2.5,4):Math.max(SOL[cur].len*2.2,SOL[cur].len+4,6):9);
   const inkUsed=()=>strokes.reduce((a,s)=>a+inkLen(s),0)+(drawing?inkLen(drawing):0);
   function start(n,keep){cur=n;store.set('bb.trcSel',n);lv=LV[n-1];if(!keep)strokes=[];drawing=null;S=null;phase='draw';ov.hidden=true;hintT=0;
-    say((cur>EX?'Expert · ':'')+objective()+' · '+(lv.m==='d'?'tes traits tombent':lv.m==='x'?'ton 1er trait reste fixe, les suivants tombent':'tes traits restent fixes')+(lv.one?' · un seul trait':''));fillSel();ui();if(!keep)store.set('bb.save.trc',null)}
+    say((cur>EX?'Expert · ':'')+objective()+' · '+(unlim?'encre illimitée : tes traits tombent, un sol est ajouté':lv.m==='d'?'tes traits tombent':lv.m==='x'?'ton 1er trait reste fixe, les suivants tombent':'tes traits restent fixes')+(lv.one?' · un seul trait':''));fillSel();ui();if(!keep)store.set('bb.save.trc',null)}
   function objective(){if(lv.k==='water'&&lv.glass2)return 'Remplis les deux verres';if(lv.k==='water'&&lv.tap[3]!=='water')return KIND2[lv.tap[3]==='bubble'?'water':'sand'];return KIND[lv.k]}
   function say(t){msgEl.textContent=t}
   function ui(){const m=inkMax(),u=inkUsed();$('#trc-inkv').textContent=unlim?'∞':Math.max(0,Math.round((1-u/m)*100))+' %';$('#trc-inkbar').style.width=unlim?'100%':Math.max(0,(1-u/m)*100)+'%';
@@ -193,7 +194,7 @@ const Trace=(()=>{
   goBtn.onclick=()=>{if(phase==='draw')launch();else if(phase==='run'){S=null;phase='draw';ui()}else{ov.hidden=true;S=null;phase='draw';ui()}};
   $('#trc-undo').onclick=()=>{if(phase!=='draw')return;strokes.pop();ui()};
   $('#trc-reset').onclick=()=>start(cur);
-  $('#trc-unl').onclick=()=>{if(phase!=='draw')return;unlim=!unlim;store.set('bb.trcUnlim',unlim);if(!unlim&&inkUsed()>inkMax()){strokes=[];say('Encre limitée : ton dessin dépassait, il a été effacé')}else say(unlim?'Encre illimitée : tu peux dessiner autant que tu veux, mais 1 étoile au plus':'Encre limitée : jusqu’à 3 étoiles selon l’encre utilisée');ui()};
+  $('#trc-unl').onclick=()=>{if(phase!=='draw')return;unlim=!unlim;store.set('bb.trcUnlim',unlim);if(!unlim&&inkUsed()>inkMax()){strokes=[];say('Encre limitée : ton dessin dépassait, il a été effacé')}else say(unlim?'Encre illimitée : tes traits tombent, un sol est ajouté pour construire · 1 étoile au plus':'Encre limitée : jusqu’à 3 étoiles selon l’encre utilisée');ui()};
   $('#trc-hint').onclick=()=>{if(SOL[cur]){hintT=4;say('Indice : un début de solution en pointillés')}else say('Pas d’indice pour ce niveau')};
   lvlSel.onchange=()=>{lvlSel.blur();start(+lvlSel.value)};
 
@@ -216,6 +217,7 @@ const Trace=(()=>{
       ctx.fillStyle='#8a94c8';ctx.fillRect(X(fx),Y(fy+.15),fw*sc,.15*sc)}
     for(const[x1,y1,x2,y2]of lv.portals||[]){for(const[x,y,c]of[[x1,y1,'#ff9a3c'],[x2,y2,'#3cc8ff']]){ctx.strokeStyle=c;ctx.lineWidth=3;ctx.beginPath();ctx.arc(X(x),Y(y),.5*sc,0,7);ctx.stroke();ctx.fillStyle=c+'33';ctx.fill()}}
     ctx.lineCap='round';
+    if(unlim){ctx.fillStyle='#5a4a36';ctx.fillRect(X(0),Y(.1),FW*sc,.12*sc);ctx.fillStyle='#8a7354';ctx.fillRect(X(0),Y(.1),FW*sc,.03*sc)}
     for(const s of lv.segs||[])line(...s,TH*sc,'#c9d1f0');
     for(const[x,y,sw]of lv.springs||[]){ctx.fillStyle='#4fd67a';ctx.fillRect(X(x-sw/2),Y(y+.1),sw*sc,.2*sc);ctx.strokeStyle='#4fd67a';ctx.lineWidth=2;ctx.beginPath();for(let i=0;i<=8;i++){const xx=x-sw/2+sw*i/8;ctx.lineTo(X(xx),Y(y-.15-(i%2)*.25))}ctx.stroke()}
     for(const[hx,hy,hw,hh]of lv.heat||[]){const gr=ctx.createLinearGradient(0,Y(hy+hh),0,Y(hy));gr.addColorStop(0,'#ffb347');gr.addColorStop(1,'#e2462f');ctx.fillStyle=gr;ctx.fillRect(X(hx),Y(hy+hh),hw*sc,hh*sc);
@@ -248,8 +250,8 @@ const Trace=(()=>{
     if(lv.ball)ballAt(lv.ball,S&&S.ball,'#ff5d8a');if(lv.ball2)ballAt(lv.ball2,S&&S.ball2,'#5dd6ff');
     if(lv.egg){const p=S?S.egg.getPosition():{x:lv.egg[0],y:lv.egg[1]};ctx.fillStyle=S&&S.broke?'#ffcc66':'#fff6e0';ctx.beginPath();ctx.ellipse(X(p.x),Y(p.y),.36*sc,.46*sc,0,0,7);ctx.fill()}
     // traits du joueur
-    strokes.forEach((st,i)=>{const dyn=lv.m==='d'||lv.m==='x'&&i>0;if(!S||!dyn)drawStroke(st,dyn?'#ff9a3c':'#7fc4ff')});
-    if(drawing){const dyn=lv.m==='d'||lv.m==='x'&&strokes.length>0;drawStroke(drawing,dyn?'#ffb56b':'#a8d8ff')}
+    strokes.forEach((st,i)=>{const dyn=unlim||lv.m==='d'||lv.m==='x'&&i>0;if(!S||!dyn)drawStroke(st,dyn?'#ff9a3c':'#7fc4ff')});
+    if(drawing){const dyn=unlim||lv.m==='d'||lv.m==='x'&&strokes.length>0;drawStroke(drawing,dyn?'#ffb56b':'#a8d8ff')}
     if(hintT>0&&SOL[cur]){hintT-=dt;ctx.globalAlpha=Math.min(1,hintT);for(const st of SOL[cur].st)drawStroke(st.slice(0,Math.max(2,Math.ceil(st.length*.6))),'#ffc54d',true);ctx.globalAlpha=1}}
   function resize(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;W=w;H=h;sc=Math.min(w/FW,h/FH);ox=(w-FW*sc)/2;oy=(h-FH*sc)/2;
     cv.style.width=W+'px';cv.style.height=H+'px';cv.width=Math.round(W*DPR());cv.height=Math.round(H*DPR())}
