@@ -87,6 +87,11 @@ const Trace=(()=>{
 
   /* ---------- Monde physique ---------- */
   const V=(x,y)=>P.Vec2(x,y);
+  // simplification (Ramer-Douglas-Peucker) des traits mobiles en encre illimitée : moins de calculs, même forme
+  function simplify(pts,eps){if(pts.length<3)return pts;const keep=new Uint8Array(pts.length);keep[0]=keep[pts.length-1]=1;const stack=[[0,pts.length-1]];
+    while(stack.length){const[a,b]=stack.pop();const[ax,ay]=pts[a],[bx,by]=pts[b],dx=bx-ax,dy=by-ay,L=Math.hypot(dx,dy)||1e-9;let md=0,mi=-1;
+      for(let i=a+1;i<b;i++){const d=Math.abs((pts[i][0]-ax)*dy-(pts[i][1]-ay)*dx)/L;if(d>md){md=d;mi=i}}if(md>eps){keep[mi]=1;stack.push([a,mi],[mi,b])}}
+    return pts.filter((_,i)=>keep[i])}
   function seg(body,x1,y1,x2,y2,th,opt){const cx=(x1+x2)/2,cy=(y1+y2)/2,len=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1);body.createFixture(new P.Box(len/2+th/2,th/2,V(cx,cy),a),opt||{friction:.35})}
   function glassWalls(g){const[x,y,w,h,inv]=g;return inv?[[x-.08,y+h,x+w+.08,y+h],[x,y,x,y+h],[x+w,y,x+w,y+h]]:[[x-.08,y,x+w+.08,y],[x,y,x,y+h],[x+w,y,x+w,y+h]]}
   const mul=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
@@ -109,7 +114,7 @@ const Trace=(()=>{
     (lv.obs||[]).forEach(([x,y,r])=>S.obs.push(mk(x,y,r,'obs')));
     if(lv.ball)S.ball=mk(...lv.ball,'ball');if(lv.ball2)S.ball2=mk(...lv.ball2,'ball2');
     if(lv.egg){const b=w.createBody({type:'dynamic',position:V(...lv.egg)});b.createFixture(new P.Circle(.42),{density:1,friction:.9,userData:'egg'});S.egg=b}
-    strokes.forEach((st,si)=>{if(st.length<2)return;const dyn=unlim||lv.m==='d'||lv.m==='x'&&si>0;const b=w.createBody({type:dyn?'dynamic':'static'});
+    strokes.forEach((st,si)=>{if(st.length<2)return;const dyn=unlim||lv.m==='d'||lv.m==='x'&&si>0;const b=w.createBody({type:dyn?'dynamic':'static'});if(dyn&&unlim)st=simplify(st,.06);
       for(let i=1;i<st.length;i++)seg(b,st[i-1][0],st[i-1][1],st[i][0],st[i][1],.14,{density:1,friction:.5});
       for(const p of st)b.createFixture(new P.Circle(.07,V(p[0],p[1])),{density:1,friction:.5})});
     w.on('begin-contact',c=>{const a=c.getFixtureA().getUserData(),b=c.getFixtureB().getUserData();
