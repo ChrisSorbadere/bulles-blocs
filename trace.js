@@ -209,6 +209,14 @@ const Trace=(()=>{
     o.push({k:'ink',v:so.len*1.15+.3,t:'avec très peu d’encre'});
     return o[(n*7)%o.length]}
   const meds=store.get('bb.trcMed',[]);
+  /* ---------- Défi du jour ---------- */
+  const dkey=()=>{const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+  let daily=null;const dayS=()=>{const o=store.get('bb.trcDay',{last:'',n:0,won:''});const y=new Date(Date.now()-864e5),yk=y.getFullYear()+'-'+(y.getMonth()+1)+'-'+y.getDate();if(o.last!==dkey()&&o.last!==yk)o.n=0;return o};
+  function dailyPick(){const k=dkey();let o=store.get('bb.trcDaily',null);if(o&&o.d===k)return o;
+    const open=LV.map((_,i)=>i+1).filter(n=>lvOpen(n)&&SOL[n]);let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))>>>0;const n=open[h%open.length]||1,so=SOL[n],l=LV[n-1],c=[{k:'ink',t:'encre réduite de moitié'}];
+    if(so.st.length===1&&!l.one)c.push({k:'one',t:'un seul trait'});if(['ball','meet','star','clear','pop'].includes(l.k)&&TM[n])c.push({k:'fast',v:Math.ceil((TM[n]*1.25+.5)*2)/2,t:'chrono'});
+    const cc=c[(h>>>8)%c.length];if(cc.k==='fast')cc.t='en moins de '+String(cc.v).replace('.',',')+' s';o={d:k,n,c:cc};store.set('bb.trcDaily',o);return o}
+  function startDaily(){const o=dailyPick();start(o.n,false,o.c)}
   /* ---------- Mondes ---------- */
   const R=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
   const WORLDS=[
@@ -227,22 +235,23 @@ const Trace=(()=>{
   const unlocked=()=>LV.length;
   let pins=[],pinMode=false,cur=store.get('bb.trcSel',1);if(!(cur>=1&&cur<=LV.length&&lvOpen(cur)))cur=1;let lv=null,strokes=[],drawing=null,S=null,phase='draw',W=300,H=300,sc=20,ox=0,oy=0,acc=0,hintT=0,ready=false;
   let unlim=!!store.get('bb.trcUnlim',false);
-  const EX=38,inkMax=()=>unlim?1e9:lv.ink||(SOL[cur]?cur>EX&&cur<=68?Math.max(SOL[cur].len*1.7,SOL[cur].len+2.5,4):Math.max(SOL[cur].len*2.2,SOL[cur].len+4,6):9);
+  const EX=38,inkMax=()=>unlim?1e9:daily&&daily.k==='ink'&&SOL[cur]?Math.max(SOL[cur].len*1.25,SOL[cur].len+1):lv.ink||(SOL[cur]?cur>EX&&cur<=68?Math.max(SOL[cur].len*1.7,SOL[cur].len+2.5,4):Math.max(SOL[cur].len*2.2,SOL[cur].len+4,6):9);
   const inkUsed=()=>strokes.reduce((a,s)=>a+inkLen(s),0)+(drawing?inkLen(drawing):0);
-  function start(n,keep){cur=n;store.set('bb.trcSel',n);lv=LV[n-1];if(!keep){strokes=[];pins=[]}pinMode=false;drawing=null;S=null;phase='draw';ov.hidden=true;hintT=0;
-    const wi=worldOf(cur);say(objective()+' · '+(unlim?'encre illimitée : tes traits tombent, un sol est ajouté':lv.m==='d'?'tes traits tombent':lv.m==='x'?'ton 1er trait reste fixe, les suivants tombent':'tes traits restent fixes')+(lv.one?' · un seul trait':'')+(lv.pins?' · '+lv.pins+' punaise'+(lv.pins>1?'s':'')+' 📌':'')+(defi(cur)?' · 🎖 '+defi(cur).t+(meds[cur-1]?' ✓':''):''));fillSel();ui();
+  function start(n,keep,dc){daily=dc||null;unlim=daily?false:!!store.get('bb.trcUnlim',false);cur=n;if(!daily)store.set('bb.trcSel',n);lv=LV[n-1];if(!keep){strokes=[];pins=[]}pinMode=false;drawing=null;S=null;phase='draw';ov.hidden=true;hintT=0;
+    const wi=worldOf(cur);if(daily){say('📅 Défi du jour : '+objective()+' · '+daily.t+(dayS().won===dkey()?' ✓ déjà réussi':''));fillSel();ui();return}say(objective()+' · '+(unlim?'encre illimitée : tes traits tombent, un sol est ajouté':lv.m==='d'?'tes traits tombent':lv.m==='x'?'ton 1er trait reste fixe, les suivants tombent':'tes traits restent fixes')+(lv.one?' · un seul trait':'')+(lv.pins?' · '+lv.pins+' punaise'+(lv.pins>1?'s':'')+' 📌':'')+(defi(cur)?' · 🎖 '+defi(cur).t+(meds[cur-1]?' ✓':''):''));fillSel();ui();
     const tk='bb.trcTip'+wi;if(wi>=0&&!store.get(tk,false)&&WORLDS[wi].lv[0]===cur){store.set(tk,true);ov.innerHTML=`<div class="card bsum"><h2>${WORLDS[wi].e} ${WORLDS[wi].n}</h2><p>${WORLDS[wi].tip}</p><div class="brow"><button class="btn" id="trc-tipok">C’est parti !</button></div></div>`;ov.hidden=false;$('#trc-tipok').onclick=()=>{ov.hidden=true}}if(!keep)store.set('bb.save.trc',null)}
   function objective(){if(lv.k==='water'&&lv.glass2)return 'Remplis les deux verres';if(lv.k==='water'&&lv.tap[3]!=='water')return KIND2[lv.tap[3]==='bubble'?'water':'sand'];return KIND[lv.k]}
   function say(t){msgEl.textContent=t}
   function ui(){const m=inkMax(),u=inkUsed();$('#trc-inkv').textContent=unlim?'∞':Math.max(0,Math.round((1-u/m)*100))+' %';$('#trc-inkbar').style.width=unlim?'100%':Math.max(0,(1-u/m)*100)+'%';
     const ub=$('#trc-unl');ub.textContent=unlim?'♾️':'🖋️';ub.classList.toggle('on',unlim);ub.title=unlim?'Encre illimitée (1 étoile max)':'Encre limitée';
-    const pb=$('#trc-pin');pb.hidden=!lv.pins;pb.textContent='📌'+(lv.pins?Math.max(0,lv.pins-pins.length):'');pb.classList.toggle('on',pinMode);
+    $('#trc-unl').disabled=!!daily;const pb=$('#trc-pin');pb.hidden=!lv.pins;pb.textContent='📌'+(lv.pins?Math.max(0,lv.pins-pins.length):'');pb.classList.toggle('on',pinMode);
     goBtn.textContent=phase==='draw'?'▶ Lancer':phase==='run'?'⏹ Arrêter':'↻ Recommencer';goBtn.disabled=phase==='draw'&&!strokes.length&&lv.k!=='meet'}
-  function fillSel(){const wi=worldOf(cur);lvlSel.textContent=wi<0?'Niveau '+cur:WORLDS[wi].e+' '+(WORLDS[wi].lv.indexOf(cur)+1)}
+  function fillSel(){const wi=worldOf(cur);lvlSel.textContent=daily?'📅':wi<0?'Niveau '+cur:WORLDS[wi].e+' '+(WORLDS[wi].lv.indexOf(cur)+1)}
   function worldsView(){if(phase==='run')return;let h='<div class="card bsum twv"><h2>Mondes</h2><div class="twg">';
     WORLDS.forEach((w,i)=>{const op=wOpen(i),got=w.lv.reduce((a,n)=>a+(stars[n-1]||0),0),dn=w.lv.filter(n=>stars[n-1]).length,md=w.lv.filter(n=>meds[n-1]).length;
       h+=`<button class="twc tw${i}${op?'':' lock'}" data-w="${i}"${op?'':' disabled'}><span class="twe">${op?w.e:'🔒'}</span><b>${w.n}</b><small>${op?dn+'/'+w.lv.length+' · ★ '+got+(md?' · 🎖 '+md:''):'Réussis '+w.req+' niveaux'}</small></button>`});
-    h+='</div><div class="brow"><button class="btn alt" id="trc-wclose">Fermer</button></div></div>';ov.innerHTML=h;ov.hidden=false;
+    const dp=dailyPick(),ds=dayS(),dw=ds.won===dkey();h+=`</div><button class="twc tw5 twd" id="trc-daily"><span class="twe">📅</span><b>Défi du jour${dw?' ✓':''}</b><small>${dw?'Reviens demain':'Niveau surprise · '+dp.c.t}${ds.n?' · 🔥 '+ds.n:''}</small></button>`;
+    h+='<div class="brow"><button class="btn alt" id="trc-wclose">Fermer</button></div></div>';ov.innerHTML=h;ov.hidden=false;$('#trc-daily').onclick=startDaily;
     ov.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>levelsView(+b.dataset.w));$('#trc-wclose').onclick=()=>{ov.hidden=true}}
   function levelsView(wi){const w=WORLDS[wi];let h=`<div class="card bsum twv"><h2>${w.e} ${w.n}</h2><div class="tlg">`;
     w.lv.forEach((n,i)=>{const op=lvOpen(n),st=stars[n-1]||0;h+=`<button class="tlc${n===cur?' cur':''}${st?' ok':''}" data-n="${n}"${op?'':' disabled'}><b>${op?i+1:'🔒'}</b><small>${st?'★'.repeat(st):op?'·':''}${meds[n-1]?'🎖':''}</small></button>`});
@@ -253,15 +262,17 @@ const Trace=(()=>{
   function finish(win){phase='end';ui();
     if(win){const used=inkUsed(),best=SOL[cur]?SOL[cur].len:used,st=unlim?1:used<=Math.max(best*1.6,best+1.5)?3:used<=best*2.6+1?2:1,old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.trcStars',stars)}
       const df=defi(cur),ns=strokes.filter(x=>x.length>1).length,dOk=!!df&&!unlim&&(df.k==='one'?ns===1:df.k==='fast'?S&&S.t<=df.v:df.k==='few'?ns<=df.v:used<=df.v),dNew=dOk&&!meds[cur-1];if(dNew){meds[cur-1]=1;store.set('bb.trcMed',meds)}
+      let yTxt='';if(daily){const ok=daily.k!=='fast'||S&&S.t<=daily.v,ds=dayS();if(ok&&ds.won!==dkey()){ds.n++;ds.last=dkey();ds.won=dkey();store.set('bb.trcDay',ds);window._duel&&window._duel.report('trcD',1,'inc')}
+        yTxt=`<p class="tdet">📅 Défi du jour ${ok?'réussi ! 🔥 '+dayS().n+' jour'+(dayS().n>1?'s':'')+' de suite':'raté : '+daily.t}</p>`}
       const dTxt=df?`<p class="tdet">🎖 Défi : ${df.t} — ${dOk?(dNew?'réussi !':'réussi'):meds[cur-1]?'déjà obtenu':unlim?'pas en encre illimitée':'raté'}</p>`:'';
       window._duel&&window._duel.report('trcL',done(),'hi');window._duel&&window._duel.report('trcS',stars.reduce((a,b)=>a+(b||0),0),'hi');
       store.set('bb.save.trc',null);snd(1);
-      Celebrate.run(st===3||dNew?'fireworks':'confetti',dNew?'Défi 🎖 réussi !':'Réussi !',()=>{ov.innerHTML=`<div class="card bsum"><h2>Réussi !</h2><div class="bst">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><p>${unlim?'Encre illimitée : 1 étoile au plus. Rejoue en encre limitée 🖋️ pour en gagner 3.':'Encre utilisée : '+Math.round(used/inkMax()*100)+' %'+(st<3?' · moins d’encre pour plus d’étoiles':'')}</p>${dTxt}
-        <div class="brow">${nextOf(cur)?'<button class="btn" id="trc-next">Niveau suivant</button>':'<button class="btn" id="trc-next">Mondes</button>'}<button class="btn alt" id="trc-again">Rejouer</button></div></div>`;ov.hidden=false;
-        const nx=$('#trc-next'),nn=nextOf(cur);if(nx)nx.onclick=()=>nn?start(nn):worldsView();$('#trc-again').onclick=()=>start(cur)})}
+      Celebrate.run(st===3||dNew?'fireworks':'confetti',dNew?'Défi 🎖 réussi !':'Réussi !',()=>{ov.innerHTML=`<div class="card bsum"><h2>Réussi !</h2><div class="bst">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><p>${unlim?'Encre illimitée : 1 étoile au plus. Rejoue en encre limitée 🖋️ pour en gagner 3.':'Encre utilisée : '+Math.round(used/inkMax()*100)+' %'+(st<3?' · moins d’encre pour plus d’étoiles':'')}</p>${yTxt}${dTxt}
+        <div class="brow">${nextOf(cur)&&!daily?'<button class="btn" id="trc-next">Niveau suivant</button>':'<button class="btn" id="trc-next">Mondes</button>'}<button class="btn alt" id="trc-again">Rejouer</button></div></div>`;ov.hidden=false;
+        const nx=$('#trc-next'),nn=daily?0:nextOf(cur);if(nx)nx.onclick=()=>nn?start(nn):worldsView();$('#trc-again').onclick=()=>start(cur,false,daily)})}
     else{snd(2);ov.innerHTML=`<div class="card bsum"><h2>Raté…</h2><p>${lv.k==='water'?(lv.glass2?'Les verres ne sont pas assez remplis.':'Le verre n’est pas assez rempli.'):lv.k==='clear'?'Il reste des blocs rouges.':lv.k==='pop'?'Il reste des ballons.':lv.k==='star'?'La balle n’a pas atteint l’étoile.':lv.k==='stay'?'La balle est sortie de la zone.':lv.k==='protect'?'L’œuf s’est cassé !':lv.k==='meet'?'Les balles ne se sont pas touchées.':'La balle n’est pas dans le panier.'}</p>
       <div class="brow"><button class="btn" id="trc-retry">Modifier mon dessin</button><button class="btn alt" id="trc-clear">Tout effacer</button></div></div>`;ov.hidden=false;
-      $('#trc-retry').onclick=()=>{ov.hidden=true;S=null;phase='draw';ui()};$('#trc-clear').onclick=()=>start(cur)}}
+      $('#trc-retry').onclick=()=>{ov.hidden=true;S=null;phase='draw';ui()};$('#trc-clear').onclick=()=>start(cur,false,daily)}}
 
   /* ---------- Entrées ---------- */
   const toW=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left-ox)/sc,FH-(e.clientY-r.top-oy)/sc]};
@@ -270,7 +281,7 @@ const Trace=(()=>{
       if(pins.length>=lv.pins){say('Plus de punaise : touche une punaise pour la retirer');return}
       let best=null,bd=.36;for(const st of strokes)for(let i=1;i<st.length;i++){const d=dseg([x,y],st[i-1],st[i]);if(d<bd){bd=d;const a=st[i-1],b=st[i],dx=b[0]-a[0],dy=b[1]-a[1],L=dx*dx+dy*dy||1e-9,t=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/L));best=[a[0]+t*dx,a[1]+t*dy]}}
       if(!best){say('Pose la punaise sur un de tes traits');return}pins.push([Math.round(best[0]*100)/100,Math.round(best[1]*100)/100]);snd(0);ui();
-      if(pins.length>=lv.pins){pinMode=false;say(objective()+' · lance quand tu es prêt');ui()}return}if(lv.one&&strokes.length){say('Un seul trait sur ce niveau : efface-le ↶ pour recommencer');return}if(inkUsed()>=inkMax()-.05){say('Plus d’encre : efface un trait ↶');return}
+      if(pins.length>=lv.pins){pinMode=false;say(objective()+' · lance quand tu es prêt');ui()}return}if((lv.one||daily&&daily.k==='one')&&strokes.length){say('Un seul trait sur ce niveau : efface-le ↶ pour recommencer');return}if(inkUsed()>=inkMax()-.05){say('Plus d’encre : efface un trait ↶');return}
     if(!okPoint(lv,x,y)){say('On ne peut pas dessiner ici');return}cv.setPointerCapture(e.pointerId);drawing=[[x,y]];snd(3)});
   cv.addEventListener('pointermove',e=>{if(!drawing)return;const[x,y]=toW(e),l=drawing[drawing.length-1],d=Math.hypot(x-l[0],y-l[1]);if(d<.18)return;
     const left=inkMax()-inkUsed();if(left<=0)return;let px=x,py=y;if(d>left){px=l[0]+(x-l[0])*left/d;py=l[1]+(y-l[1])*left/d}
@@ -280,7 +291,7 @@ const Trace=(()=>{
   goBtn.onclick=()=>{if(phase==='draw')launch();else if(phase==='run'){S=null;phase='draw';ui()}else{ov.hidden=true;S=null;phase='draw';ui()}};
   $('#trc-undo').onclick=()=>{if(phase!=='draw')return;if(pinMode&&pins.length){pins.pop();ui();return}const st=strokes.pop();if(st)pins=pins.filter(p=>strokes.some(s=>s.some((q,i)=>i&&dseg(p,s[i-1],q)<.2025)));ui()};
   $('#trc-pin').onclick=()=>{if(phase!=='draw'||!lv.pins)return;if(!pinMode&&!strokes.length){say('Dessine d’abord un trait, puis plante la punaise dessus');return}pinMode=!pinMode;say(pinMode?'Touche un de tes traits pour y planter une punaise (touche une punaise pour l’enlever)':objective());ui()};
-  $('#trc-reset').onclick=()=>start(cur);
+  $('#trc-reset').onclick=()=>start(cur,false,daily);
   $('#trc-unl').onclick=()=>{if(phase!=='draw')return;unlim=!unlim;store.set('bb.trcUnlim',unlim);if(!unlim&&inkUsed()>inkMax()){strokes=[];say('Encre limitée : ton dessin dépassait, il a été effacé')}else say(unlim?'Encre illimitée : tes traits tombent, un sol est ajouté pour construire · 1 étoile au plus':'Encre limitée : jusqu’à 3 étoiles selon l’encre utilisée');ui()};
   $('#trc-hint').onclick=()=>{if(SOL[cur]){hintT=4;say('Indice : un début de solution en pointillés')}else say('Pas d’indice pour ce niveau')};
   lvlSel.onclick=()=>{if(phase==='run')return;levelsView(Math.max(0,worldOf(cur)))};
@@ -382,5 +393,5 @@ const Trace=(()=>{
   start(cur);
   return{frame,resize,save,load,pause(){},resume(){},
     enter(){loadLib().then(()=>{if(pend){start(pend.n,true);strokes=pend.strokes;pins=pend.pins||[];pend=null;ui()}}).catch(()=>say('Moteur physique indisponible hors ligne : ouvre ce jeu une fois avec une connexion.'))},
-    sub:()=>done()+' niveaux · ★ '+stars.reduce((a,b)=>a+(b||0),0)+(meds.filter(Boolean).length?' · 🎖 '+meds.filter(Boolean).length:'')}
+    sub:()=>done()+' niveaux · ★ '+stars.reduce((a,b)=>a+(b||0),0)+(meds.filter(Boolean).length?' · 🎖 '+meds.filter(Boolean).length:'')+(dayS().won===dkey()?' · 📅 ✓':'')}
 })();
