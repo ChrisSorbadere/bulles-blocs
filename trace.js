@@ -199,6 +199,16 @@ const Trace=(()=>{
     for(const[bx,by,bw,bh]of[...(lv.reds||[]),...(lv.heat||[]),...(lv.door||[])])if(x>bx-.15&&x<bx+bw+.15&&y>by-.15&&y<by+bh+.15)return false;
     return true}
 
+  /* ---------- Défis 🎖 ---------- */
+  // temps de la solution de référence (s), pour le défi « rapide »
+  const TM={1:4.88,2:4.88,3:3.73,4:8.13,5:2.95,6:4.88,7:5.52,8:4.07,9:8.13,10:4.88,11:6.3,12:4.05,13:4.88,14:6.02,15:4.92,16:4.88,17:11.5,18:7.88,19:11.03,20:4.88,21:6.52,22:3.67,23:4.88,24:2,25:4.88,26:2.87,27:6.52,28:4.88,29:4.93,30:5.88,31:2.72,32:4.88,33:7.52,34:9.72,35:6.48,36:4.88,37:6.52,38:4.88,39:4.88,40:5.33,41:4.88,42:3.63,43:5.02,44:4.88,45:8.13,46:5.02,47:6.63,48:4.88,49:4.88,50:8.13,51:4.08,52:2.05,53:4.88,54:4.88,55:5.02,56:2.28,57:6.13,58:5.02,59:5.88,60:4.4,61:6.52,62:4.88,63:4.03,64:5.02,65:4.88,66:2.7,67:3.88,68:4.88,69:3.38,70:5.1,71:4.98,72:2.55,73:2.67,74:6.02,75:4.67,76:2.17,77:4.38,78:3.45,79:4.43,80:4.97,81:2.62,82:3.9,83:3.05,84:3.6,85:4.53,86:5.63,87:2.7,88:5.53};
+  function defi(n){const l=LV[n-1],so=SOL[n];if(!so)return null;const o=[];
+    if(so.st.length===1&&!l.one&&so.len>3)o.push({k:'one',t:'en un seul trait'});
+    if(['ball','meet','star','clear','pop'].includes(l.k)&&TM[n]){const x=Math.ceil((TM[n]*1.3+.6)*2)/2;o.push({k:'fast',v:x,t:'en moins de '+String(x).replace('.',',')+' s'})}
+    if(so.st.length>=2&&so.st.length<=3)o.push({k:'few',v:so.st.length,t:'en '+so.st.length+' traits au plus'});
+    o.push({k:'ink',v:so.len*1.15+.3,t:'avec très peu d’encre'});
+    return o[(n*7)%o.length]}
+  const meds=store.get('bb.trcMed',[]);
   /* ---------- Mondes ---------- */
   const R=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
   const WORLDS=[
@@ -220,7 +230,7 @@ const Trace=(()=>{
   const EX=38,inkMax=()=>unlim?1e9:lv.ink||(SOL[cur]?cur>EX&&cur<=68?Math.max(SOL[cur].len*1.7,SOL[cur].len+2.5,4):Math.max(SOL[cur].len*2.2,SOL[cur].len+4,6):9);
   const inkUsed=()=>strokes.reduce((a,s)=>a+inkLen(s),0)+(drawing?inkLen(drawing):0);
   function start(n,keep){cur=n;store.set('bb.trcSel',n);lv=LV[n-1];if(!keep){strokes=[];pins=[]}pinMode=false;drawing=null;S=null;phase='draw';ov.hidden=true;hintT=0;
-    const wi=worldOf(cur);say(objective()+' · '+(unlim?'encre illimitée : tes traits tombent, un sol est ajouté':lv.m==='d'?'tes traits tombent':lv.m==='x'?'ton 1er trait reste fixe, les suivants tombent':'tes traits restent fixes')+(lv.one?' · un seul trait':'')+(lv.pins?' · '+lv.pins+' punaise'+(lv.pins>1?'s':'')+' 📌':''));fillSel();ui();
+    const wi=worldOf(cur);say(objective()+' · '+(unlim?'encre illimitée : tes traits tombent, un sol est ajouté':lv.m==='d'?'tes traits tombent':lv.m==='x'?'ton 1er trait reste fixe, les suivants tombent':'tes traits restent fixes')+(lv.one?' · un seul trait':'')+(lv.pins?' · '+lv.pins+' punaise'+(lv.pins>1?'s':'')+' 📌':'')+(defi(cur)?' · 🎖 '+defi(cur).t+(meds[cur-1]?' ✓':''):''));fillSel();ui();
     const tk='bb.trcTip'+wi;if(wi>=0&&!store.get(tk,false)&&WORLDS[wi].lv[0]===cur){store.set(tk,true);ov.innerHTML=`<div class="card bsum"><h2>${WORLDS[wi].e} ${WORLDS[wi].n}</h2><p>${WORLDS[wi].tip}</p><div class="brow"><button class="btn" id="trc-tipok">C’est parti !</button></div></div>`;ov.hidden=false;$('#trc-tipok').onclick=()=>{ov.hidden=true}}if(!keep)store.set('bb.save.trc',null)}
   function objective(){if(lv.k==='water'&&lv.glass2)return 'Remplis les deux verres';if(lv.k==='water'&&lv.tap[3]!=='water')return KIND2[lv.tap[3]==='bubble'?'water':'sand'];return KIND[lv.k]}
   function say(t){msgEl.textContent=t}
@@ -230,21 +240,23 @@ const Trace=(()=>{
     goBtn.textContent=phase==='draw'?'▶ Lancer':phase==='run'?'⏹ Arrêter':'↻ Recommencer';goBtn.disabled=phase==='draw'&&!strokes.length&&lv.k!=='meet'}
   function fillSel(){const wi=worldOf(cur);lvlSel.textContent=wi<0?'Niveau '+cur:WORLDS[wi].e+' '+(WORLDS[wi].lv.indexOf(cur)+1)}
   function worldsView(){if(phase==='run')return;let h='<div class="card bsum twv"><h2>Mondes</h2><div class="twg">';
-    WORLDS.forEach((w,i)=>{const op=wOpen(i),got=w.lv.reduce((a,n)=>a+(stars[n-1]||0),0),dn=w.lv.filter(n=>stars[n-1]).length;
-      h+=`<button class="twc tw${i}${op?'':' lock'}" data-w="${i}"${op?'':' disabled'}><span class="twe">${op?w.e:'🔒'}</span><b>${w.n}</b><small>${op?dn+'/'+w.lv.length+' · ★ '+got:'Réussis '+w.req+' niveaux'}</small></button>`});
+    WORLDS.forEach((w,i)=>{const op=wOpen(i),got=w.lv.reduce((a,n)=>a+(stars[n-1]||0),0),dn=w.lv.filter(n=>stars[n-1]).length,md=w.lv.filter(n=>meds[n-1]).length;
+      h+=`<button class="twc tw${i}${op?'':' lock'}" data-w="${i}"${op?'':' disabled'}><span class="twe">${op?w.e:'🔒'}</span><b>${w.n}</b><small>${op?dn+'/'+w.lv.length+' · ★ '+got+(md?' · 🎖 '+md:''):'Réussis '+w.req+' niveaux'}</small></button>`});
     h+='</div><div class="brow"><button class="btn alt" id="trc-wclose">Fermer</button></div></div>';ov.innerHTML=h;ov.hidden=false;
     ov.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>levelsView(+b.dataset.w));$('#trc-wclose').onclick=()=>{ov.hidden=true}}
   function levelsView(wi){const w=WORLDS[wi];let h=`<div class="card bsum twv"><h2>${w.e} ${w.n}</h2><div class="tlg">`;
-    w.lv.forEach((n,i)=>{const op=lvOpen(n),st=stars[n-1]||0;h+=`<button class="tlc${n===cur?' cur':''}${st?' ok':''}" data-n="${n}"${op?'':' disabled'}><b>${op?i+1:'🔒'}</b><small>${st?'★'.repeat(st):op?'·':''}</small></button>`});
+    w.lv.forEach((n,i)=>{const op=lvOpen(n),st=stars[n-1]||0;h+=`<button class="tlc${n===cur?' cur':''}${st?' ok':''}" data-n="${n}"${op?'':' disabled'}><b>${op?i+1:'🔒'}</b><small>${st?'★'.repeat(st):op?'·':''}${meds[n-1]?'🎖':''}</small></button>`});
     h+='</div><div class="brow"><button class="btn alt" id="trc-wback">↩ Mondes</button></div></div>';ov.innerHTML=h;ov.hidden=false;
     ov.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>start(+b.dataset.n));$('#trc-wback').onclick=worldsView}
   function launch(){if(!P)return;pinMode=false;S=build(lv,strokes,false,pins);phase='run';acc=0;ui();snd(0);store.set('bb.save.trc',{n:cur,strokes,pins})}
   function nextOf(n){const wi=worldOf(n);if(wi<0)return 0;const L=WORLDS[wi].lv,i=L.indexOf(n);return i<L.length-1?L[i+1]:0}
   function finish(win){phase='end';ui();
     if(win){const used=inkUsed(),best=SOL[cur]?SOL[cur].len:used,st=unlim?1:used<=Math.max(best*1.6,best+1.5)?3:used<=best*2.6+1?2:1,old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.trcStars',stars)}
+      const df=defi(cur),ns=strokes.filter(x=>x.length>1).length,dOk=!!df&&!unlim&&(df.k==='one'?ns===1:df.k==='fast'?S&&S.t<=df.v:df.k==='few'?ns<=df.v:used<=df.v),dNew=dOk&&!meds[cur-1];if(dNew){meds[cur-1]=1;store.set('bb.trcMed',meds)}
+      const dTxt=df?`<p class="tdet">🎖 Défi : ${df.t} — ${dOk?(dNew?'réussi !':'réussi'):meds[cur-1]?'déjà obtenu':unlim?'pas en encre illimitée':'raté'}</p>`:'';
       window._duel&&window._duel.report('trcL',done(),'hi');window._duel&&window._duel.report('trcS',stars.reduce((a,b)=>a+(b||0),0),'hi');
       store.set('bb.save.trc',null);snd(1);
-      Celebrate.run(st===3?'fireworks':'confetti','Réussi !',()=>{ov.innerHTML=`<div class="card bsum"><h2>Réussi !</h2><div class="bst">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><p>${unlim?'Encre illimitée : 1 étoile au plus. Rejoue en encre limitée 🖋️ pour en gagner 3.':'Encre utilisée : '+Math.round(used/inkMax()*100)+' %'+(st<3?' · moins d’encre pour plus d’étoiles':'')}</p>
+      Celebrate.run(st===3||dNew?'fireworks':'confetti',dNew?'Défi 🎖 réussi !':'Réussi !',()=>{ov.innerHTML=`<div class="card bsum"><h2>Réussi !</h2><div class="bst">${'★'.repeat(st)}${'☆'.repeat(3-st)}</div><p>${unlim?'Encre illimitée : 1 étoile au plus. Rejoue en encre limitée 🖋️ pour en gagner 3.':'Encre utilisée : '+Math.round(used/inkMax()*100)+' %'+(st<3?' · moins d’encre pour plus d’étoiles':'')}</p>${dTxt}
         <div class="brow">${nextOf(cur)?'<button class="btn" id="trc-next">Niveau suivant</button>':'<button class="btn" id="trc-next">Mondes</button>'}<button class="btn alt" id="trc-again">Rejouer</button></div></div>`;ov.hidden=false;
         const nx=$('#trc-next'),nn=nextOf(cur);if(nx)nx.onclick=()=>nn?start(nn):worldsView();$('#trc-again').onclick=()=>start(cur)})}
     else{snd(2);ov.innerHTML=`<div class="card bsum"><h2>Raté…</h2><p>${lv.k==='water'?(lv.glass2?'Les verres ne sont pas assez remplis.':'Le verre n’est pas assez rempli.'):lv.k==='clear'?'Il reste des blocs rouges.':lv.k==='pop'?'Il reste des ballons.':lv.k==='star'?'La balle n’a pas atteint l’étoile.':lv.k==='stay'?'La balle est sortie de la zone.':lv.k==='protect'?'L’œuf s’est cassé !':lv.k==='meet'?'Les balles ne se sont pas touchées.':'La balle n’est pas dans le panier.'}</p>
@@ -370,5 +382,5 @@ const Trace=(()=>{
   start(cur);
   return{frame,resize,save,load,pause(){},resume(){},
     enter(){loadLib().then(()=>{if(pend){start(pend.n,true);strokes=pend.strokes;pins=pend.pins||[];pend=null;ui()}}).catch(()=>say('Moteur physique indisponible hors ligne : ouvre ce jeu une fois avec une connexion.'))},
-    sub:()=>done()+' niveaux · ★ '+stars.reduce((a,b)=>a+(b||0),0)}
+    sub:()=>done()+' niveaux · ★ '+stars.reduce((a,b)=>a+(b||0),0)+(meds.filter(Boolean).length?' · 🎖 '+meds.filter(Boolean).length:'')}
 })();
