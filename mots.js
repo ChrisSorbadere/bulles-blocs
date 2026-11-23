@@ -19,22 +19,27 @@ const Words=(()=>{
     for(let i=0;i<5;i++)if(r[i]!==2&&c[g[i]]){r[i]=1;c[g[i]]--}return r}
 
   /* ---------- soupe de lettres ---------- */
-  const sopEls=[$('#sop-wrap'),$('#sop-list'),$('#sop-diff')],isS=()=>mode[0]==='s';
+  const sopEls=[$('#sop-wrap'),$('#sop-list'),$('#sop-bar')],isS=()=>mode[0]==='s';
+  let sopClue=store.get('bb.sopClue','words');
   let sopDi=store.get('bb.sopDiff',1);if(!(sopDi>=0&&sopDi<=2))sopDi=1;$('#sop-diff').value=String(sopDi);let sopPend=null;
   const fmt=t=>Math.floor(t/60)+':'+String(t%60).padStart(2,'0');
-  function showS(on){gridEl.hidden=on;kbEl.hidden=on;sopEls[0].hidden=!on;sopEls[1].hidden=!on;sopEls[2].hidden=!on||mode==='sday'}
-  function sopTick(G){msg((mode==='sday'?'Soupe du jour · ':'')+G.tn+' · '+G.found.length+'/'+G.words.length+' · ⏱ '+fmt(G.t));if(mode==='sday'&&!G.done)saveSopDay(G)}
-  function saveSopDay(G){const all=store.get('bb.sopDay',{});all[lang]={d:dkey(),found:G.found,t:G.t,done:!!G.done};store.set('bb.sopDay',all)}
+  function clueOpts(){const c=$('#sop-clue'),ln=Sopa.LN;c.innerHTML='<option value="words">📝 Liste de mots</option><option value="emoji">🧩 Indices emoji</option>'+['fr','es','en'].filter(l=>l!==lang).map(l=>`<option value="tr:${l}">🌍 Liste en ${ln[l]}</option>`).join('');
+    if(![...c.options].some(o=>o.value===sopClue))sopClue='words';c.value=sopClue}
+  const dayClue=()=>{const k=dayNum()%3;return k===0?'words':k===1?'emoji':'tr:'+(lang==='fr'?'es':'fr')};
+  function showS(on){gridEl.hidden=on;kbEl.hidden=on;sopEls[0].hidden=!on;sopEls[1].hidden=!on;sopEls[2].hidden=!on||mode==='sday';if(on)clueOpts()}
+  let sopNote='',noteT=0;
+  function sopTick(G,note){if(note){sopNote=note;noteT=4}else if(noteT>0)noteT--;msg(noteT>0&&sopNote?sopNote:(mode==='sday'?'Soupe du jour · ':'')+G.tn+' · '+G.found.length+'/'+G.words.length+' · ⏱ '+fmt(G.t));if(mode==='sday'&&!G.done)saveSopDay(G)}
+  function saveSopDay(G){const all=store.get('bb.sopDay',{});all[lang]={d:dkey(),found:G.found,t:G.t,done:!!G.done,mok:G.mok||0,early:G.early||0};store.set('bb.sopDay',all)}
   function sopStart(fresh){showS(true);newBtn.disabled=mode==='sday';
-    if(mode==='sday'){const all=store.get('bb.sopDay',{}),st=all[lang]&&all[lang].d===dkey()?all[lang]:null;const G=Sopa.start(lang,dayNum()*7919+17,1,sopDone,st,sopTick);if(G.done)msg('Soupe du jour terminée en '+fmt(G.t)+' · nouvelle soupe demain');return}
-    if(sopPend&&!fresh){const o=sopPend;sopPend=null;Sopa.start(o.lang,o.seed,o.di,sopDone,o,sopTick);return}
-    const G=Sopa.get();if(!fresh&&G&&!G.done&&G.lang===lang&&G.di===sopDi&&G.seed!==dayNum()*7919+17){Sopa.start(G.lang,G.seed,G.di,sopDone,G,sopTick);return}
-    Sopa.start(lang,Math.floor(Math.random()*1e9),sopDi,sopDone,null,sopTick)}
-  function sopDone(G){const best=store.get('bb.sopBest',{}),k=lang+G.di,rec=!best[k]||G.t<best[k];if(rec){best[k]=G.t;store.set('bb.sopBest',best)}
+    if(mode==='sday'){const all=store.get('bb.sopDay',{}),st=all[lang]&&all[lang].d===dkey()?all[lang]:null;const G=Sopa.start(lang,dayNum()*7919+17,1,sopDone,st,sopTick,dayClue());if(G.done)msg('Soupe du jour terminée en '+fmt(G.t)+' · nouvelle soupe demain');return}
+    if(sopPend&&!fresh){const o=sopPend;sopPend=null;sopClue=o.clue||sopClue;clueOpts();Sopa.start(o.lang,o.seed,o.di,sopDone,o,sopTick,sopClue);return}
+    const G=Sopa.get();if(!fresh&&G&&!G.done&&G.lang===lang&&G.di===sopDi&&G.seed!==dayNum()*7919+17){Sopa.start(G.lang,G.seed,G.di,sopDone,G,sopTick,sopClue);return}
+    Sopa.start(lang,Math.floor(Math.random()*1e9),sopDi,sopDone,null,sopTick,sopClue)}
+  function sopDone(G){const best=store.get('bb.sopBest',{}),k=lang+G.di,rec=!G.rev&&(!best[k]||G.t<best[k]);if(rec){best[k]=G.t;store.set('bb.sopBest',best)}
     if(mode==='sday'){const all=store.get('bb.sopDay',{});const first=!(all[lang]&&all[lang].d===dkey()&&all[lang].done);saveSopDay(G);if(first)window._duel&&window._duel.report('sopD',1,'inc')}
     else window._duel&&window._duel.report('sopL',1,'inc');
     snd(2);Celebrate.run(rec?'fireworks':'confetti',rec?'Record !':'Bravo !',()=>{msg((mode==='sday'?'Soupe du jour terminée':'Soupe terminée')+' en '+fmt(G.t)+(rec?' · record !':''));
-      Celebrate.ask('Tous les mots trouvés !','Temps : '+fmt(G.t)+' · record '+fmt(best[k])+'. Une nouvelle soupe ?','Nouvelle soupe','Fermer',()=>{setMode('sfree');start(true)},null)})}
+      Celebrate.ask(G.rev?'Grille terminée':'Mot mystère : '+G.mys.toUpperCase()+(G.early?' ⭐':''),(G.early?'Trouvé avant la fin de la grille, bravo ! ':'')+'Temps : '+fmt(G.t)+' · record '+fmt(best[k])+'. Une nouvelle soupe ?','Nouvelle soupe','Fermer',()=>{setMode('sfree');start(true)},null)})}
   async function start(fresh){if(isS()){sopStart(fresh);return}showS(false);loading=true;msg('');try{D=await data(lang)}catch(e){loading=false;msg('Liste de mots indisponible hors ligne. Ouvre ce jeu une fois avec une connexion.');return}loading=false;
     cur='';busy=false;shakeRow=-1;revealRow=-1;
     if(mode==='day'){target=dailyWord();const s=dayState();guesses=s?s.g.slice():[];over=!!(s&&s.done);won=!!(s&&s.won)}
@@ -75,6 +80,7 @@ const Words=(()=>{
         mode==='day'?'Partie libre':'Nouveau mot','Fermer',()=>{setMode('free');start(true)},null)}}
   const prevKey=()=>{const d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
   function setMode(m){mode=m;modeSel.value=m;store.set('bb.motMode',m)}
+  $('#sop-clue').onchange=()=>{sopClue=$('#sop-clue').value;store.set('bb.sopClue',sopClue);$('#sop-clue').blur();if(mode==='sfree'){const G=Sopa.get();if(G&&!G.done){G.clue=sopClue;Sopa.render()}else start(true)}};
   $('#sop-diff').onchange=()=>{sopDi=+$('#sop-diff').value;store.set('bb.sopDiff',sopDi);$('#sop-diff').blur();if(mode==='sfree')start(true)};
   kbEl.addEventListener('pointerdown',e=>{const b=e.target.closest('.key');if(!b)return;e.preventDefault();key(b.dataset.k)});
   addEventListener('keydown',e=>{if($('#g-mot').hidden||Celebrate.active()||e.ctrlKey||e.metaKey||e.altKey)return;
@@ -88,7 +94,7 @@ const Words=(()=>{
   langSel.onchange=()=>{lang=langSel.value;store.set('bb.motLang',lang);langSel.blur();target='';start(true)};
   modeSel.value=mode;modeSel.onchange=()=>{setMode(modeSel.value);modeSel.blur();start(true)};
   newBtn.onclick=()=>{if(mode==='sfree'){const G=Sopa.get();if(!G||G.done||!G.found.length){start(true);return}Celebrate.ask('Nouvelle soupe ?','La grille en cours sera abandonnée.','Nouvelle soupe','Continuer',()=>start(true),null);return}if(mode!=='free')return;if(over||!guesses.length){start(true);return}Celebrate.ask('Nouveau mot ?','Le mot en cours sera abandonné.','Nouveau mot','Continuer',()=>start(true),null)};
-  function save(){if(mode==='sfree'){const G=Sopa.get();if(!G||G.done||!G.found.length&&G.t<5)return null;return{sop:{lang:G.lang,seed:G.seed,di:G.di,found:G.found,t:G.t}}}if(mode!=='free'||over||!guesses.length||busy)return null;return{lang,target,guesses}}
+  function save(){if(mode==='sfree'){const G=Sopa.get();if(!G||G.done||!G.found.length&&G.t<5)return null;return{sop:{lang:G.lang,seed:G.seed,di:G.di,found:G.found,t:G.t,mok:G.mok||0,early:G.early||0,clue:G.clue}}}if(mode!=='free'||over||!guesses.length||busy)return null;return{lang,target,guesses}}
   function load(o){if(o.sop&&KB[o.sop.lang]){lang=o.sop.lang;langSel.value=lang;setMode('sfree');sopPend=o.sop;sopDi=o.sop.di;$('#sop-diff').value=String(sopDi);restored=false;return}if(!KB[o.lang]||typeof o.target!=='string'||!Array.isArray(o.guesses))return;lang=o.lang;langSel.value=lang;setMode('free');target=o.target;guesses=o.guesses;over=false;won=false;restored=true}
   let restored=false,started=false;
   return{frame(){},resize(){},save,load,pause(){},resume(){},
