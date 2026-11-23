@@ -3,19 +3,20 @@
 const Cross=(()=>{
   const wrap=$('#crx-wrap'),gridEl=$('#crx-grid'),clueEl=$('#crx-clue'),kbEl=$('#crx-kb'),ov=$('#crx-ov');
   const KB={fr:['azertyuiop','qsdfghjklm','wxcvbn⌫'],es:['qwertyuiop','asdfghjklñ','zxcvbnm⌫'],en:['qwertyuiop','asdfghjkl','zxcvbnm⌫']};
-  const SZ=[7,9,11],TGT=[9,15,24];
+  const SZ=[9,11,11,13,13],TGT=[15,24,32,44,46],ATT=[30,30,30,24,24];
+  const showLen=f=>f<2,clueOf=(w,f,em)=>{if(em&&w.em)return'<i class="cem">'+w.em+'</i>';if(f<2)return w.c1;if(f===2)return w.c2;if(f===3){let h=0;for(const ch of w.w)h=h*31+ch.charCodeAt(0)|0;return h&1?w.c3:w.c2}return w.c3};
   const mul=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
   const BANK={};
   async function data(l){if(BANK[l])return BANK[l];const r=await fetch('cw-'+l+'.json');const j=await r.json();
     const cnt={};j.w.forEach(e=>{if(e[2])cnt[e[2]]=(cnt[e[2]]||0)+1});
-    return BANK[l]=j.w.map(([w,c,e])=>({w,c,e,ue:!!e&&cnt[e]===1}))}
+    return BANK[l]=j.w.map(([w,c1,c2,c3,e,r])=>({w,c1,c2:c2||c1,c3:c3||c2||c1,e,r:!!r,ue:!!e&&cnt[e]===1}))}
   let G=null,onDone=null,onTk=null,tick=null,cur=-1,dir=0,badShown='';
   // ---------- génération ----------
   function build(bank,seed,di,cm){const R=mul(seed),N=SZ[di],tgt=TGT[di];
-    const pool0=bank.filter(e=>e.w.length<=N&&(cm!=='emoji'||e.ue)&&(di>0||e.w.length<=7));
+    const pool0=bank.filter(e=>e.w.length<=N&&(cm!=='emoji'||e.ue)&&(di>=3||!e.r));
     let best=null,bs=-1;
-    for(let at=0;at<36;at++){const g=Array(N*N).fill(''),du=Array(N*N).fill(0),pl=[],used=new Set();let cross=0;
-      const pool=pool0.slice().sort(()=>R()-.5);
+    for(let at=0;at<ATT[di];at++){const g=Array(N*N).fill(''),du=Array(N*N).fill(0),pl=[],used=new Set();let cross=0;
+      const pool=di>=2?pool0.map(e=>[e,e.w.length+R()*4]).sort((a,b)=>b[1]-a[1]).map(x=>x[0]):pool0.slice().sort(()=>R()-.5);
       const fits=(w,x0,y0,d)=>{const L=w.length,dx=d?0:1,dy=d?1:0,x1=x0+dx*(L-1),y1=y0+dy*(L-1);if(x0<0||y0<0||x1>=N||y1>=N)return -1;
         const bx=x0-dx,by=y0-dy,ax=x1+dx,ay=y1+dy;if(bx>=0&&by>=0&&g[by*N+bx])return -1;if(ax<N&&ay<N&&g[ay*N+ax])return -1;let c=0;
         for(let k=0;k<L;k++){const x=x0+dx*k,y=y0+dy*k,i=y*N+x;if(g[i]){if(g[i]!==w[k]||du[i]&(1<<d))return -1;c++}
@@ -25,13 +26,13 @@ const Cross=(()=>{
       const first=pool.filter(e=>e.w.length>=N-2);const f=first.length?first[0]:pool[0];
       const fd=R()<.5?0:1,off=Math.floor(R()*(N-f.w.length+1)),mid=Math.floor(N/2)+(R()<.5?-1:0)*(N>7?Math.floor(R()*2):0);
       put(f,fd?mid:off,fd?off:mid,fd,0);
-      for(let pass=0;pass<3&&pl.length<tgt;pass++)for(const e of pool){if(pl.length>=tgt)break;if(used.has(e.w))continue;const w=e.w;let opts=[],bc=0;
+      for(let pass=0;pass<(di>=2?5:3)&&pl.length<tgt;pass++)for(const e of pool){if(pl.length>=tgt)break;if(used.has(e.w))continue;const w=e.w;let opts=[],bc=0;
         for(let i=0;i<N*N;i++){const ch=g[i];if(!ch)continue;const px=i%N,py=i/N|0;for(let k=0;k<w.length;k++)if(w[k]===ch)for(let d=0;d<2;d++){if(du[i]&(1<<d))continue;
           const x0=px-(d?0:k),y0=py-(d?k:0),c=fits(w,x0,y0,d);if(c<1)continue;if(c>bc){bc=c;opts=[]}if(c===bc)opts.push([x0,y0,d])}}
         if(opts.length){const o=opts[Math.floor(R()*opts.length)];put(e,o[0],o[1],o[2],bc)}}
-      const filled=g.filter(Boolean).length,sc=pl.length*12+cross*3+filled;if(sc>bs){bs=sc;best={g,pl}}}
+      const filled=g.filter(Boolean).length,sc=di>=2?pl.length*8+cross*6+filled*2:pl.length*12+cross*3+filled;if(sc>bs){bs=sc;best={g,pl}}}
     const {g,pl}=best;const starts={};pl.forEach(p=>{const i=p.y*N+p.x;starts[i]=1});let num=0;const nums={};Object.keys(starts).map(Number).sort((a,b)=>a-b).forEach(i=>nums[i]=++num);
-    const words=pl.map(p=>({w:p.e.w,c:p.e.c,em:p.e.e,x:p.x,y:p.y,d:p.d,n:nums[p.y*N+p.x],cells:[...p.e.w].map((_,k)=>(p.y+(p.d?k:0))*N+p.x+(p.d?0:k))})).sort((a,b)=>a.d-b.d||a.n-b.n);
+    const words=pl.map(p=>({w:p.e.w,c1:p.e.c1,c2:p.e.c2,c3:p.e.c3,em:p.e.e,x:p.x,y:p.y,d:p.d,n:nums[p.y*N+p.x],cells:[...p.e.w].map((_,k)=>(p.y+(p.d?k:0))*N+p.x+(p.d?0:k))})).sort((a,b)=>a.d-b.d||a.n-b.n);
     return{N,sol:g,words,nums}}
   // ---------- état ----------
   const wordsAt=i=>G.words.filter(w=>w.cells.includes(i));
@@ -42,7 +43,7 @@ const Cross=(()=>{
     gridEl.style.gridTemplateColumns=`repeat(${N},1fr)`;
     gridEl.innerHTML=G.sol.map((s,i)=>s?`<div class="cc${hl.has(i)?' hl':''}${i===cur?' cur':''}${G.rv[i]?' rv':''}${G.bad[i]?' bad':''}${G.done?' ok':''}" data-i="${i}">${G.nums[i]?'<small>'+G.nums[i]+'</small>':''}${G.fill[i].toUpperCase()}</div>`:'<div class="cx"></div>').join('');
     fitFont();
-    if(w){const t=G.cm==='emoji'&&w.em?'<i class="cem">'+w.em+'</i>':w.c;clueEl.querySelector('span').innerHTML=`<b>${w.n}${w.d?'↓':'→'}</b>&nbsp;${t} <small>(${w.w.length})</small>`}
+    if(w){const t=clueOf(w,G.di,G.cm==='emoji');clueEl.querySelector('span').innerHTML=`<b>${w.n}${w.d?'↓':'→'}</b>&nbsp;${t}${showLen(G.di)?' <small>('+w.w.length+')</small>':''}`}
     kbEl.innerHTML=KB[G.lang].map(r=>'<div class="krow">'+[...r].map(k=>`<button class="key${k==='⌫'?' wide':''}" data-k="${k}" aria-label="${k==='⌫'?'Effacer':k}">${k==='⌫'?'⌫':k.toUpperCase()}</button>`).join('')+'</div>').join('')}
   function fitFont(){const W=gridEl.clientWidth;if(W)gridEl.style.fontSize=(W/G.N*.52)+'px'}
   function nextWord(step){const ws=G.words,k=ws.indexOf(curWord());for(let s=1;s<=ws.length;s++){const w=ws[(k+step*s+ws.length*s)%ws.length];if(w.cells.some(c=>!G.fill[c])||s===ws.length){selWord(w);return}}}
@@ -58,14 +59,14 @@ const Cross=(()=>{
     const sig=G.fill.join('');if(sig!==badShown){badShown=sig;snd(0);onTk&&onTk(G,'Grille remplie, mais il reste des erreurs')}}
   // ---------- aides ----------
   function help(k){if(!G||G.done)return;const w=curWord();
-    if(k==='letter'){let i=G.fill[cur]!==G.sol[cur]?cur:w.cells.find(c=>G.fill[c]!==G.sol[c]);if(i==null)return;G.fill[i]=G.sol[i];G.rv[i]=1;G.bad[i]=0;G.helps++}
+    if(k==='check'&&G.di>=4)return;if(k==='letter'){let i=G.fill[cur]!==G.sol[cur]?cur:w.cells.find(c=>G.fill[c]!==G.sol[c]);if(i==null)return;G.fill[i]=G.sol[i];G.rv[i]=1;G.bad[i]=0;G.helps++}
     else if(k==='word'){if(w.cells.every(c=>G.fill[c]===G.sol[c]))return;w.cells.forEach(c=>{G.fill[c]=G.sol[c];G.rv[c]=1;G.bad[c]=0});G.helps++;nextWord(1)}
     else if(k==='check'){let n=0;G.sol.forEach((s,i)=>{if(s&&G.fill[i]&&G.fill[i]!==s){G.bad[i]=1;n++}});G.helps++;onTk&&onTk(G,n?n+' lettre'+(n>1?'s':'')+' fausse'+(n>1?'s':''):'Aucune erreur pour l’instant')}
     changed()}
   function helpMenu(){if(!G||G.done)return;const st=Math.max(1,3-G.helps);
-    ov.innerHTML=`<div class="card bsum"><h2>Aide</h2><p class="tdet">Chaque aide coûte une étoile (minimum ★). Actuellement : ${'★'.repeat(st)}</p><div class="brow col"><button class="btn" data-h="letter">💡 Révéler une lettre</button><button class="btn" data-h="word">🔤 Révéler le mot</button><button class="btn" data-h="check">✓ Vérifier la grille</button><button class="btn alt" data-h="">Fermer</button></div></div>`;ov.hidden=false;
+    ov.innerHTML=`<div class="card bsum"><h2>Aide</h2><p class="tdet">Chaque aide coûte une étoile (minimum ★). Actuellement : ${'★'.repeat(st)}</p><div class="brow col"><button class="btn" data-h="letter">💡 Révéler une lettre</button><button class="btn" data-h="word">🔤 Révéler le mot</button>${G.di<4?'<button class="btn" data-h="check">✓ Vérifier la grille</button>':''}<button class="btn alt" data-h="">Fermer</button></div></div>`;ov.hidden=false;
     ov.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{ov.hidden=true;if(b.dataset.h)help(b.dataset.h)})}
-  function listView(){if(!G)return;const sec=(d,t)=>`<p class="tdet">${t}</p>`+G.words.filter(w=>w.d===d).map(w=>{const ok=w.cells.every(c=>G.fill[c]);return`<button class="cli${ok?' ok':''}" data-w="${G.words.indexOf(w)}"><b>${w.n}</b> ${G.cm==='emoji'&&w.em?w.em:w.c} <small>(${w.w.length})</small></button>`}).join('');
+  function listView(){if(!G)return;const sec=(d,t)=>`<p class="tdet">${t}</p>`+G.words.filter(w=>w.d===d).map(w=>{const ok=w.cells.every(c=>G.fill[c]);return`<button class="cli${ok?' ok':''}" data-w="${G.words.indexOf(w)}"><b>${w.n}</b> ${clueOf(w,G.di,G.cm==='emoji')}${showLen(G.di)?' <small>('+w.w.length+')</small>':''}</button>`}).join('');
     ov.innerHTML=`<div class="card bsum cwl"><h2>Définitions</h2>${sec(0,'Horizontalement →')}${sec(1,'Verticalement ↓')}<div class="brow"><button class="btn alt" data-w="-1">Fermer</button></div></div>`;ov.hidden=false;
     ov.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>{ov.hidden=true;const k=+b.dataset.w;if(k>=0)selWord(G.words[k])})}
   // ---------- saisie ----------

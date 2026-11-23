@@ -66,26 +66,26 @@ const Words=(()=>{
       Celebrate.ask(G.rev?'Grille terminée':'Mot mystère : '+G.mys.toUpperCase()+(G.early?' ⭐':''),(G.early?'Trouvé avant la fin de la grille, bravo ! ':'')+'Temps : '+fmt(G.t)+' · record '+fmt(best[k])+'. Une nouvelle soupe ?','Nouvelle soupe','Fermer',()=>{setMode('sfree');start(true)},null)})}
   /* ---------- mots croisés ---------- */
   const crxEls=[$('#crx-bar'),$('#crx-wrap'),$('#crx-clue'),$('#crx-kb')],isC=()=>mode[0]==='c';
-  let crxDi=store.get('bb.crxDiff',1);if(!(crxDi>=0&&crxDi<=2))crxDi=1;$('#crx-diff').value=String(crxDi);
+  let crxDi=store.get('bb.crxForce',0);if(!(crxDi>=0&&crxDi<=4))crxDi=0;$('#crx-diff').value=String(crxDi);
   let crxCm=store.get('bb.crxCm','def');if(crxCm!=='def'&&crxCm!=='emoji')crxCm='def';$('#crx-cm').value=crxCm;let crxPend=null;
-  function showC(on){crxEls.forEach(e=>e.hidden=!on);if(!on)$('#crx-ov').hidden=true;$('#crx-diff').hidden=mode!=='cfree';$('#crx-cm').hidden=mode!=='cfree'}
+  function showC(on){crxEls.forEach(e=>e.hidden=!on);if(!on)$('#crx-ov').hidden=true;$('#crx-diff').hidden=mode!=='cfree';$('#crx-cm').hidden=mode!=='cfree'||crxDi>=2}
   const crxDaySeed=()=>dayNum()*7919+({fr:31,es:577,en:1013})[lang];
   function saveCrxDay(G){const all=store.get('bb.crxDay',{});all[lang]={d:dkey(),fill:G.fill,rv:G.rv,helps:G.helps,t:G.t,done:!!G.done};store.set('bb.crxDay',all)}
   let crxNote='',crxNT=0;
   function crxTick(G,note){if(note){crxNote=note;crxNT=3}else if(crxNT>0)crxNT--;const n=G.words.filter(w=>w.cells.every(c=>G.fill[c])).length;
-    msg(crxNT>0&&crxNote?crxNote:(mode==='cday'?'Grille du jour · ':'')+n+'/'+G.words.length+' mots · ⏱ '+fmt(G.t)+' · '+'★'.repeat(Cross.stars(G)));if(mode==='cday'&&!G.done)saveCrxDay(G)}
+    msg(crxNT>0&&crxNote?crxNote:(mode==='cday'?'Grille du jour (force 3) · ':'Force '+(G.di+1)+' · ')+n+'/'+G.words.length+' mots · ⏱ '+fmt(G.t)+' · '+'★'.repeat(Cross.stars(G)));if(mode==='cday'&&!G.done)saveCrxDay(G)}
   function crxDone(G){const st=Cross.stars(G);snd(2);
     if(mode==='cday'){const all=store.get('bb.crxDay',{}),first=!(all[lang]&&all[lang].d===dkey()&&all[lang].done);saveCrxDay(G);if(first)window._duel&&window._duel.report('crxD',1,'inc');
       Celebrate.run(st===3?'fireworks':'confetti','★'.repeat(st),()=>{msg('Grille du jour terminée en '+fmt(G.t)+' · '+'★'.repeat(st)+' · nouvelle grille demain');Celebrate.ask('Grille du jour terminée','★'.repeat(st)+' · temps '+fmt(G.t)+'. Une grille libre ?','Grille libre','Fermer',()=>{setMode('cfree');start(true)},null)});return}
-    const best=store.get('bb.crxBest',{}),k=lang+G.di,rec=st===3&&(!best[k]||G.t<best[k]);if(rec){best[k]=G.t;store.set('bb.crxBest',best)}window._duel&&window._duel.report('crxL',1,'inc');
+    const best=store.get('bb.crxBest',{}),k=lang+'f'+G.di,rec=st===3&&(!best[k]||G.t<best[k]);if(rec){best[k]=G.t;store.set('bb.crxBest',best)}window._duel&&window._duel.report('crxL',1,'inc');
     Celebrate.run(rec?'fireworks':'confetti',rec?'Record !':'★'.repeat(st),()=>{msg('Grille terminée en '+fmt(G.t)+' · '+'★'.repeat(st)+(rec?' · record !':''));Celebrate.ask(rec?'Record !':'Grille terminée','★'.repeat(st)+' · temps '+fmt(G.t)+(best[k]?' · record '+fmt(best[k]):'')+'. Une nouvelle grille ?','Nouvelle grille','Fermer',()=>start(true),null)})}
   async function crxStart(fresh){showS(false);gridEl.hidden=true;kbEl.hidden=true;showC(true);newBtn.disabled=mode==='cday';msg('');let B;
     try{B=await Cross.data(lang)}catch(e){msg('Grilles indisponibles hors ligne. Ouvre ce jeu une fois avec une connexion.');return}if(!isC())return;
-    if(mode==='cday'){const all=store.get('bb.crxDay',{}),st=all[lang]&&all[lang].d===dkey()?all[lang]:null;const G=Cross.start(B,lang,crxDaySeed(),1,'def',crxDone,st,crxTick);if(G.done)msg('Grille du jour terminée en '+fmt(G.t)+' · nouvelle grille demain');return}
+    if(mode==='cday'){const all=store.get('bb.crxDay',{}),st=all[lang]&&all[lang].d===dkey()?all[lang]:null;const G=Cross.start(B,lang,crxDaySeed(),2,'def',crxDone,st,crxTick);if(G.done)msg('Grille du jour terminée en '+fmt(G.t)+' · nouvelle grille demain');return}
     if(crxPend&&!fresh){const o=crxPend;crxPend=null;Cross.start(B,o.lang,o.seed,o.di,o.cm,crxDone,o,crxTick);return}
-    const G=Cross.get();if(!fresh&&G&&!G.done&&G.lang===lang&&G.di===crxDi&&G.cm===crxCm&&G.seed!==crxDaySeed()){Cross.start(B,G.lang,G.seed,G.di,G.cm,crxDone,G,crxTick);return}
-    Cross.start(B,lang,Math.floor(Math.random()*1e9),crxDi,crxCm,crxDone,null,crxTick)}
-  $('#crx-diff').onchange=()=>{crxDi=+$('#crx-diff').value;store.set('bb.crxDiff',crxDi);$('#crx-diff').blur();start(true)};
+    const G=Cross.get();if(!fresh&&G&&!G.done&&G.lang===lang&&G.di===crxDi&&G.cm===(crxDi<2?crxCm:'def')&&G.seed!==crxDaySeed()){Cross.start(B,G.lang,G.seed,G.di,G.cm,crxDone,G,crxTick);return}
+    Cross.start(B,lang,Math.floor(Math.random()*1e9),crxDi,crxDi<2?crxCm:'def',crxDone,null,crxTick)}
+  $('#crx-diff').onchange=()=>{crxDi=+$('#crx-diff').value;store.set('bb.crxForce',crxDi);if(crxDi>=2&&crxCm==='emoji'){crxCm='def';$('#crx-cm').value='def';store.set('bb.crxCm','def')}showC(true);$('#crx-diff').blur();start(true)};
   $('#crx-cm').onchange=()=>{crxCm=$('#crx-cm').value;store.set('bb.crxCm',crxCm);$('#crx-cm').blur();start(true)};
   $('#crx-list').onclick=()=>Cross.list();$('#crx-help').onclick=()=>Cross.help();
   async function start(fresh){if(isC()){crxStart(fresh);return}if(isS()){sopStart(fresh);return}showS(false);loading=true;msg('');try{D=await data(lang)}catch(e){loading=false;msg('Liste de mots indisponible hors ligne. Ouvre ce jeu une fois avec une connexion.');return}loading=false;
