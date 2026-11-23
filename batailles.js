@@ -17,7 +17,7 @@ const Battle=(()=>{
     {n:'Géant',s:'⬟',cost:30,hp:260,dmg:10,rng:0,spd:3.2,cd:1.4,r:3,splash:2.6}];
   const MUL=[[1,1,1,1,1,1.5,1,1],[1,1,1,3,1,1.2,1,1.5],[1.5,.7,1,1.1,.3,1.2,1,1],[1.3,.45,2.5,1,.7,2.5,1.2,.8],[.9,.9,.9,.9,.9,1.2,.9,.9],[1,1.3,1,1,1.3,1,1,1],[1,1,1,1,1,1,1,1],[1,1,1,1,1,1,1,1]];
   const UNLOCK=[1,3,5,8,12,16,20,999];
-  const ORD=[['➡️','Avancer'],['🛡️','Tenir'],['↖️','Flanc gauche'],['↗️','Flanc droit'],['⏳','Réserve']];
+  const ORD=[['➡️','Avancer'],['🛡️','Tenir'],['↖️','Flanc gauche'],['↗️','Flanc droit'],['⏳','Réserve'],['⚔️','Attendre puis charger']];
   const WORLDS=[['Plaines','#2a3326','#33402e'],['Forêts','#1f2c22','#28382b'],['Collines','#2f2f26','#3a3a2d'],['Rivières','#22303a','#2b3a44'],['Marches','#2c2a33','#36333f']];
   const PLAYER_BUDGET=n=>Math.round(24+n*4.2);
   // Force de l'armée ennemie par niveau : calée par simulation (un robot joue des dizaines de batailles par niveau)
@@ -152,6 +152,7 @@ const Battle=(()=>{
       bp['0:'+g]={steps:pl.steps,march:!!pl.march,si:0,t:0}}
     // chariot à escorter
     if(lv.wagon)units.push({t:4,side:0,x:lv.wagon.x,y:lv.wagon.y,hp:110,max:110,dk:1,cd:0,tg:null,rt:0,ord:0,g:-1,wp:0,mor:100,rout:0,fx:0,fy:-1,mv:0,dead:0,fade:0,flash:0,fled:0,buff:0,wag:1});
+    for(const u of units){u.ax=u.x;u.ay=u.y;if(u.side===1&&u.ord===5)u.ord=1}
     // vitesse de groupe : un groupe marche au pas de son unité la plus lente
     const gs={};for(const u of units){const k=u.side+':'+u.g;gs[k]=Math.min(gs[k]??99,T[u.t].spd)}for(const u of units)u.gs=u.g?gs[u.side+':'+u.g]:T[u.t].spd;
     if(lv.eplan){const mem=units.filter(u=>u.side===1&&u.ep);if(mem.length){const cx=mem.reduce((a,u)=>a+u.x,0)/mem.length,cy=mem.reduce((a,u)=>a+u.y,0)/mem.length;
@@ -159,6 +160,8 @@ const Battle=(()=>{
     return{units,plans:bp,banner:null,waves:(lv.waves||[]).map(w=>({t:w.t,list:w.list,flank:w.flank,done:0})),hold:0,cap:0,gate:lv.wall?lv.wall.hp:0,mwin:null,proj:[],fx:[],t:0,over:0,P,rally:P.doc&&P.doc.second?2:1,rallyT:0,start:[mineList.length,enemy.length],val:[used(mineList),used(enemy)],
       kills:[new Array(8).fill(0),new Array(8).fill(0)],lost:[new Array(8).fill(0),new Array(8).fill(0)],fledN:[0,0]}}
   // franchir une rivière (par un pont) ou un mur (par la porte)
+  const LEASH=8;
+  function home(u,dt,ES){const dx=u.ax-u.x,dy=u.ay-u.y,d=Math.hypot(dx,dy);if(d>.6){const sp=T[u.t].spd*ES*.8,m=Math.min(d,sp*dt);u.x+=dx/d*m;u.y+=dy/d*m;u.fx=dx/d;u.fy=dy/d;u.mv+=dt}else{u.mv=0}}
   let XL=null,XB=null;
   function cross(u,tx,ty2){const lv=XL,b=XB;if(lv.river){const ry=lv.river.y,sd=Math.sign(u.y-ry),de=Math.sign(ty2-ry);if(sd&&de&&sd!==de&&!lv.river.br.some(br=>Math.abs(u.x-br.x)<br.w/2-1)){let bb=lv.river.br[0];for(const br of lv.river.br)if(Math.abs(br.x-u.x)+Math.abs(br.x-tx)<Math.abs(bb.x-u.x)+Math.abs(bb.x-tx))bb=br;return[bb.x,ry]}}
     if(lv.wall){const wl=lv.wall,sd=Math.sign(u.y-wl.y),de=Math.sign(ty2-wl.y);if(sd&&de&&sd!==de){const open=b&&b.gate<=0;if(!open)return[wl.gx,wl.y+sd*(wl.h+2)];if(Math.abs(u.x-wl.gx)>wl.gw/2-1.2)return[wl.gx,wl.y+sd*(wl.h+.5)]}}
@@ -183,7 +186,7 @@ const Battle=(()=>{
     if(!alive[1].length&&!pend){if(mis==='escort'){}else{end(true);return}}
     if(b.t>150){if(mis!=='rout')end(false);else b.over=1;return}
     for(const key in b.plans){const pl=b.plans[key];if(pl.si>=pl.steps.length)continue;const sd=+key[0],mem=alive[sd].filter(u=>u.pk===key&&!u.rout);if(!mem.length){pl.si=pl.steps.length;continue}
-      const st=pl.steps[pl.si];let foe=false;const rad=st.k==='hold'?22:9;
+      const st=pl.steps[pl.si];if(st.k==='hold'&&sd===0){for(const u of mem){u.ord=1;u.ax=u.x;u.ay=u.y}pl.si=pl.steps.length;continue}let foe=false;const rad=st.k==='hold'?22:9;
       if(!pl.march||st.k==='hold')for(const u of mem){near(u.x,u.y,rad,o=>{if(!foe&&o.side!==sd&&!o.dead&&!o.hid&&(o.x-u.x)**2+(o.y-u.y)**2<rad*rad)foe=true});if(foe)break}
       if(foe){pl.si=pl.steps.length;continue}
       if(st.k==='go'){const ok=mem.filter(u=>Math.hypot(st.x+u.off[0]-u.x,st.y+u.off[1]-u.y)<2.2).length;if(ok>=mem.length*.7){pl.si++;pl.t=0}}
@@ -219,7 +222,9 @@ const Battle=(()=>{
         if(!best&&!VIS&&!(mis==='defend'&&u.side===1))for(const o of alive[1-u.side]){if(o.hid)continue;const d=(o.x-u.x)**2+(o.y-u.y)**2;if(d<bd){bd=d;best=o}}
         u.tg=best}
       const g=u.tg;
-      if(!g){if(u.ord===1||u.ord===4){if(b.t>(VIS?12:30))u.ord=0;else continue}
+      const HOLD=u.side===0&&u.ord===1;
+      if(!g&&HOLD){home(u,dt,ES);continue}
+      if(!g){if(u.ord===1||u.ord===4||u.ord===5){if(b.t>(VIS?12:30))u.ord=0;else continue}
         let tx=u.x,ty2=u.side===0?2:FH-2;if(mis==='defend'&&u.side===1){tx=lv.flag.x;ty2=lv.flag.y}else if(mis==='hill'&&u.side===0&&b.t>3){tx=lv.zone.x;ty2=lv.zone.y}
         [tx,ty2]=cross(u,tx,ty2);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>1){let sp=u.gs*ES;if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;u.x+=ddx/dd*sp*dt;u.y+=ddy/dd*sp*dt;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt}continue}
       let dx=g.x-u.x,dy=g.y-u.y,d=Math.hypot(dx,dy)||.01;
@@ -233,7 +238,7 @@ const Battle=(()=>{
       if(mis==='hill'&&u.side===1&&d>16&&!u.ord&&(u.x-lv.zone.x)**2+(u.y-lv.zone.y)**2>(lv.zone.r*.6)**2){let [tx,ty2]=cross(u,lv.zone.x,lv.zone.y);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy)||1;const sp=u.gs*ES;u.x+=ddx/dd*sp*dt;u.y+=ddy/dd*sp*dt;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt;continue}
       if(mis==='defend'&&u.side===1&&d>14&&!u.ord){let [tx,ty2]=cross(u,lv.flag.x,lv.flag.y);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>1.5){const sp=u.gs*ES;u.x+=ddx/dd*sp*dt;u.y+=ddy/dd*sp*dt;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt}continue}
       // ordres
-      if(u.ord===1&&(d<22||b.t>30||(b.lastHit!=null&&b.t-b.lastHit>6)))u.ord=0;
+      if((u.ord===5||u.ord===1&&u.side===1)&&(d<22||b.t>30||(b.lastHit!=null&&b.t-b.lastHit>6)))u.ord=0;
       if(u.ord===4&&(b.t>15||(b.lastHit!=null&&b.t-b.lastHit>6)||alive[u.side].length<b.start[u.side]*.6||d<16))u.ord=0;
       if((u.ord===2||u.ord===3)&&d<12)u.ord=0;
       const range=ty.rng*(onHill(lv,u.x,u.y)?1.3:1)*(env==='rain'?.8:1),meleeR=ty.r+T[g.t].r+.6;
@@ -251,7 +256,8 @@ const Battle=(()=>{
           if(ty.splash){near(g.x,g.y,ty.splash,o=>{if(o.side!==u.side&&!o.dead&&o!==g&&(o.x-g.x)**2+(o.y-g.y)**2<ty.splash**2)hurt(o,dm*.6,u,false)});b.fx.push({k:'ring',x:g.x,y:g.y,t:0,r:ty.splash,c:u.side});b.shake=Math.max(b.shake||0,.15)}
           hurt(g,dm,u,false)}
         u.fx=-(u.x-g.x)/d;u.fy=-(u.y-g.y)/d;if(u.hp<=0)kill(u,g);continue}
-      if(stay||u.ord===1||u.ord===4)continue;
+      if(HOLD){if(Math.hypot(g.x-u.ax,g.y-u.ay)>LEASH+T[g.t].r+ty.r+1.5){home(u,dt,ES);continue}}
+      else if(stay||u.ord===1||u.ord===4||u.ord===5)continue;
       // destination : cible, point de contournement ou pont
       let tx=g.x,ty2=g.y;
       if(u.ord===2||u.ord===3){const sx=(u.ord===2)!==(u.side===1)?6:FW-6,path=u.side===0?[[sx,80],[sx,EZ-8]]:[[sx,70],[sx,ZY+8]];
@@ -268,6 +274,7 @@ const Battle=(()=>{
       near(u.x,u.y,3+ru,o=>{if(o===u||o.dead)return;const dx=u.x-o.x,dy=u.y-o.y,d2=dx*dx+dy*dy,m=ru+T[o.t].r;if(d2<m*m&&d2>1e-6){const d=Math.sqrt(d2),w=T[o.t].r>2?.9:.5,p=(m-d)*w;u.x+=dx/d*p;u.y+=dy/d*p}});
       for(const r of lv.rocks){const dx=u.x-r.x,dy=u.y-r.y,d=Math.hypot(dx,dy),m=r.r+ru;if(d<m&&d>1e-6){u.x+=dx/d*(m-d);u.y+=dy/d*(m-d);
           if(u.tg){const tx=-dy/d,tyy=dx/d,s=Math.sign((u.tg.x-u.x)*tx+(u.tg.y-u.y)*tyy)||1;u.x+=tx*s*T[u.t].spd*dt*.8;u.y+=tyy*s*T[u.t].spd*dt*.8}}}
+      if(u.side===0&&u.ord===1&&u.ax!=null){const dx=u.x-u.ax,dy=u.y-u.ay,dl=Math.hypot(dx,dy);if(dl>LEASH){u.x=u.ax+dx/dl*LEASH;u.y=u.ay+dy/dl*LEASH}}
       if(lv.wall){const wl=lv.wall;if(Math.abs(u.y-wl.y)<wl.h+ru&&!(b.gate<=0&&Math.abs(u.x-wl.gx)<wl.gw/2-ru*.5))u.y=wl.y+(u.y>=wl.y?1:-1)*(wl.h+ru)}
       if(lv.river){const rv=lv.river;if(Math.abs(u.y-rv.y)<rv.h+ru&&!rv.br.some(br=>Math.abs(u.x-br.x)<br.w/2-ru*.5)){u.y=rv.y+(u.y>=rv.y?1:-1)*(rv.h+ru)}}
       u.x=Math.max(1,Math.min(FW-1,u.x));u.y=Math.max(.6,Math.min(FH-.6,u.y))}
@@ -307,7 +314,7 @@ const Battle=(()=>{
       if(best&&String(best.g)!==String(selG)){selG=best.g;const n=mine.filter(u=>String(u.g)===String(selG)).length;say('Groupe choisi ('+n+' unité'+(n>1?'s':'')+') : touche la carte pour ajouter une étape');snd(0);tools();return}
       if(selG==null){say('Touche d’abord une de tes unités pour choisir son groupe');return}
       if(x<1||x>FW-1||y<1||y>FH-1||L.rocks.some(r=>Math.hypot(x-r.x,y-r.y)<r.r)){say('Pas d’étape ici');return}
-      const pl=plans[selG]||(plans[selG]={steps:[],march:false});if(pl.steps.length>=8){say('8 étapes au maximum');return}pl.steps.push({k:'go',x:Math.round(x*10)/10,y:Math.round(y*10)/10});snd(0);tools();return}
+      const pl=plans[selG]||(plans[selG]={steps:[],march:false});if(pl.steps.length>=8){say('8 étapes au maximum');return}const lst=pl.steps[pl.steps.length-1];if(lst&&lst.k==='hold'){say('Après 🛡️ Tenir, le groupe garde sa position : retire cette étape pour aller plus loin');return}pl.steps.push({k:'go',x:Math.round(x*10)/10,y:Math.round(y*10)/10});snd(0);tools();return}
     if(erase){painting=true;eraseAt(x,y);return}
     if(mode==='block'){block(x,y);return}
     painting=true;lastPaint=[x,y];if(addUnit(x,y)){snd(0);tools()}});
@@ -408,13 +415,13 @@ const Battle=(()=>{
     toolsEl.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{if(b.dataset.m==='block'&&mode==='block'&&!erase)shape=(shape+1)%3;mode=b.dataset.m;erase=false;tools()});
     const q=s=>toolsEl.querySelector(s);
     if(q('[data-e]'))q('[data-e]').onclick=()=>{erase=!erase;tools()};
-    if(q('[data-o]'))q('[data-o]').onclick=()=>{order=(order+1)%5;say(['Les prochaines unités avanceront vers l’ennemi','Les prochaines unités tiendront leur position jusqu’à l’arrivée de l’ennemi','Les prochaines unités contourneront par la gauche avant d’attaquer','Les prochaines unités contourneront par la droite avant d’attaquer','Les prochaines unités attendront 15 secondes en réserve'][order]);tools()};
+    if(q('[data-o]'))q('[data-o]').onclick=()=>{order=(order+1)%6;say(['Les prochaines unités avanceront vers l’ennemi','Les prochaines unités garderont leur position : elles se battent sur place et ne poursuivent pas','Les prochaines unités contourneront par la gauche avant d’attaquer','Les prochaines unités contourneront par la droite avant d’attaquer','Les prochaines unités attendront 15 secondes en réserve','Les prochaines unités attendront l’ennemi, puis chargeront à son arrivée'][order]);tools()};
     if(q('[data-l]'))q('[data-l]').onclick=()=>{mine=validArmy(prog.lastArmy||[]);plans=JSON.parse(JSON.stringify(prog.lastPlans||{}));say(mine.length?'Dernière armée replacée (ce qui rentre dans le budget et le terrain)':'Rien à replacer ici');tools()};
     if(q('[data-p]'))q('[data-p]').onclick=()=>{planMode=true;erase=false;selG=null;say('Plan : touche une de tes unités pour choisir son groupe, puis la carte pour ses étapes');tools()};
     if(q('[data-done]'))q('[data-done]').onclick=()=>{planMode=false;selG=null;cleanPlans();say('Plans enregistrés : '+Object.keys(plans).length+' groupe'+(Object.keys(plans).length>1?'s':'')+' avec une mission');tools()};
     const cp=()=>plans[selG]||(plans[selG]={steps:[],march:false});
     if(q('[data-w]'))q('[data-w]').onclick=()=>{const pl=cp(),l=pl.steps[pl.steps.length-1];if(l&&l.k==='wait'){l.s=Math.min(60,l.s+5)}else if(pl.steps.length<8)pl.steps.push({k:'wait',s:5});tools()};
-    if(q('[data-h]'))q('[data-h]').onclick=()=>{const pl=cp();if(pl.steps.length<8)pl.steps.push({k:'hold'});say('Le groupe tiendra cette position jusqu’à l’arrivée de l’ennemi, puis attaquera');tools()};
+    if(q('[data-h]'))q('[data-h]').onclick=()=>{const pl=cp();if(pl.steps.length<8)pl.steps.push({k:'hold'});say('Le groupe gardera cette position : il se bat sur place et ne poursuit pas');tools()};
     if(q('[data-mf]'))q('[data-mf]').onclick=()=>{const pl=cp();pl.march=!pl.march;say(pl.march?'Marche forcée : le groupe ignore l’ennemi jusqu’à la fin de son chemin':'Le groupe se battra s’il croise l’ennemi en chemin');tools()};
     if(q('[data-u]'))q('[data-u]').onclick=()=>{const pl=cp();pl.steps.pop();tools()};
     if(q('[data-x]'))q('[data-x]').onclick=()=>{delete plans[selG];tools()};
