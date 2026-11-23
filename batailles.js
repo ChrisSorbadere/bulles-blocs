@@ -21,7 +21,7 @@ const Battle=(()=>{
   const WORLDS=[['Plaines','#2a3326','#33402e'],['Forêts','#1f2c22','#28382b'],['Collines','#2f2f26','#3a3a2d'],['Rivières','#22303a','#2b3a44'],['Marches','#2c2a33','#36333f']];
   const PLAYER_BUDGET=n=>Math.round(24+n*4.2);
   // Force de l'armée ennemie par niveau : calée par simulation (un robot joue des dizaines de batailles par niveau)
-  const ENEMY_K={1:0.845,2:0.845,3:0.738,4:0.818,5:1.163,6:0.924,7:0.473,8:0.791,9:0.712,10:1.11,11:1.774,12:0.871,13:0.898,14:0.765,15:0.898,16:1.137,17:1.03,18:1.376,19:0.898,20:0.632,21:0.712,22:0.818,23:0.977,24:1.376,25:1.27,26:1.296,27:0.818,28:1.137,29:1.19,30:0.765,31:1.03,32:0.712,33:0.951,34:0.712,35:1.482,36:0.765,37:0.924,38:1.243,39:0.818,40:1.482,41:1.907,42:1.243,43:0.685,44:1.004,45:1.588};
+  const ENEMY_K={1:0.871,2:0.924,3:0.791,4:0.871,5:1.084,6:0.924,7:0.366,8:0.765,9:0.712,10:1.057,11:1.668,12:0.791,13:0.924,14:0.765,15:0.898,16:1.137,17:0.951,18:1.376,19:0.951,20:0.552,21:1.03,22:0.791,23:0.977,24:1.216,25:1.27,26:1.296,27:0.924,28:1.163,29:1.216,30:0.605,31:1.296,32:0.499,33:0.977,34:0.685,35:1.376,36:0.526,37:0.845,38:1.057,39:0.951,40:0.632,41:1.323,42:1.243,43:0.951,44:1.057,45:1.19};
   const DOC={drums:['🥁','Tambours','Les pertes de moral sont réduites d’un tiers',60],lances:['🐎','Lances de charge','La charge des cavaliers fait ×2,6 au lieu de ×2',50],
     fire:['🔥','Flèches enflammées','Archers +20 % de dégâts',70],tortue:['🐢','Tortue','Les boucliers protègent plus loin et mieux',60],
     eng:['⚙️','Ingénieurs','Les catapultes tirent 25 % plus vite',70],banner:['🚩','Étendard','Aura du général +50 %, ralliement plus long',80],second:['📯','Second ralliement','Deux ralliements par bataille',120]};
