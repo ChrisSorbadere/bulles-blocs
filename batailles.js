@@ -161,7 +161,17 @@ const Battle=(()=>{
       kills:[new Array(8).fill(0),new Array(8).fill(0)],lost:[new Array(8).fill(0),new Array(8).fill(0)],fledN:[0,0]}}
   // franchir une rivière (par un pont) ou un mur (par la porte)
   const LEASH=8;
-  function home(u,dt,ES){const dx=u.ax-u.x,dy=u.ay-u.y,d=Math.hypot(dx,dy);if(d>.6){const sp=T[u.t].spd*ES*.8,m=Math.min(d,sp*dt);u.x+=dx/d*m;u.y+=dy/d*m;u.fx=dx/d;u.fy=dy/d;u.mv+=dt}else{u.mv=0}}
+  // avancer d'un pas vers (dx,dy) en contournant les rochers ; si l'unité piétine, elle prend un détour
+  function mv(u,dx,dy,d,step,dt){if(d<1e-6)return;let nx=dx/d,ny=dy/d;const lv=XL,ru=T[u.t].r;
+    if(u.det){u.det.t-=dt;const ex=u.det.x-u.x,ey=u.det.y-u.y,ed=Math.hypot(ex,ey);if(u.det.t<=0||ed<1)u.det=null;else{nx=ex/ed;ny=ey/ed}}
+    if(!u.det&&lv){let best=null,bt=1e9;const look=Math.min(d,7);
+      for(const r of lv.rocks){const rx=r.x-u.x,ry=r.y-u.y,t=rx*nx+ry*ny;if(t<=0||t>look+r.r)continue;const pd=rx*ny-ry*nx,cl=r.r+ru+.5;if(Math.abs(pd)<cl&&t<bt){bt=t;best={r,pd,cl}}}
+      if(best){const{r,pd,cl}=best;if(!u.av||u.av.r!==r)u.av={r,side:pd>=0?-1:1};const sd=u.av.side,px=r.x+ny*sd*(cl+.8),py=r.y-nx*sd*(cl+.8),ex=px-u.x,ey=py-u.y,ed=Math.hypot(ex,ey)||1;nx=ex/ed;ny=ey/ed}else u.av=null}
+    const m=Math.min(d,step);u.x+=nx*m;u.y+=ny*m;u.fx=nx;u.fy=ny;u.mv+=dt;
+    // blocage : peu de progrès en 1,5 s alors qu'on veut avancer
+    u.stT=(u.stT||0)+dt;if(u.stX==null){u.stX=u.x;u.stY=u.y}
+    if(u.stT>1.5){const moved=Math.hypot(u.x-u.stX,u.y-u.stY);if(moved<step/dt*1.5*.25&&!u.det&&lv&&(lv.rocks.some(r=>Math.hypot(r.x-u.x,r.y-u.y)<r.r+ru+2.5)||lv.river&&Math.abs(u.y-lv.river.y)<lv.river.h+ru+2.5||lv.wall&&Math.abs(u.y-lv.wall.y)<lv.wall.h+ru+2.5)){const sd=(u.stS=-(u.stS||1)),dl=6;u.det={x:Math.max(2,Math.min(FW-2,u.x+(-dy/d)*sd*dl+dx/d*1.5)),y:Math.max(2,Math.min(FH-2,u.y+(dx/d)*sd*dl+dy/d*1.5)),t:2.5}}u.stT=0;u.stX=u.x;u.stY=u.y}}
+  function home(u,dt,ES){const dx=u.ax-u.x,dy=u.ay-u.y,d=Math.hypot(dx,dy);if(d>.6){const sp=T[u.t].spd*ES*.8;mv(u,dx,dy,d,sp*dt,dt)}else{u.mv=0}}
   let XL=null,XB=null;
   function cross(u,tx,ty2){const lv=XL,b=XB;if(lv.river){const ry=lv.river.y,sd=Math.sign(u.y-ry),de=Math.sign(ty2-ry);if(sd&&de&&sd!==de&&!lv.river.br.some(br=>Math.abs(u.x-br.x)<br.w/2-1)){let bb=lv.river.br[0];for(const br of lv.river.br)if(Math.abs(br.x-u.x)+Math.abs(br.x-tx)<Math.abs(bb.x-u.x)+Math.abs(bb.x-tx))bb=br;return[bb.x,ry]}}
     if(lv.wall){const wl=lv.wall,sd=Math.sign(u.y-wl.y),de=Math.sign(ty2-wl.y);if(sd&&de&&sd!==de){const open=b&&b.gate<=0;if(!open)return[wl.gx,wl.y+sd*(wl.h+2)];if(Math.abs(u.x-wl.gx)>wl.gw/2-1.2)return[wl.gx,wl.y+sd*(wl.h+.5)]}}
@@ -207,7 +217,7 @@ const Battle=(()=>{
     if(b.banner)b.banner[1]-=dt;
     const env=lv.env||'clear',ES=env==='snow'?.78:env==='desert'?1-Math.min(.3,b.t/200):1,VIS=env==='night'?20:env==='fog'?30:0;
     for(const u of U){if(u.dead){u.fade+=dt;continue}const ty=T[u.t];if(u.hid)continue;
-      if(u.wag){let blk=false;near(u.x,u.y,3.5,o=>{if(o.side===1&&!o.dead)blk=true});u.flash=Math.max(0,u.flash-dt);if(!blk){const sp=2.4*ES*(inWater(lv,u.x,u.y)?.45:1);let tx=lv.wagon.x,ty3=2;[tx,ty3]=cross(u,tx,ty3);const dx=tx-u.x,dy=ty3-u.y,d=Math.hypot(dx,dy)||1;u.x+=dx/d*sp*dt;u.y+=dy/d*sp*dt}continue}u.flash=Math.max(0,u.flash-dt);u.cd-=dt;u.rt-=dt;u.buff=Math.max(0,u.buff-dt);
+      if(u.wag){let blk=false;near(u.x,u.y,3.5,o=>{if(o.side===1&&!o.dead)blk=true});u.flash=Math.max(0,u.flash-dt);if(!blk){const sp=2.4*ES*(inWater(lv,u.x,u.y)?.45:1);let tx=lv.wagon.x,ty3=2;[tx,ty3]=cross(u,tx,ty3);const dx=tx-u.x,dy=ty3-u.y,d=Math.hypot(dx,dy)||1;mv(u,dx,dy,d,sp*dt,dt)}continue}u.flash=Math.max(0,u.flash-dt);u.cd-=dt;u.rt-=dt;u.buff=Math.max(0,u.buff-dt);
       // moral
       const ng=nearGen(u);if(u.hp<u.max*.35)morLoss(u,dt*2);if(env==='desert'&&!ng&&b.t>20)morLoss(u,dt*.6);u.mor=Math.min(100,u.mor+dt*(ng?7:2));
       if(u.t===7||u.t===6)u.mor=100;
@@ -226,17 +236,17 @@ const Battle=(()=>{
       if(!g&&HOLD){home(u,dt,ES);continue}
       if(!g){if(u.ord===1||u.ord===4||u.ord===5){if(b.t>(VIS?12:30))u.ord=0;else continue}
         let tx=u.x,ty2=u.side===0?2:FH-2;if(mis==='defend'&&u.side===1){tx=lv.flag.x;ty2=lv.flag.y}else if(mis==='hill'&&u.side===0&&b.t>3){tx=lv.zone.x;ty2=lv.zone.y}
-        [tx,ty2]=cross(u,tx,ty2);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>1){let sp=u.gs*ES;if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;u.x+=ddx/dd*sp*dt;u.y+=ddy/dd*sp*dt;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt}continue}
+        [tx,ty2]=cross(u,tx,ty2);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>1){let sp=u.gs*ES;if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;mv(u,ddx,ddy,dd,sp*dt,dt)}continue}
       let dx=g.x-u.x,dy=g.y-u.y,d=Math.hypot(dx,dy)||.01;
       // plan de mission
       const pl=u.pk&&b.plans[u.pk];let stay=false;
       if(pl&&pl.si<pl.steps.length){const st=pl.steps[pl.si];
         if(st.k==='go'){let tx=st.x+u.off[0],ty2=st.y+u.off[1];[tx,ty2]=cross(u,tx,ty2);
-          const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>.4){let sp=u.gs*ES*(u.buff>0?1.25:1);if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;const m=Math.min(dd,sp*dt);u.x+=ddx/dd*m;u.y+=ddy/dd*m;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt}
+          const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>.4){let sp=u.gs*ES*(u.buff>0?1.25:1);if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;mv(u,ddx,ddy,dd,sp*dt,dt)}
           continue}
         stay=true}
-      if(mis==='hill'&&u.side===1&&d>16&&!u.ord&&(u.x-lv.zone.x)**2+(u.y-lv.zone.y)**2>(lv.zone.r*.6)**2){let [tx,ty2]=cross(u,lv.zone.x,lv.zone.y);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy)||1;const sp=u.gs*ES;u.x+=ddx/dd*sp*dt;u.y+=ddy/dd*sp*dt;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt;continue}
-      if(mis==='defend'&&u.side===1&&d>14&&!u.ord){let [tx,ty2]=cross(u,lv.flag.x,lv.flag.y);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>1.5){const sp=u.gs*ES;u.x+=ddx/dd*sp*dt;u.y+=ddy/dd*sp*dt;u.fx=ddx/dd;u.fy=ddy/dd;u.mv+=dt}continue}
+      if(mis==='hill'&&u.side===1&&d>16&&!u.ord&&(u.x-lv.zone.x)**2+(u.y-lv.zone.y)**2>(lv.zone.r*.6)**2){let [tx,ty2]=cross(u,lv.zone.x,lv.zone.y);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy)||1;const sp=u.gs*ES;mv(u,ddx,ddy,dd,sp*dt,dt);continue}
+      if(mis==='defend'&&u.side===1&&d>14&&!u.ord){let [tx,ty2]=cross(u,lv.flag.x,lv.flag.y);const ddx=tx-u.x,ddy=ty2-u.y,dd=Math.hypot(ddx,ddy);if(dd>1.5){const sp=u.gs*ES;mv(u,ddx,ddy,dd,sp*dt,dt)}continue}
       // ordres
       if((u.ord===5||u.ord===1&&u.side===1)&&(d<22||b.t>30||(b.lastHit!=null&&b.t-b.lastHit>6)))u.ord=0;
       if(u.ord===4&&(b.t>15||(b.lastHit!=null&&b.t-b.lastHit>6)||alive[u.side].length<b.start[u.side]*.6||d<16))u.ord=0;
@@ -268,7 +278,7 @@ const Battle=(()=>{
         if(u.cd<=0){u.cd=ty.cd;b.gate-=ty.dmg*k*(u.t===7?3:1);b.fx.push({k:'p',x:lv.wall.gx+(Math.random()-.5)*6,y:lv.wall.y,vx:(Math.random()-.5)*10,vy:Math.random()*8,t:0,c:2});if(b.gate<=0){b.fx.push({k:'ring',x:lv.wall.gx,y:lv.wall.y,t:0,r:8,c:2});b.shake=.2}}u.fx=0;u.fy=-1;continue}
       dx=tx-u.x;dy=ty2-u.y;d=Math.hypot(dx,dy)||.01;
       let sp=(Math.hypot(g.x-u.x,g.y-u.y)>14?u.gs:ty.spd)*ES*(u.buff>0?1.25:1);if(inWater(lv,u.x,u.y))sp*=.45;if(inTerrain(lv.forest,u.x,u.y))sp*=.75;
-      u.x+=dx/d*sp*dt;u.y+=dy/d*sp*dt;u.fx=dx/d;u.fy=dy/d;u.mv+=dt}
+      mv(u,dx,dy,d,sp*dt,dt)}
     // séparation, obstacles, rivière
     for(const u of U){if(u.dead)continue;const ru=T[u.t].r;
       near(u.x,u.y,3+ru,o=>{if(o===u||o.dead)return;const dx=u.x-o.x,dy=u.y-o.y,d2=dx*dx+dy*dy,m=ru+T[o.t].r;if(d2<m*m&&d2>1e-6){const d=Math.sqrt(d2),w=T[o.t].r>2?.9:.5,p=(m-d)*w;u.x+=dx/d*p;u.y+=dy/d*p}});
