@@ -2,7 +2,7 @@
    6 mondes de 20 niveaux · obstacles : ancres, glace, pierres, feu, bulles · spéciaux : bombes (boucle), éclair (ligne ≥ 7), joker */
 const Dots=(()=>{
   const cv=$('#dot-cv'),ctx=cv.getContext('2d'),stage=$('#dot-stage'),goalsEl=$('#dot-goals'),movesEl=$('#dot-moves'),lvlBtn=$('#dot-lvl'),ov=$('#dot-ov');
-  const C=6,Rw=7,COLS=['#ff5d5d','#ffc23d','#3fcf6e','#45a6ff','#b77bff'],CN=['rouges','jaunes','verts','bleus','violets'];
+  let C=6,Rw=7;const COLS=['#ff5d5d','#ffc23d','#3fcf6e','#45a6ff','#b77bff'],CN=['rouges','jaunes','verts','bleus','violets'];
   const rng=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
   const WORLDS=[
     {n:'Plage',e:'🏖️',bg:['#16324a','#1d2850'],tip:'Relie les points de même couleur. Une ligne de 7 points ou plus crée un ⚡ éclair : utilisé dans une ligne suivante, il efface sa rangée et sa colonne.'},
@@ -13,7 +13,7 @@ const Dots=(()=>{
     {n:'Espace',e:'🚀',bg:['#0e0f2a','#1d1238'],tip:'Tout se mélange dans l’espace : à toi de trouver le bon ordre !'}];
   const NLV=WORLDS.length*20,wOf=n=>Math.min(WORLDS.length-1,Math.floor((n-1)/20));
   // coups par niveau : calés par simulation (un robot joue 40 parties par niveau)
-  const MOVES={1:11,2:11,3:10,4:20,5:25,6:23,7:24,8:23,9:26,10:18,11:22,12:25,13:25,14:19,15:23,16:27,17:70,18:70,19:47,20:35,21:60,22:63,23:70,24:64,25:69,26:32,27:45,28:34,29:56,30:53,31:59,32:51,33:70,34:62,35:70,36:55,37:70,38:70,39:70,40:70,41:38,42:31,43:32,44:37,45:58,46:52,47:40,48:33,49:38,50:23,51:37,52:42,53:36,54:57,55:35,56:44,57:55,58:33,59:38,60:34,61:70,62:31,63:70,64:70,65:54,66:41,67:70,68:70,69:70,70:39,71:49,72:31,73:70,74:35,75:38,76:70,77:44,78:70,79:43,80:50,81:41,82:34,83:41,84:41,85:50,86:41,87:70,88:70,89:64,90:33,91:34,92:39,93:70,94:34,95:36,96:62,97:32,98:39,99:39,100:45,101:67,102:28,103:36,104:35,105:48,106:43,107:47,108:62,109:42,110:55,111:48,112:48,113:37,114:37,115:70,116:70,117:70,118:52,119:47,120:61};
+  const MOVES={1:10,2:11,3:11,4:24,5:19,6:22,7:19,8:26,9:29,10:26,11:19,12:16,13:21,14:22,15:17,16:17,17:16,18:23,19:26,20:14,21:24,22:17,23:30,24:17,25:47,26:42,27:45,28:39,29:53,30:44,31:60,32:18,33:69,34:27,35:39,36:34,37:16,38:67,39:70,40:42,41:27,42:42,43:16,44:16,45:47,46:50,47:16,48:27,49:15,50:15,51:48,52:49,53:32,54:28,55:43,56:18,57:50,58:46,59:28,60:25,61:36,62:33,63:31,64:40,65:41,66:15,67:56,68:34,69:34,70:31,71:52,72:38,73:19,74:51,75:31,76:40,77:33,78:43,79:53,80:25,81:44,82:19,83:36,84:34,85:33,86:47,87:29,88:37,89:40,90:30,91:34,92:33,93:32,94:42,95:38,96:41,97:44,98:33,99:44,100:20,101:57,102:36,103:30,104:53,105:40,106:27,107:40,108:19,109:43,110:31,111:33,112:31,113:36,114:20,115:35,116:49,117:28,118:28,119:43,120:47};
   let stars=store.get('bb.dotStars',[]);if(!Array.isArray(stars))stars=[];
   const unlocked=()=>{let n=1;while(stars[n-1])n++;return Math.min(n,NLV)};
   let cur=Math.min(store.get('bb.dotSel',1),unlocked())||1;
@@ -21,26 +21,41 @@ const Dots=(()=>{
   const id=(r,c)=>r*C+c,RC=i=>[i/C|0,i%C];
   const nb4=i=>{const[r,c]=RC(i),o=[];if(c>0)o.push(i-1);if(c<C-1)o.push(i+1);if(r>0)o.push(i-C);if(r<Rw-1)o.push(i+C);return o};
   /* ---------- niveaux ---------- */
-  function genLevel(n){const R=rng(n*9973+7),ri=k=>Math.floor(R()*k),w=wOf(n),k10=(n-1)%20,tier=Math.min(1,(n-1)/100),saw=(k10%10)/9;
-    const L={n,w,nCol:n<=3?4:5,goals:{},holes:[],ice:[],anchors:0,stones:[],fire:[],bub:[],joker:0};
-    const pick=(m,ban)=>{const s=new Set();let t=0;while(s.size<m&&t++<400){const i=ri(C*Rw);if(!ban.includes(i))s.add(i)}return[...s]};
+  function shapeHoles(kind){const out=[],cc=(C-1)/2,rc=(Rw-1)/2;for(let r=0;r<Rw;r++)for(let c=0;c<C;c++){let h=false;const dx=c-cc,dy=r-rc;
+      if(kind==='diamond')h=Math.abs(dx)/(C/2)+Math.abs(dy)/(Rw/2)>1.12;
+      else if(kind==='cross')h=(c<Math.floor(C/3)||c>=C-Math.floor(C/3))&&(r<Math.floor(Rw/3)||r>=Rw-Math.floor(Rw/3));
+      else if(kind==='ring')h=Math.abs(dx)<.6+(C%2?0:.5)-.5&&Math.abs(dy)<.6+(Rw%2?0:.5)-.5;
+      else if(kind==='heart'){const x=dx/(C/2)*1.25,y=-dy/(Rw/2)*1.25+.25;h=Math.pow(x*x+y*y-1,3)-x*x*y*y*y>0}
+      else if(kind==='hour')h=Math.abs(dx)>(C/2)*(.4+.6*Math.abs(dy)/(Rw/2))+.1;
+      if(h)out.push(id(r,c))}return out}
+  const RS={26:1,28:1,36:1,39:1,40:1,54:1,63:1,72:2,73:1,85:1,90:1,92:1,98:1,110:1,116:1,120:2};
+  function genLevel(n){const R=rng(n*9973+7+(RS[n]||0)*131),ri=k=>Math.floor(R()*k),w=wOf(n),k10=(n-1)%20,tier=Math.min(1,(n-1)/100),saw=(k10%10)/9;
+    // taille de la grille : 6×7 au début, puis variée
+    const SZ=[[6,7],[5,6],[6,6],[7,7],[7,8],[5,7],[6,8]],sz=n<=10||k10<3?[6,7]:SZ[ri(SZ.length)];C=sz[0];Rw=sz[1];
+    const L={n,w,C,R:Rw,nCol:n<=3?4:5,goals:{},holes:[],ice:[],anchors:0,stones:[],fire:[],bub:[],joker:0,walls:[]};
+    const pick=(m,ban)=>{const s=new Set();let t=0;while(s.size<m&&t++<400){const i=ri(C*Rw);if(!ban.includes(i))s.add(i)}return[...s]},top=[...Array(C).keys()],top2=[...Array(C*2).keys()];
     // couleurs à collecter
     const k=n<3?1:n<8?2:(R()<.5?2:3),cols=[];while(cols.length<k){const c=ri(L.nCol);if(!cols.includes(c))cols.push(c)}
     L.goals.colors={};cols.forEach(c=>L.goals.colors[c]=Math.round((k===1?14:k===2?11:9)+tier*14+saw*6+ri(3)));
     // trous (formes) à partir du niveau 11
-    if(n>=11&&R()<.55){const sh=[[[0,0],[0,5]],[[3,0],[3,5]],[[0,0],[0,5],[6,0],[6,5]],[[3,2],[3,3]],[[0,2],[0,3],[6,2],[6,3]],[[2,0],[4,0],[2,5],[4,5]]][ri(6)];L.holes=sh.map(([r,c])=>id(r,c))}
+    if(n>=11&&R()<.6){const kinds=['diamond','cross','ring','heart','hour','corners'],kd=kinds[ri(kinds.length)];L.shape=kd;
+      L.holes=kd==='corners'?[id(0,0),id(0,C-1),id(Rw-1,0),id(Rw-1,C-1)]:shapeHoles(kd);if(C*Rw-L.holes.length<24){L.holes=[];L.shape=null}}
+    // murs entre deux cases (à partir du Glacier)
+    if(w>=2&&R()<.5){const nw=3+ri(4),set=new Set();for(let t=0;t<60&&set.size<nw;t++){const i=ri(C*Rw),[r,c]=RC(i),v=R()<.5,j=v?(r<Rw-1?i+C:-1):(c<C-1?i+1:-1);if(j<0||L.holes.includes(i)||L.holes.includes(j))continue;set.add(i+'-'+j)}L.walls=[...set]}
     // obstacles selon le monde (introduits en douceur, puis mélangés)
     const feats=[];if(w===1||w>=3&&R()<.35)feats.push('anchors');if(w===2||w===4&&R()<.5||w===5&&R()<.4)feats.push('ice');if(w===2&&k10>=5||w===3&&R()<.5||w===5&&R()<.4)feats.push('stones');
     if(w===3||w===5&&R()<.45)feats.push('fire');if(w===4||w===5&&R()<.45)feats.push('bub');if(w===0&&k10>=12&&R()<.5)feats.push('anchors');
-    const lvl=k10/19;
-    if(feats.includes('anchors'))L.anchors=Math.min(4,1+Math.floor(lvl*2.5)+(w>=3?1:0));
-    if(feats.includes('ice'))L.ice=pick(Math.min(16,6+Math.round(lvl*8)+w),L.holes);
-    if(feats.includes('stones'))L.stones=pick(Math.min(9,3+Math.round(lvl*4)),[...L.holes,...[0,1,2,3,4,5]]);
-    if(feats.includes('fire'))L.fire=pick(Math.min(6,2+Math.round(lvl*3)),[...L.holes,...L.stones,...[0,1,2,3,4,5,6,7,8,9,10,11]]);
-    if(feats.includes('bub'))L.bub=pick(Math.min(10,4+Math.round(lvl*5)),[...L.holes,...L.stones]);
+    const lvl=k10/19,cells=C*Rw-L.holes.length,af=Math.min(1,cells/42),sc=m=>Math.max(1,Math.round(m*af));
+    if(cells<36&&!cols.includes(4))L.nCol=4;
+    if(feats.length>=2&&L.walls.length>3)L.walls=L.walls.slice(0,3);
+    if(feats.includes('anchors'))L.anchors=Math.min(cells<36?2:3,1+Math.floor(lvl*2.5)+(w>=3?1:0)-(feats.length>=2?1:0))||1;
+    if(feats.includes('ice'))L.ice=pick(sc(Math.min(16,6+Math.round(lvl*8)+w)),L.holes);
+    if(feats.includes('stones'))L.stones=pick(sc(Math.min(9,3+Math.round(lvl*4))),[...L.holes,...top]);
+    if(feats.includes('fire'))L.fire=pick(sc(Math.min(5,2+Math.round(lvl*3))),[...L.holes,...L.stones,...top2]);
+    if(feats.includes('bub'))L.bub=pick(sc(Math.min(10,4+Math.round(lvl*5))),[...L.holes,...L.stones]);
     if(w>=4)L.joker=w===4?.03:.02;
     // moins de couleurs à collecter quand il y a beaucoup d'obstacles
-    const nf=feats.length;if(nf>=2)for(const c in L.goals.colors)L.goals.colors[c]=Math.round(L.goals.colors[c]*.7);
+    const nf=feats.length,area=(C*Rw-L.holes.length)/42;for(const c in L.goals.colors)L.goals.colors[c]=Math.max(5,Math.round(L.goals.colors[c]*(nf>=2?.7:1)*Math.min(1.15,Math.max(.6,area))));
     const need=Object.values(L.goals.colors).reduce((a,b)=>a+b,0);
     L.moves=MOVES[n]||Math.max(12,Math.round(.25*need+2*L.anchors+.5*L.ice.length+1.2*L.stones.length+2.5*L.fire.length+.9*L.bub.length+18));
     return L}
@@ -70,7 +85,7 @@ const Dots=(()=>{
   const isDot=k=>k&&!k.a&&!k.s;            // point (couleur ou joker), libre ou en bulle
   const free=k=>isDot(k)&&!k.b;             // utilisable dans un chemin
   const match=(k,col)=>free(k)&&(k.j||k.c===col);
-  function start(n,dc){daily=dc||null;cur=n;if(!SIM&&!daily)store.set('bb.dotSel',n);lv=genLevel(n);
+  function start(n,dc){daily=dc||null;cur=n;if(!SIM&&!daily)store.set('bb.dotSel',n);lv=genLevel(n);walls=new Set(lv.walls);if(!SIM)resize();
     if(daily){if(daily.k==='moves')lv.moves=Math.max(8,Math.round(lv.moves*.85));else if(daily.k==='noloop')lv.moves=Math.round(lv.moves*1.2);else{const free=[...Array(lv.nCol).keys()].filter(c=>lv.goals.colors[c]==null);if(free.length){lv.goals.colors[free[0]]=10;lv.moves+=5}}}
     moves=lv.moves;over=false;path=[];loop=false;fx=[];flash=null;
     hole=new Array(C*Rw).fill(false);lv.holes.forEach(i=>hole[i]=true);ice=new Array(C*Rw).fill(0);lv.ice.forEach(i=>ice[i]=1);fire=new Array(C*Rw).fill(0);lv.fire.forEach(i=>fire[i]=1);
@@ -82,9 +97,10 @@ const Dots=(()=>{
     ensureMove();state='fall';erasing=false;hud();fillSel();boostUI();if(!SIM){if(daily)dailyCard();else tip()}}
   function lowest(c){let r=Rw-1;while(r>0&&hole[id(r,c)])r--;return r}
   function hasMove(){for(let i=0;i<C*Rw;i++){const k=g[i];if(!free(k))continue;const[r,c]=RC(i);
-      for(const j of[c<C-1?i+1:-1,r<Rw-1?i+C:-1]){if(j<0)continue;const o=g[j];if(!free(o))continue;if(k.j||o.j||k.c===o.c)return true}}return false}
+      for(const j of[c<C-1?i+1:-1,r<Rw-1?i+C:-1]){if(j<0||wallBetween(i,j))continue;const o=g[j];if(!free(o))continue;if(k.j||o.j||k.c===o.c)return true}}return false}
   function ensureMove(){let t=0;while(!hasMove()&&t++<50){const ds=g.map((k,i)=>free(k)&&!k.j?i:-1).filter(i=>i>=0),cs=ds.map(i=>g[i].c);for(let i=cs.length-1;i>0;i--){const j=rnd(i+1);[cs[i],cs[j]]=[cs[j],cs[i]]}ds.forEach((i,k)=>g[i].c=cs[k])}}
-  const adj=(a,b)=>{const[r1,c1]=RC(a),[r2,c2]=RC(b);return Math.abs(r1-r2)+Math.abs(c1-c2)===1};
+  let walls=new Set();const wallBetween=(a,b)=>walls.has(Math.min(a,b)+'-'+Math.max(a,b));
+  const adj=(a,b)=>{const[r1,c1]=RC(a),[r2,c2]=RC(b);return Math.abs(r1-r2)+Math.abs(c1-c2)===1&&!wallBetween(a,b)};
   const pathCol=p=>{for(const i of p)if(g[i]&&!g[i].j)return g[i].c;return 0};
   // cellules entourées par une boucle (centre dans le polygone du chemin)
   function enclosed(p){const poly=p.map(i=>RC(i)),out=[];for(let i=0;i<C*Rw;i++){if(p.includes(i))continue;const[r,c]=RC(i);let ins=false;
@@ -183,6 +199,8 @@ const Dots=(()=>{
       if(fire[i]){const p=cell*.06,gr=ctx.createRadialGradient(x+cell/2,y+cell*.65,2,x+cell/2,y+cell/2,cell*.6);gr.addColorStop(0,'rgba(255,200,80,'+(.55+.15*Math.sin(t*8+i))+')');gr.addColorStop(1,'rgba(255,70,30,.12)');ctx.fillStyle=gr;ctx.beginPath();ctx.roundRect?ctx.roundRect(x+p,y+p,cell-2*p,cell-2*p,cell*.2):ctx.rect(x+p,y+p,cell-2*p,cell-2*p);ctx.fill()}
       else if(ice[i]){ctx.fillStyle='rgba(170,220,255,.22)';ctx.strokeStyle='rgba(200,235,255,.5)';ctx.lineWidth=1.5;const p=cell*.08;ctx.beginPath();ctx.roundRect?ctx.roundRect(x+p,y+p,cell-2*p,cell-2*p,cell*.18):ctx.rect(x+p,y+p,cell-2*p,cell-2*p);ctx.fill();ctx.stroke()}
       else{ctx.fillStyle='rgba(255,255,255,.035)';ctx.beginPath();ctx.arc(x+cell/2,y+cell/2,cell*.12,0,7);ctx.fill()}}
+    ctx.strokeStyle='rgba(230,236,255,.85)';ctx.lineWidth=Math.max(3,cell*.09);ctx.lineCap='round';for(const k of walls){const[a,b]=k.split('-').map(Number),[r1,c1]=RC(a),[r2,c2]=RC(b);ctx.beginPath();
+      if(r1===r2){const x=ox+(c1+1)*cell;ctx.moveTo(x,oy+r1*cell+cell*.12);ctx.lineTo(x,oy+(r1+1)*cell-cell*.12)}else{const y=oy+(r1+1)*cell;ctx.moveTo(ox+c1*cell+cell*.12,y);ctx.lineTo(ox+(c1+1)*cell-cell*.12,y)}ctx.stroke()}ctx.lineCap='butt';
     if(path.length){const col=COLS[pathCol(path)];ctx.strokeStyle=col;ctx.lineWidth=cell*.16;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();
       path.forEach((i,k2)=>{const x=cx(i),y=cyR(i/C|0);k2?ctx.lineTo(x,y):ctx.moveTo(x,y)});if(pt&&!loop)ctx.lineTo(pt[0],pt[1]);ctx.stroke();ctx.lineCap='butt';
       if(!loop&&path.length>=7){ctx.fillStyle='#fff';ctx.font='700 '+Math.round(cell*.4)+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚡',cx(path[path.length-1]),cyR(path[path.length-1]/C|0)-cell*.45)}}
@@ -215,9 +233,9 @@ const Dots=(()=>{
   $('#dot-new').onclick=()=>{if(over||moves===lv.moves){start(cur,daily);return}Celebrate.ask('Recommencer le niveau ?','Le niveau repart de zéro.','Recommencer','Continuer',()=>start(cur,daily),null)};
   const tok=k=>k?(k.a?{a:1}:k.s?{s:k.s}:{c:k.c,j:k.j||0,z:k.z||0,b:k.b||0}):null;
   function save(){if(over||daily)return null;if(state!=='idle'||drag)return undefined;if(moves===lv.moves)return null;return{v:2,n:cur,g:g.map(tok),ice,fire,moves,prog,anchorsOut,bubN:lv.bubN,stN:lv.stN}}
-  function load(o){if(o.v!==2||!(o.n>=1&&o.n<=unlocked())||!Array.isArray(o.g)||o.g.length!==C*Rw)return;cur=o.n;lv=genLevel(o.n);hole=new Array(C*Rw).fill(false);lv.holes.forEach(i=>hole[i]=true);
+  function load(o){if(o.v!==2||!(o.n>=1&&o.n<=unlocked())||!Array.isArray(o.g))return;const L0=genLevel(o.n);if(o.g.length!==C*Rw){genLevel(cur);return}cur=o.n;lv=L0;walls=new Set(lv.walls);resize();hole=new Array(C*Rw).fill(false);lv.holes.forEach(i=>hole[i]=true);
     g=o.g.map((k,i)=>k?{...k,y:i/C|0}:null);ice=o.ice;fire=o.fire||new Array(C*Rw).fill(0);moves=o.moves;prog=o.prog;anchorsOut=o.anchorsOut||0;lv.bubN=o.bubN||0;lv.stN=o.stN||0;over=false;path=[];loop=false;fx=[];state='idle';hud();fillSel()}
   start(cur);
   return{frame,resize,save,load,pause(){},resume(){},sub:()=>WORLDS[wOf(unlocked())].e+' Niveau '+unlocked()+' · ★ '+stars.reduce((a,b)=>a+(b||0),0)+(dayS().won===dkey()?' · 📅 ✓':''),
-    _sim:{genLevel,start:n=>start(n),setMoves:m=>{moves=m},tick:()=>{let t=0;while(state==='fall'&&t++<400)frame(.05)},get:()=>({g,lv,prog,ice,fire,over,moves}),commitPath:(p,l)=>{path=p;loop=l;commit()},set SIM(v){SIM=v},get SIM(){return SIM}}}
+    _sim:{genLevel,start:n=>start(n),setMoves:m=>{moves=m},tick:()=>{let t=0;while(state==='fall'&&t++<400)frame(.05)},get:()=>({g,lv,prog,ice,fire,over,moves,C,R:Rw,walls}),commitPath:(p,l)=>{path=p;loop=l;commit()},set SIM(v){SIM=v},get SIM(){return SIM}}}
 })();
