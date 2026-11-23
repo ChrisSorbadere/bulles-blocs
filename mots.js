@@ -4,7 +4,7 @@ const Words=(()=>{
   const KB={fr:['azertyuiop','qsdfghjklm','⏎wxcvbn⌫'],es:['qwertyuiop','asdfghjklñ','⏎zxcvbnm⌫'],en:['qwertyuiop','asdfghjkl','⏎zxcvbnm⌫']};
   const LN={fr:'Français',es:'Español',en:'English'};
   let lang=store.get('bb.motLang',null);if(!KB[lang])lang=I18N.lang==='en'?'en':'fr';
-  let mode=store.get('bb.motMode','day');if(!['day','free','sday','sfree','slvl'].includes(mode))mode='day';
+  let mode=store.get('bb.motMode','day');if(!['day','free','sday','sfree','slvl','stime'].includes(mode))mode='day';
   const DATA={};
   let D=null,target='',guesses=[],cur='',over=false,won=false,busy=false,loading=false,shakeRow=-1,revealRow=-1;
   async function data(l){if(DATA[l])return DATA[l];const r=await fetch('mots-'+l+'.json');const j=await r.json();return DATA[l]={s:j.s,v:new Set(j.v.split(' '))}}
@@ -28,7 +28,9 @@ const Words=(()=>{
   const dayClue=()=>{const k=dayNum()%3;return k===0?'words':k===1?'emoji':'tr:'+(lang==='fr'?'es':'fr')};
   function showS(on){gridEl.hidden=on;kbEl.hidden=on;sopEls[0].hidden=!on;sopEls[1].hidden=!on;sopEls[2].hidden=!on||mode==='sday';if(!on)$('#sop-ov').hidden=true;if(on)clueOpts()}
   let sopNote='',noteT=0;
-  function sopTick(G,note){if(note){sopNote=note;noteT=4}else if(noteT>0)noteT--;msg(noteT>0&&sopNote?sopNote:(mode==='sday'?'Soupe du jour · ':mode==='slvl'?'Niveau '+sopLvl+' · ':'')+G.tn+' · '+G.found.length+'/'+G.words.length+' · ⏱ '+fmt(G.t)+(mode==='slvl'?' / '+fmt(PAR[G.di]):''));if(mode==='sday'&&!G.done)saveSopDay(G)}
+  function taGrid(G){if(!TA)return;TA.grid++;TA.score+=3;TA.left+=10;sopNote='Grille terminée ! +10 s';noteT=2;start(false)}
+  function sopTick(G,note,ev){if(mode==='stime'&&TA){if(ev){const add=ev.k==='word'?4+Math.floor(ev.w.length/2):ev.k==='bonus'?10:12;TA.left+=add;TA.score+=ev.k==='word'?1:ev.k==='bonus'?2:3;note=(note||'')+(note?' ':'')+'+'+add+' s'}else if(!note){TA.left--;if(TA.left<=0){taEnd();return}}
+      if(note){sopNote=note;noteT=2}else if(noteT>0)noteT--;msg(noteT>0&&sopNote?sopNote:'⏱ '+fmt(Math.max(0,TA.left))+' · '+TA.score+' points · record '+taBest());return}if(note){sopNote=note;noteT=4}else if(noteT>0)noteT--;msg(noteT>0&&sopNote?sopNote:(mode==='sday'?'Soupe du jour · ':mode==='slvl'?'Niveau '+sopLvl+' · ':'')+G.tn+' · '+G.found.length+'/'+G.words.length+' · ⏱ '+fmt(G.t)+(mode==='slvl'?' / '+fmt(PAR[G.di]):''));if(mode==='sday'&&!G.done)saveSopDay(G)}
   function saveSopDay(G){const all=store.get('bb.sopDay',{});all[lang]={d:dkey(),found:G.found,t:G.t,done:!!G.done,mok:G.mok||0,early:G.early||0};store.set('bb.sopDay',all)}
   /* parcours : 36 niveaux, 12 thèmes × 3 difficultés, mode de liste qui alterne */
   const NLV=36,THO=[0,2,4,6,1,5,7,3,8,11,10,9],PAR=[150,210,270];
@@ -43,7 +45,11 @@ const Words=(()=>{
     h+='<div class="brow"><button class="btn alt" id="sop-ovc">Fermer</button></div></div>';ov.innerHTML=h;ov.hidden=false;
     ov.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ov.hidden=true;sopLvl=+b.dataset.k;store.set('bb.sopLvCur',sopLvl);start(true)});$('#sop-ovc').onclick=()=>{ov.hidden=true}}
   $('#sop-lvbtn').onclick=lvlView;
-  function sopStart(fresh){showS(true);newBtn.disabled=mode==='sday'||mode==='slvl';$('#sop-lvbtn').hidden=mode!=='slvl';$('#sop-diff').hidden=mode==='slvl';$('#sop-clue').hidden=mode==='slvl';
+  let TA=null;const taBest=()=>(store.get('bb.sopTA',{})[lang]||0);
+  function taEnd(){Sopa.stop();const sc=TA.score,all=store.get('bb.sopTA',{}),rec=sc>(all[lang]||0);if(rec){all[lang]=sc;store.set('bb.sopTA',all);window._duel&&window._duel.report('sopT',sc,'hi')}const g=TA.grid;TA=null;snd(2);
+    Celebrate.run(rec?'fireworks':'confetti','Temps écoulé !',()=>{msg('Contre-la-montre : '+sc+' point'+(sc>1?'s':'')+' · record '+Math.max(sc,all[lang]||0));Celebrate.ask(rec?'Nouveau record !':'Temps écoulé',sc+' point'+(sc>1?'s':'')+' · '+(g?g+' grille'+(g>1?'s':'')+' terminée'+(g>1?'s':''):'aucune grille terminée')+' · record '+(all[lang]||sc)+'. On recommence ?','Rejouer','Fermer',()=>start(true),null)})}
+  function sopStart(fresh){showS(true);newBtn.disabled=mode==='sday'||mode==='slvl';
+    if(mode==='stime'){$('#sop-lvbtn').hidden=true;$('#sop-diff').hidden=true;$('#sop-clue').hidden=true;if(fresh||!TA)TA={left:60,score:0,grid:0};const di=Math.min(2,Math.floor(TA.grid/2));Sopa.start(lang,Math.floor(Math.random()*1e9),di,taGrid,null,sopTick,'words');return}$('#sop-lvbtn').hidden=mode!=='slvl';$('#sop-diff').hidden=mode==='slvl';$('#sop-clue').hidden=mode==='slvl';
     if(mode==='slvl'){if(!lvOpen(sopLvl))sopLvl=1;lvlLabel();const d=lvDef(sopLvl);let st=null;if(sopPend&&sopPend.lvl===sopLvl&&!fresh){st=sopPend;sopPend=null}else{const G=Sopa.get();if(!fresh&&G&&!G.done&&G.lvl===sopLvl&&G.lang===lang)st=G}
       const G=Sopa.start(lang,d.seed,d.di,sopDone,st,sopTick,d.clue,d.ti);G.lvl=sopLvl;return}
     if(mode==='sday'){const all=store.get('bb.sopDay',{}),st=all[lang]&&all[lang].d===dkey()?all[lang]:null;const G=Sopa.start(lang,dayNum()*7919+17,1,sopDone,st,sopTick,dayClue());if(G.done)msg('Soupe du jour terminée en '+fmt(G.t)+' · nouvelle soupe demain');return}
@@ -117,5 +123,5 @@ const Words=(()=>{
   let restored=false,started=false;
   return{frame(){},resize(){},save,load,pause(){},resume(){},
     enter(){if(!started||(mode==='day'&&target&&target!==(D&&D.s.length?dailyWord():target))){started=true;if(restored){restored=false;data(lang).then(d=>{D=d;render();newBtn.disabled=false}).catch(()=>start(false))}else start(false)}},
-    sub:()=>{if(isS()){const a=store.get('bb.sopDay',{})[lang];return 'Soupe de lettres · '+LN[lang]+(lvStars().filter(Boolean).length?' · parcours '+lvStars().filter(Boolean).length+'/'+NLV:'')+(a&&a.d===dkey()&&a.done?' · soupe du jour ✓':'')}const s=stats(),d=dayState();return LN[lang]+(d&&d.done?(d.won?' · trouvé ✓':' · raté'):' · mot du jour')+(s.st?' · série '+s.st:'')}}
+    sub:()=>{if(isS()){const a=store.get('bb.sopDay',{})[lang];return 'Soupe de lettres · '+LN[lang]+(taBest()?' · chrono '+taBest():'')+(lvStars().filter(Boolean).length?' · parcours '+lvStars().filter(Boolean).length+'/'+NLV:'')+(a&&a.d===dkey()&&a.done?' · soupe du jour ✓':'')}const s=stats(),d=dayState();return LN[lang]+(d&&d.done?(d.won?' · trouvé ✓':' · raté'):' · mot du jour')+(s.st?' · série '+s.st:'')}}
 })();

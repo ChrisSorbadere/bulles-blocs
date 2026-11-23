@@ -48,7 +48,8 @@ const Sopa=(()=>{
           for(let k=0;k<w.length;k++)g[y0+dy*k][x0+dx*k]=w[k];free-=nw;pl.push({w,idx:o.idx,x0,y0,dx,dy});break}}
       if(!LS.has(free)||pl.length<5)continue;const c=my.filter(x=>x.replace(' ','').length===free),m=c[Math.floor(R()*c.length)],ml=m.replace(' ','');let q=0;
       for(let y=0;y<sz;y++)for(let x=0;x<sz;x++)if(!g[y][x])g[y][x]=ml[q++];
-      return{lang,seed,di,ti,tn,sz,g,mys:m,words:pl.sort((a,b)=>a.w.localeCompare(b.w)),found:[],t:0}}
+      const nb=pl.length>=9?2:pl.length>=6?1:0,bon=[];for(let k=0;k<nb;k++)bon.push(pl.splice(Math.floor(R()*pl.length),1)[0]);
+      return{lang,seed,di,ti,tn,sz,g,mys:m,words:pl.sort((a,b)=>a.w.localeCompare(b.w)),bonus:bon,bf:[],found:[],t:0}}
     return null}
   // ---------- rendu ----------
   function render(){if(!G)return;const sz=G.sz;gridEl.style.gridTemplateColumns=`repeat(${sz},1fr)`;
@@ -56,14 +57,15 @@ const Sopa=(()=>{
     const cl=G.clue||'words';listEl.innerHTML=G.words.map((w,i)=>{const f=G.found.includes(i),W=w.w.toUpperCase();let t;
         if(cl==='emoji')t=EMO[G.ti][w.idx]+' '+(f?W:'·'.repeat(w.w.length));else if(cl.startsWith('tr:')){const tr=TH[cl.slice(3)][G.ti][1].split(' ')[w.idx].toUpperCase();t=f?tr+' → '+W:tr}else t=W;
         return`<span class="sw${f?' ok':''}" style="${f?'--c:'+COLS[i%COLS.length]:''}">${t}</span>`}).join('')+
-      `<div class="smys">🔎 ${G.mok?'Mot mystère : <b>'+G.mys.toUpperCase()+'</b>'+(G.early?' ⭐':''):`Mot mystère : ${G.mys.split(' ').map(x=>'_'.repeat(x.length)).join(' ')} <small>(${G.mys.replace(' ','').length} lettres)</small><span class="sgi"><input id="sop-in" autocomplete="off" autocapitalize="characters" placeholder="?"><button class="btn sbtn" id="sop-guess">OK</button></span>`+(G.found.length===G.words.length?' <button class="btn sbtn alt" id="sop-reveal">Révéler</button>':'')}</div>`;
+      (G.bonus.length?`<div class="sbon">⭐ Mots bonus cachés : ${G.bf.length}/${G.bonus.length}${G.bf.length?' · '+G.bf.map(i=>G.bonus[i].w.toUpperCase()).join(', '):''}</div>`:'')+`<div class="smys">🔎 ${G.mok?'Mot mystère : <b>'+G.mys.toUpperCase()+'</b>'+(G.early?' ⭐':''):`Mot mystère : ${G.mys.split(' ').map(x=>'_'.repeat(x.length)).join(' ')} <small>(${G.mys.replace(' ','').length} lettres)</small><span class="sgi"><input id="sop-in" autocomplete="off" autocapitalize="characters" placeholder="?"><button class="btn sbtn" id="sop-guess">OK</button></span>`+(G.found.length===G.words.length?' <button class="btn sbtn alt" id="sop-reveal">Révéler</button>':'')}</div>`;
     const gb=$('#sop-guess');if(gb)gb.onclick=guess;const ib=$('#sop-in');if(ib)ib.onkeydown=e=>{if(e.key==='Enter')guess()};const rb=$('#sop-reveal');if(rb)rb.onclick=()=>{G.mok=1;G.early=0;G.rev=1;render();check()};draw()}
-  function guess(){const inp=$('#sop-in'),v=inp?inp.value:'';if(!v.trim())return;if(norm(v)===norm(G.mys)){G.mok=1;G.early=G.found.length<G.words.length?1:0;snd(1);render();check()}else{snd(0);inp.value='';onTk&&onTk(G,'Ce n’est pas le mot mystère')}}
+  function guess(){const inp=$('#sop-in'),v=inp?inp.value:'';if(!v.trim())return;if(norm(v)===norm(G.mys)){G.mok=1;G.early=G.found.length<G.words.length?1:0;snd(1);render();onTk&&onTk(G,null,{k:'mys'});check()}else{snd(0);inp.value='';onTk&&onTk(G,'Ce n’est pas le mot mystère')}}
   function check(){if(G.found.length===G.words.length&&G.mok&&!G.done)finish()}
   function cellBox(){const r=gridEl.getBoundingClientRect(),wr=wrap.getBoundingClientRect();return{x:r.left-wr.left,y:r.top-wr.top,c:r.width/G.sz}}
   function draw(){if(!G)return;const b=cellBox(),line=(x0,y0,x1,y1,col,op)=>`<line x1="${b.x+(x0+.5)*b.c}" y1="${b.y+(y0+.5)*b.c}" x2="${b.x+(x1+.5)*b.c}" y2="${b.y+(y1+.5)*b.c}" stroke="${col}" stroke-opacity="${op}" stroke-width="${b.c*.78}" stroke-linecap="round"/>`;
     let h='';G.found.forEach(i=>{const w=G.words[i];h+=line(w.x0,w.y0,w.x0+w.dx*(w.w.length-1),w.y0+w.dy*(w.w.length-1),COLS[i%COLS.length],.45)});
-    if(G.found.length===G.words.length){const used=new Set();G.words.forEach(w=>{for(let k=0;k<w.w.length;k++)used.add((w.x0+w.dx*k)+','+(w.y0+w.dy*k))});for(let y=0;y<G.sz;y++)for(let x=0;x<G.sz;x++)if(!used.has(x+','+y))h+=`<circle cx="${b.x+(x+.5)*b.c}" cy="${b.y+(y+.5)*b.c}" r="${b.c*.42}" fill="#ffd27a" fill-opacity=".55"/>`}
+    G.bf.forEach(i=>{const w=G.bonus[i];h+=line(w.x0,w.y0,w.x0+w.dx*(w.w.length-1),w.y0+w.dy*(w.w.length-1),'#ffd27a',.5)});
+    if(G.found.length===G.words.length){const used=new Set();[...G.words,...G.bonus].forEach(w=>{for(let k=0;k<w.w.length;k++)used.add((w.x0+w.dx*k)+','+(w.y0+w.dy*k))});for(let y=0;y<G.sz;y++)for(let x=0;x<G.sz;x++)if(!used.has(x+','+y))h+=`<circle cx="${b.x+(x+.5)*b.c}" cy="${b.y+(y+.5)*b.c}" r="${b.c*.42}" fill="#ffd27a" fill-opacity=".55"/>`}
     if(sel&&sel.e)h+=line(sel.s[0],sel.s[1],sel.e[0],sel.e[1],'#ffffff',.35);svg.innerHTML=h}
   // ---------- saisie ----------
   function cellAt(e){const b=cellBox(),wr=wrap.getBoundingClientRect(),x=Math.floor((e.clientX-wr.left-b.x)/b.c),y=Math.floor((e.clientY-wr.top-b.y)/b.c);return x>=0&&y>=0&&x<G.sz&&y<G.sz?[x,y]:null}
@@ -73,16 +75,17 @@ const Sopa=(()=>{
   wrap.addEventListener('pointermove',e=>{if(!sel)return;const c=cellAt(e);if(!c)return;sel.e=snap(sel.s,c);draw()});
   const endSel=()=>{if(!sel)return;const{s,e}=sel;sel=null;const dx=Math.sign(e[0]-s[0]),dy=Math.sign(e[1]-s[1]),n=Math.max(Math.abs(e[0]-s[0]),Math.abs(e[1]-s[1]))+1;
     let str='';for(let i=0;i<n;i++)str+=G.g[s[1]+dy*i][s[0]+dx*i];const rev=[...str].reverse().join('');
-    const i=G.words.findIndex((w,k)=>!G.found.includes(k)&&(w.w===str||w.w===rev));
-    if(i>=0&&n>1){G.found.push(i);snd(1);if(navigator.vibrate)try{navigator.vibrate(15)}catch(_){}render();if(G.found.length===G.words.length){onTk&&onTk(G,G.mok?'':'Tous les mots trouvés ! Les lettres restantes forment le mot mystère 🔎');check()}}else{if(n>1)snd(0);draw()}};
+    const i=G.words.findIndex((w,k)=>!G.found.includes(k)&&(w.w===str||w.w===rev)),bi=i<0?G.bonus.findIndex((w,k)=>!G.bf.includes(k)&&(w.w===str||w.w===rev)):-1;
+    if(bi>=0&&n>1){G.bf.push(bi);snd(1);render();onTk&&onTk(G,'⭐ Mot bonus : '+G.bonus[bi].w.toUpperCase()+' !',{k:'bonus',w:G.bonus[bi].w});return}
+    if(i>=0&&n>1){G.found.push(i);snd(1);if(navigator.vibrate)try{navigator.vibrate(15)}catch(_){}render();onTk&&onTk(G,null,{k:'word',w:G.words[i].w});if(G.found.length===G.words.length){onTk&&onTk(G,G.mok?'':'Tous les mots trouvés ! Les lettres restantes forment le mot mystère 🔎');check()}}else{if(n>1)snd(0);draw()}};
   wrap.addEventListener('pointerup',endSel);wrap.addEventListener('pointercancel',()=>{sel=null;draw()});
   function finish(){G.done=true;clearInterval(tick);onDone&&onDone(G)}
   let AC=null;function snd(k){if(store.get('bb.mute',false))return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();const t0=AC.currentTime,o=AC.createOscillator(),v=AC.createGain();
     o.type='triangle';o.frequency.value=k?660:200;v.gain.setValueAtTime(.0001,t0);v.gain.exponentialRampToValueAtTime(.06,t0+.01);v.gain.exponentialRampToValueAtTime(.0001,t0+.18);o.connect(v).connect(AC.destination);o.start(t0);o.stop(t0+.2)}catch(e){}}
   new ResizeObserver(()=>draw()).observe(wrap);
   // ---------- API ----------
-  function start(lang,seed,di,cb,state,onTick,clue,ti){G=gen(lang,seed,di,ti);G.clue=clue||'words';if(state){G.found=state.found||[];G.t=state.t||0;G.done=!!state.done;G.mok=state.mok||0;G.early=state.early||0}onDone=cb;onTk=onTick;sel=null;render();clearInterval(tick);
-    tick=setInterval(()=>{if(!G||G.done||wrap.hidden||document.hidden)return;G.t++;onTick&&onTick(G)},1000);onTick&&onTick(G);return G}
+  function start(lang,seed,di,cb,state,onTick,clue,ti){G=gen(lang,seed,di,ti);G.clue=clue||'words';if(state){G.found=state.found||[];G.t=state.t||0;G.done=!!state.done;G.mok=state.mok||0;G.early=state.early||0;G.bf=state.bf||[]}onDone=cb;onTk=onTick;sel=null;render();clearInterval(tick);
+    tick=setInterval(()=>{if(!G||G.done||wrap.offsetParent===null||document.hidden||Celebrate.active())return;G.t++;onTick&&onTick(G)},1000);onTick&&onTick(G);return G}
   function stop(){clearInterval(tick)}
   return{start,stop,get:()=>G,DIFF,TH,render,LN,EMO}
 })();
