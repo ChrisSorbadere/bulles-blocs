@@ -39,7 +39,7 @@ const Sopa=(()=>{
   const mul=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
   let G=null,sel=null,onDone=null,timer=0,tick=null,onTk=null;
   // ---------- génération ----------
-  function gen(lang,seed,di){const R=mul(seed),D=DIFF[di],ti=Math.floor(R()*TH[lang].length),[tn,ws0]=TH[lang][ti],ws=ws0.split(' ');
+  function gen(lang,seed,di,fti){const R=mul(seed),D=DIFF[di],r0=Math.floor(R()*TH[lang].length),ti=fti!=null?fti:r0,[tn,ws0]=TH[lang][ti],ws=ws0.split(' ');
     const my0=MY[lang][ti].split(' '),my=[...my0];for(const a of my0)for(const b of my0)if(a!==b)my.push(a+' '+b);const LS=new Set(my.map(x=>x.replace(' ','').length)),minL=Math.min(...LS);
     for(let sz=D.sz;sz>=6;sz--)for(let a=0;a<900;a++){const g=[...Array(sz)].map(()=>Array(sz).fill(''));let free=sz*sz;const pl=[];
       const order=ws.map((w,idx)=>({w,idx})).filter(o=>o.w.length<=sz).sort(()=>R()-.5);
@@ -81,8 +81,8 @@ const Sopa=(()=>{
     o.type='triangle';o.frequency.value=k?660:200;v.gain.setValueAtTime(.0001,t0);v.gain.exponentialRampToValueAtTime(.06,t0+.01);v.gain.exponentialRampToValueAtTime(.0001,t0+.18);o.connect(v).connect(AC.destination);o.start(t0);o.stop(t0+.2)}catch(e){}}
   new ResizeObserver(()=>draw()).observe(wrap);
   // ---------- API ----------
-  function start(lang,seed,di,cb,state,onTick,clue){G=gen(lang,seed,di);G.clue=clue||'words';if(state){G.found=state.found||[];G.t=state.t||0;G.done=!!state.done;G.mok=state.mok||0;G.early=state.early||0}onDone=cb;onTk=onTick;sel=null;render();clearInterval(tick);
+  function start(lang,seed,di,cb,state,onTick,clue,ti){G=gen(lang,seed,di,ti);G.clue=clue||'words';if(state){G.found=state.found||[];G.t=state.t||0;G.done=!!state.done;G.mok=state.mok||0;G.early=state.early||0}onDone=cb;onTk=onTick;sel=null;render();clearInterval(tick);
     tick=setInterval(()=>{if(!G||G.done||wrap.hidden||document.hidden)return;G.t++;onTick&&onTick(G)},1000);onTick&&onTick(G);return G}
   function stop(){clearInterval(tick)}
-  return{start,stop,get:()=>G,DIFF,TH,render,LN}
+  return{start,stop,get:()=>G,DIFF,TH,render,LN,EMO}
 })();
