@@ -44,20 +44,28 @@ const Dots=(()=>{
     const need=Object.values(L.goals.colors).reduce((a,b)=>a+b,0);
     L.moves=MOVES[n]||Math.max(12,Math.round(.25*need+2*L.anchors+.5*L.ice.length+1.2*L.stones.length+2.5*L.fire.length+.9*L.bub.length+18));
     return L}
+  /* ---------- défi du jour ---------- */
+  const dkey=(o=0)=>{const d=new Date(Date.now()-o*864e5);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+  let daily=null;
+  const dayS=()=>{const o=store.get('bb.dotDay',{last:'',n:0});if(o.last!==dkey()&&o.last!==dkey(1))o.n=0;return o};
+  function dailyPick(){const k=dkey();let o=store.get('bb.dotDaily',null);if(o&&o.d===k)return o;let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))>>>0;
+    const u=unlocked(),n=1+h%Math.max(1,u),cs=[{k:'moves',t:'coups réduits'},{k:'noloop',t:'boucles interdites'},{k:'bonus',t:'objectif bonus'}];o={d:k,n,c:cs[(h>>>7)%3]};store.set('bb.dotDaily',o);return o}
   const isHole=i=>hole[i];
   const rndCol=ban=>{let c;do{c=rnd(lv.nCol)}while(c===ban&&lv.nCol>1);return c};
   const newDot=ban=>lv.joker&&Math.random()<lv.joker?{j:1}:{c:rndCol(ban)};
   const isDot=k=>k&&!k.a&&!k.s;            // point (couleur ou joker), libre ou en bulle
   const free=k=>isDot(k)&&!k.b;             // utilisable dans un chemin
   const match=(k,col)=>free(k)&&(k.j||k.c===col);
-  function start(n){cur=n;if(!SIM)store.set('bb.dotSel',n);lv=genLevel(n);moves=lv.moves;over=false;path=[];loop=false;fx=[];flash=null;
+  function start(n,dc){daily=dc||null;cur=n;if(!SIM&&!daily)store.set('bb.dotSel',n);lv=genLevel(n);
+    if(daily){if(daily.k==='moves')lv.moves=Math.max(8,Math.round(lv.moves*.85));else if(daily.k==='noloop')lv.moves=Math.round(lv.moves*1.2);else{const free=[...Array(lv.nCol).keys()].filter(c=>lv.goals.colors[c]==null);if(free.length){lv.goals.colors[free[0]]=10;lv.moves+=5}}}
+    moves=lv.moves;over=false;path=[];loop=false;fx=[];flash=null;
     hole=new Array(C*Rw).fill(false);lv.holes.forEach(i=>hole[i]=true);ice=new Array(C*Rw).fill(0);lv.ice.forEach(i=>ice[i]=1);fire=new Array(C*Rw).fill(0);lv.fire.forEach(i=>fire[i]=1);
     prog={colors:{},anchors:0,ice:0,stones:0,bub:0,fire:0};g=new Array(C*Rw).fill(null);
     for(let i=0;i<C*Rw;i++){if(hole[i])continue;const[r]=RC(i);g[i]={c:rndCol(-1),y:r-Rw-1}}
     lv.stones.forEach(i=>{if(!hole[i])g[i]={s:2,y:(i/C|0)-Rw-1}});lv.bub.forEach(i=>{if(!hole[i]&&g[i]&&!g[i].s)g[i].b=1});
     let placed=0;if(lv.anchors){const cs=[...Array(C).keys()].filter(c=>!hole[c]&&!g[c].s).sort(()=>Math.random()-.5);for(const c of cs.slice(0,lv.anchors)){g[c]={a:1,y:-1};placed++}}
     anchorsOut=lv.anchors-placed;lv.bubN=g.filter(k=>k&&k.b).length;lv.stN=g.filter(k=>k&&k.s).length;
-    ensureMove();state='fall';hud();fillSel();if(!SIM)tip()}
+    ensureMove();state='fall';hud();fillSel();if(!SIM){if(daily)dailyCard();else tip()}}
   function lowest(c){let r=Rw-1;while(r>0&&hole[id(r,c)])r--;return r}
   function hasMove(){for(let i=0;i<C*Rw;i++){const k=g[i];if(!free(k))continue;const[r,c]=RC(i);
       for(const j of[c<C-1?i+1:-1,r<Rw-1?i+C:-1]){if(j<0)continue;const o=g[j];if(!free(o))continue;if(k.j||o.j||k.c===o.c)return true}}return false}
@@ -102,9 +110,12 @@ const Dots=(()=>{
     if(lv.stN&&prog.stones<lv.stN)return false;if(lv.bubN&&prog.bub<lv.bubN)return false;if(lv.fire.length&&fireLeft()>0)return false;return true}
   function win(){over=true;if(SIM)return;const st=moves>=lv.moves*.3?3:moves>=lv.moves*.15?2:1;const old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.dotStars',stars)}
     window._duel&&window._duel.report('dot',stars.filter(Boolean).length,'hi');window._duel&&window._duel.report('dotS',stars.reduce((a,b)=>a+(b||0),0),'hi');
-    store.set('bb.save.dot',null);const nx=cur<NLV,newW=nx&&wOf(cur+1)!==wOf(cur);
+    store.set('bb.save.dot',null);
+    if(daily){const ds=dayS(),first=ds.won!==dkey();if(first){ds.n++;ds.last=dkey();ds.won=dkey();store.set('bb.dotDay',ds);window._duel&&window._duel.report('dotD',1,'inc')}
+      Celebrate.run('fireworks','Défi du jour réussi !',()=>Celebrate.ask('📅 Défi du jour réussi !','🔥 '+ds.n+' jour'+(ds.n>1?'s':'')+' de suite · '+'★'.repeat(st)+' au niveau '+cur+'. Reviens demain pour un nouveau défi.','Carte','Rejouer',()=>mapView(wOf(unlocked())),()=>start(cur,daily)));return}
+    const nx=cur<NLV,newW=nx&&wOf(cur+1)!==wOf(cur);
     Celebrate.run(st===3||newW?'fireworks':'confetti',newW?WORLDS[wOf(cur)].e+' '+WORLDS[wOf(cur)].n+' terminé !':'Niveau '+cur+' réussi !',()=>Celebrate.ask('★'.repeat(st)+'☆'.repeat(3-st),'Niveau '+cur+' réussi avec '+moves+' coup'+(moves>1?'s':'')+' d’avance.'+(newW?' Nouveau monde : '+WORLDS[wOf(cur+1)].e+' '+WORLDS[wOf(cur+1)].n+' !':''),nx?'Niveau suivant':'Rejouer','Carte',()=>start(nx?cur+1:cur),()=>mapView(wOf(cur))))}
-  function lose(){over=true;if(SIM)return;store.set('bb.save.dot',null);snd(5);Celebrate.ask('Plus de coups','Il te manquait '+missing()+'. On réessaie ?','Réessayer','Carte',()=>start(cur),()=>mapView(wOf(cur)))}
+  function lose(){over=true;if(SIM)return;store.set('bb.save.dot',null);snd(5);Celebrate.ask('Plus de coups','Il te manquait '+missing()+'. On réessaie ?','Réessayer','Carte',()=>start(cur,daily),()=>mapView(wOf(cur)))}
   function missing(){const G=lv.goals,out=[];for(const c in G.colors){const m=G.colors[c]-(prog.colors[c]||0);if(m>0)out.push(m+' '+CN[c])}
     const add=(a,b,s)=>{const m=a-b;if(m>0)out.push(m+' '+s+(m>1?'s':''))};
     if(lv.anchors)add(lv.anchors,prog.anchors,'ancre');if(lv.ice.length)add(lv.ice.length,prog.ice,'glace');if(lv.stN)add(lv.stN,prog.stones,'pierre');if(lv.bubN)add(lv.bubN,prog.bub,'bulle');if(lv.fire.length&&fireLeft())out.push(fireLeft()+' feu'+(fireLeft()>1?'x':''));return out.join(', ')}
@@ -112,13 +123,15 @@ const Dots=(()=>{
     for(const c in G.colors){const left=Math.max(0,G.colors[c]-(prog.colors[c]||0));h+=`<span class="dg${left?'':' ok'}"><i style="background:${COLS[c]}"></i>${left||'✓'}</span>`}
     if(lv.anchors)h+=chip('⚓',Math.max(0,lv.anchors-prog.anchors));if(lv.ice.length)h+=chip('❄',Math.max(0,lv.ice.length-prog.ice));if(lv.stN)h+=chip('🪨',Math.max(0,lv.stN-prog.stones));
     if(lv.bubN)h+=chip('🫧',Math.max(0,lv.bubN-prog.bub));if(lv.fire.length)h+=chip('🔥',fireLeft());goalsEl.innerHTML=h}
-  function fillSel(){if(SIM)return;const w=WORLDS[wOf(cur)];lvlBtn.textContent=w.e+' '+cur}
+  function fillSel(){if(SIM)return;const w=WORLDS[wOf(cur)];lvlBtn.textContent=daily?'📅 '+cur:w.e+' '+cur}
+  function dailyCard(){const ds=dayS(),done=ds.won===dkey();const txt={moves:'Moins de coups que d’habitude : chaque coup compte !',noloop:'Les boucles sont interdites aujourd’hui : seulement des lignes (et des éclairs ⚡).',bonus:'Un objectif de couleur en plus, avec quelques coups de plus.'}[daily.k];
+    ov.innerHTML=`<div class="card bsum"><h2>📅 Défi du jour</h2><p>Niveau ${cur} · ${daily.t}</p><p>${txt}</p>${done?'<p class="tdet">✓ Déjà réussi aujourd’hui</p>':''}${ds.n?`<p class="tdet">🔥 Série : ${ds.n} jour${ds.n>1?'s':''}</p>`:''}<div class="brow"><button class="btn" id="dot-tipok">C’est parti !</button></div></div>`;ov.hidden=false;$('#dot-tipok').onclick=()=>{ov.hidden=true}}
   function tip(){const w=wOf(cur),k='bb.dotTip'+w;if(store.get(k,false)||(cur-1)%20!==0)return;store.set(k,true);const W2=WORLDS[w];
     ov.innerHTML=`<div class="card bsum"><h2>${W2.e} ${W2.n}</h2><p>${W2.tip}</p><div class="brow"><button class="btn" id="dot-tipok">C’est parti !</button></div></div>`;ov.hidden=false;$('#dot-tipok').onclick=()=>{ov.hidden=true}}
   function mapView(w){w=Math.max(0,Math.min(WORLDS.length-1,w));const u=unlocked(),W2=WORLDS[w];let h=`<div class="card bsum twv"><div class="bmh"><button class="btn ico" id="dm-prev"${w?'':' disabled'}>◀</button><h2>${W2.e} ${W2.n}</h2><button class="btn ico" id="dm-next"${w<WORLDS.length-1&&u>(w+1)*20?'':' disabled'}>▶</button></div><div class="tlg">`;
     for(let n=w*20+1;n<=w*20+20;n++){const st=stars[n-1]||0,op=n<=u;h+=`<button class="tlc${n===cur?' cur':''}${st?' ok':''}" data-n="${n}"${op?'':' disabled'}><b>${op?n:'🔒'}</b><small>${st?'★'.repeat(st):''}</small></button>`}
-    const got=stars.slice(w*20,w*20+20).reduce((a,b)=>a+(b||0),0);h+=`</div><p class="tdet">★ ${got} / 60</p><div class="brow"><button class="btn alt" id="dm-close">Fermer</button></div></div>`;ov.innerHTML=h;ov.hidden=false;
-    ov.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ov.hidden=true;start(+b.dataset.n)});$('#dm-prev').onclick=()=>mapView(w-1);$('#dm-next').onclick=()=>mapView(w+1);$('#dm-close').onclick=()=>{ov.hidden=true}}
+    const got=stars.slice(w*20,w*20+20).reduce((a,b)=>a+(b||0),0),dp=dailyPick(),ds=dayS();h+=`</div><p class="tdet">★ ${got} / 60</p><div class="brow"><button class="btn" id="dm-daily">📅 Défi du jour${ds.won===dkey()?' ✓':''}${ds.n?' · 🔥'+ds.n:''}</button><button class="btn alt" id="dm-close">Fermer</button></div></div>`;ov.innerHTML=h;ov.hidden=false;
+    ov.querySelectorAll('[data-n]').forEach(b=>b.onclick=()=>{ov.hidden=true;start(+b.dataset.n)});$('#dm-prev').onclick=()=>mapView(w-1);$('#dm-next').onclick=()=>mapView(w+1);$('#dm-close').onclick=()=>{ov.hidden=true};$('#dm-daily').onclick=()=>{ov.hidden=true;const d=dailyPick();start(d.n,d.c)}}
 
   /* ---------- Toucher ---------- */
   function cellAt(e,tol){const b=cv.getBoundingClientRect(),x=e.clientX-b.left-ox,y=e.clientY-b.top-oy,c=Math.floor(x/cell),r=Math.floor(y/cell);
@@ -129,7 +142,7 @@ const Dots=(()=>{
     if(path.length>1&&i===path[path.length-2]){path.pop();if(loop)loop=false;snd(0,path.length);return}
     const col=pathCol(path),allJ=path.every(j=>g[j].j);
     if(loop||!free(g[i])||!adj(i,last))return;if(!(g[i].j||allJ||g[i].c===col))return;
-    if(path.includes(i)){if(path.length>=4){path.push(i);loop=true;snd(1)}return}
+    if(path.includes(i)){if(path.length>=4&&!(daily&&daily.k==='noloop')){path.push(i);loop=true;snd(1)}return}
     path.push(i);snd(0,path.length)});
   const up=()=>{if(!drag)return;drag=false;pt=null;commit()};cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',()=>{drag=false;path=[];loop=false;pt=null});
 
@@ -183,12 +196,12 @@ const Dots=(()=>{
     const notes=k===0?[[330*Math.pow(2,Math.min(n,14)/12),0]]:k===1?[[660,0],[880,.06]]:k===2?[[520,0],[700,.05]]:k===3?[[523,0],[659,.06],[784,.12],[1047,.18]]:k===4?[[392,0],[523,.08]]:k===6?[[180,0],[120,.05],[90,.1]]:[[260,0],[200,.15]];
     notes.forEach(([f,d])=>{const o=AC.createOscillator(),v=AC.createGain(),s=t0+d;o.type=k===6?'sawtooth':'sine';o.frequency.value=f;v.gain.setValueAtTime(.0001,s);v.gain.exponentialRampToValueAtTime(.09,s+.008);v.gain.exponentialRampToValueAtTime(.0001,s+.16);o.connect(v).connect(AC.destination);o.start(s);o.stop(s+.2)})}catch(e){}}
   lvlBtn.onclick=()=>mapView(wOf(cur));
-  $('#dot-new').onclick=()=>{if(over||moves===lv.moves){start(cur);return}Celebrate.ask('Recommencer le niveau ?','Le niveau repart de zéro.','Recommencer','Continuer',()=>start(cur),null)};
+  $('#dot-new').onclick=()=>{if(over||moves===lv.moves){start(cur,daily);return}Celebrate.ask('Recommencer le niveau ?','Le niveau repart de zéro.','Recommencer','Continuer',()=>start(cur,daily),null)};
   const tok=k=>k?(k.a?{a:1}:k.s?{s:k.s}:{c:k.c,j:k.j||0,z:k.z||0,b:k.b||0}):null;
-  function save(){if(over)return null;if(state!=='idle'||drag)return undefined;if(moves===lv.moves)return null;return{v:2,n:cur,g:g.map(tok),ice,fire,moves,prog,anchorsOut,bubN:lv.bubN,stN:lv.stN}}
+  function save(){if(over||daily)return null;if(state!=='idle'||drag)return undefined;if(moves===lv.moves)return null;return{v:2,n:cur,g:g.map(tok),ice,fire,moves,prog,anchorsOut,bubN:lv.bubN,stN:lv.stN}}
   function load(o){if(o.v!==2||!(o.n>=1&&o.n<=unlocked())||!Array.isArray(o.g)||o.g.length!==C*Rw)return;cur=o.n;lv=genLevel(o.n);hole=new Array(C*Rw).fill(false);lv.holes.forEach(i=>hole[i]=true);
     g=o.g.map((k,i)=>k?{...k,y:i/C|0}:null);ice=o.ice;fire=o.fire||new Array(C*Rw).fill(0);moves=o.moves;prog=o.prog;anchorsOut=o.anchorsOut||0;lv.bubN=o.bubN||0;lv.stN=o.stN||0;over=false;path=[];loop=false;fx=[];state='idle';hud();fillSel()}
   start(cur);
-  return{frame,resize,save,load,pause(){},resume(){},sub:()=>WORLDS[wOf(unlocked())].e+' Niveau '+unlocked()+' · ★ '+stars.reduce((a,b)=>a+(b||0),0),
+  return{frame,resize,save,load,pause(){},resume(){},sub:()=>WORLDS[wOf(unlocked())].e+' Niveau '+unlocked()+' · ★ '+stars.reduce((a,b)=>a+(b||0),0)+(dayS().won===dkey()?' · 📅 ✓':''),
     _sim:{genLevel,start:n=>start(n),setMoves:m=>{moves=m},tick:()=>{let t=0;while(state==='fall'&&t++<400)frame(.05)},get:()=>({g,lv,prog,ice,fire,over,moves}),commitPath:(p,l)=>{path=p;loop=l;commit()},set SIM(v){SIM=v},get SIM(){return SIM}}}
 })();
