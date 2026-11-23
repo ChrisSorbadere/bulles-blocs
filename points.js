@@ -50,6 +50,20 @@ const Dots=(()=>{
   const dayS=()=>{const o=store.get('bb.dotDay',{last:'',n:0});if(o.last!==dkey()&&o.last!==dkey(1))o.n=0;return o};
   function dailyPick(){const k=dkey();let o=store.get('bb.dotDaily',null);if(o&&o.d===k)return o;let h=0;for(const ch of k)h=(h*31+ch.charCodeAt(0))>>>0;
     const u=unlocked(),n=1+h%Math.max(1,u),cs=[{k:'moves',t:'coups réduits'},{k:'noloop',t:'boucles interdites'},{k:'bonus',t:'objectif bonus'}];o={d:k,n,c:cs[(h>>>7)%3]};store.set('bb.dotDaily',o);return o}
+  /* ---------- bonus : 🔀 mélange, 🧽 gomme, ➕3 coups (1 bonus toutes les 3 étoiles gagnées) ---------- */
+  let boost=store.get('bb.dotBoost',null);if(!boost||typeof boost!=='object')boost={sh:1,er:1,mv:1,bank:0,nx:0};let erasing=false;
+  const BK=['sh','er','mv'],BI={sh:'🔀',er:'🧽',mv:'➕3'},BN={sh:'mélangeur',er:'gomme',mv:'+3 coups'};
+  function saveBoost(){store.set('bb.dotBoost',boost);boostUI()}
+  function earn(d){if(d<=0)return[];boost.bank+=d;const got=[];while(boost.bank>=3){boost.bank-=3;const k=BK[boost.nx%3];boost.nx++;boost[k]++;got.push(k)}saveBoost();return got}
+  function boostUI(){const el=$('#dot-boost');if(!el||SIM)return;el.innerHTML=BK.map(k=>`<button class="btn bt${k==='er'&&erasing?' on':''}" data-b="${k}"${boost[k]&&!over?'':' disabled'}>${BI[k]}<small>${BN[k]} · ${boost[k]}</small></button>`).join('')+`<span class="dbank">★ ${boost.bank}/3</span>`;
+    el.querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>useBoost(b.dataset.b))}
+  function useBoost(k){if(over||state!=='idle'||!boost[k])return;
+    if(k==='sh'){boost.sh--;const ds=g.map((t,i)=>free(t)&&!t.j?i:-1).filter(i=>i>=0);ds.forEach(i=>g[i].c=rnd(lv.nCol));ensureMove();fx.push({t:'shuf',age:0});snd(1);saveBoost()}
+    else if(k==='mv'){boost.mv--;moves+=3;snd(4);hud();saveBoost()}
+    else{erasing=!erasing;boostUI()}}
+  function eraseAt(i){const t=g[i];if(!t||t.a){erasing=false;boostUI();return}boost.er--;erasing=false;
+    if(t.s){g[i]=null;prog.stones++}else{if(t.b)prog.bub++;if(!t.j&&t.c!=null)prog.colors[t.c]=(prog.colors[t.c]||0)+1;if(ice[i]){ice[i]=0;prog.ice++}if(fire[i]){fire[i]=0;prog.fire++}g[i]=null}
+    fx.push({t:'pop',i,c:t.c!=null&&!t.j?t.c:-1,age:0});snd(2,2);saveBoost();gravity(-1);hud()}
   const isHole=i=>hole[i];
   const rndCol=ban=>{let c;do{c=rnd(lv.nCol)}while(c===ban&&lv.nCol>1);return c};
   const newDot=ban=>lv.joker&&Math.random()<lv.joker?{j:1}:{c:rndCol(ban)};
@@ -65,7 +79,7 @@ const Dots=(()=>{
     lv.stones.forEach(i=>{if(!hole[i])g[i]={s:2,y:(i/C|0)-Rw-1}});lv.bub.forEach(i=>{if(!hole[i]&&g[i]&&!g[i].s)g[i].b=1});
     let placed=0;if(lv.anchors){const cs=[...Array(C).keys()].filter(c=>!hole[c]&&!g[c].s).sort(()=>Math.random()-.5);for(const c of cs.slice(0,lv.anchors)){g[c]={a:1,y:-1};placed++}}
     anchorsOut=lv.anchors-placed;lv.bubN=g.filter(k=>k&&k.b).length;lv.stN=g.filter(k=>k&&k.s).length;
-    ensureMove();state='fall';hud();fillSel();if(!SIM){if(daily)dailyCard();else tip()}}
+    ensureMove();state='fall';erasing=false;hud();fillSel();boostUI();if(!SIM){if(daily)dailyCard();else tip()}}
   function lowest(c){let r=Rw-1;while(r>0&&hole[id(r,c)])r--;return r}
   function hasMove(){for(let i=0;i<C*Rw;i++){const k=g[i];if(!free(k))continue;const[r,c]=RC(i);
       for(const j of[c<C-1?i+1:-1,r<Rw-1?i+C:-1]){if(j<0)continue;const o=g[j];if(!free(o))continue;if(k.j||o.j||k.c===o.c)return true}}return false}
@@ -108,14 +122,16 @@ const Dots=(()=>{
   const fireLeft=()=>fire?fire.reduce((a,b)=>a+b,0):0;
   function done(){const G=lv.goals;for(const c in G.colors)if((prog.colors[c]||0)<G.colors[c])return false;if(lv.anchors&&prog.anchors<lv.anchors)return false;if(lv.ice.length&&prog.ice<lv.ice.length)return false;
     if(lv.stN&&prog.stones<lv.stN)return false;if(lv.bubN&&prog.bub<lv.bubN)return false;if(lv.fire.length&&fireLeft()>0)return false;return true}
-  function win(){over=true;if(SIM)return;const st=moves>=lv.moves*.3?3:moves>=lv.moves*.15?2:1;const old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.dotStars',stars)}
+  function win(){over=true;if(SIM)return;erasing=false;const st=moves>=lv.moves*.3?3:moves>=lv.moves*.15?2:1;const old=stars[cur-1]||0;if(st>old){stars[cur-1]=st;store.set('bb.dotStars',stars)}
+    const got=earn(Math.max(0,st-old)),gtxt=got.length?' Bonus gagné : '+got.map(k=>BI[k]+' '+BN[k]).join(', ')+' !':'';boostUI();
     window._duel&&window._duel.report('dot',stars.filter(Boolean).length,'hi');window._duel&&window._duel.report('dotS',stars.reduce((a,b)=>a+(b||0),0),'hi');
     store.set('bb.save.dot',null);
     if(daily){const ds=dayS(),first=ds.won!==dkey();if(first){ds.n++;ds.last=dkey();ds.won=dkey();store.set('bb.dotDay',ds);window._duel&&window._duel.report('dotD',1,'inc')}
       Celebrate.run('fireworks','Défi du jour réussi !',()=>Celebrate.ask('📅 Défi du jour réussi !','🔥 '+ds.n+' jour'+(ds.n>1?'s':'')+' de suite · '+'★'.repeat(st)+' au niveau '+cur+'. Reviens demain pour un nouveau défi.','Carte','Rejouer',()=>mapView(wOf(unlocked())),()=>start(cur,daily)));return}
     const nx=cur<NLV,newW=nx&&wOf(cur+1)!==wOf(cur);
-    Celebrate.run(st===3||newW?'fireworks':'confetti',newW?WORLDS[wOf(cur)].e+' '+WORLDS[wOf(cur)].n+' terminé !':'Niveau '+cur+' réussi !',()=>Celebrate.ask('★'.repeat(st)+'☆'.repeat(3-st),'Niveau '+cur+' réussi avec '+moves+' coup'+(moves>1?'s':'')+' d’avance.'+(newW?' Nouveau monde : '+WORLDS[wOf(cur+1)].e+' '+WORLDS[wOf(cur+1)].n+' !':''),nx?'Niveau suivant':'Rejouer','Carte',()=>start(nx?cur+1:cur),()=>mapView(wOf(cur))))}
-  function lose(){over=true;if(SIM)return;store.set('bb.save.dot',null);snd(5);Celebrate.ask('Plus de coups','Il te manquait '+missing()+'. On réessaie ?','Réessayer','Carte',()=>start(cur,daily),()=>mapView(wOf(cur)))}
+    Celebrate.run(st===3||newW?'fireworks':'confetti',newW?WORLDS[wOf(cur)].e+' '+WORLDS[wOf(cur)].n+' terminé !':'Niveau '+cur+' réussi !',()=>Celebrate.ask('★'.repeat(st)+'☆'.repeat(3-st),'Niveau '+cur+' réussi avec '+moves+' coup'+(moves>1?'s':'')+' d’avance.'+gtxt+(newW?' Nouveau monde : '+WORLDS[wOf(cur+1)].e+' '+WORLDS[wOf(cur+1)].n+' !':''),nx?'Niveau suivant':'Rejouer','Carte',()=>start(nx?cur+1:cur),()=>mapView(wOf(cur))))}
+  function lose(){over=true;if(SIM)return;erasing=false;snd(5);if(boost.mv>0){Celebrate.ask('Plus de coups','Il te manquait '+missing()+'. Utiliser un bonus ➕3 coups ('+boost.mv+') ?','➕3 coups','Réessayer',()=>{boost.mv--;moves+=3;over=false;state='idle';hud();saveBoost()},()=>start(cur,daily));return}
+    store.set('bb.save.dot',null);Celebrate.ask('Plus de coups','Il te manquait '+missing()+'. On réessaie ?','Réessayer','Carte',()=>start(cur,daily),()=>mapView(wOf(cur)))}
   function missing(){const G=lv.goals,out=[];for(const c in G.colors){const m=G.colors[c]-(prog.colors[c]||0);if(m>0)out.push(m+' '+CN[c])}
     const add=(a,b,s)=>{const m=a-b;if(m>0)out.push(m+' '+s+(m>1?'s':''))};
     if(lv.anchors)add(lv.anchors,prog.anchors,'ancre');if(lv.ice.length)add(lv.ice.length,prog.ice,'glace');if(lv.stN)add(lv.stN,prog.stones,'pierre');if(lv.bubN)add(lv.bubN,prog.bub,'bulle');if(lv.fire.length&&fireLeft())out.push(fireLeft()+' feu'+(fireLeft()>1?'x':''));return out.join(', ')}
@@ -137,7 +153,7 @@ const Dots=(()=>{
   function cellAt(e,tol){const b=cv.getBoundingClientRect(),x=e.clientX-b.left-ox,y=e.clientY-b.top-oy,c=Math.floor(x/cell),r=Math.floor(y/cell);
     if(r<0||c<0||r>=Rw||c>=C)return-1;const dx=x-(c+.5)*cell,dy=y-(r+.5)*cell;if(Math.hypot(dx,dy)>cell*tol)return-1;return id(r,c)}
   let drag=false,pt=null;
-  cv.addEventListener('pointerdown',e=>{if(state!=='idle'||over||!ov.hidden)return;const i=cellAt(e,.48);if(i<0||!free(g[i]))return;cv.setPointerCapture(e.pointerId);drag=true;path=[i];loop=false;pt=null;snd(0,1)});
+  cv.addEventListener('pointerdown',e=>{if(state!=='idle'||over||!ov.hidden)return;const i=cellAt(e,.48);if(erasing){if(i>=0)eraseAt(i);return}if(i<0||!free(g[i]))return;cv.setPointerCapture(e.pointerId);drag=true;path=[i];loop=false;pt=null;snd(0,1)});
   cv.addEventListener('pointermove',e=>{if(!drag)return;const b=cv.getBoundingClientRect();pt=[e.clientX-b.left,e.clientY-b.top];const i=cellAt(e,.38);if(i<0)return;const last=path[path.length-1];if(i===last)return;
     if(path.length>1&&i===path[path.length-2]){path.pop();if(loop)loop=false;snd(0,path.length);return}
     const col=pathCol(path),allJ=path.every(j=>g[j].j);
