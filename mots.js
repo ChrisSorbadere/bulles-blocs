@@ -4,7 +4,7 @@ const Words=(()=>{
   const KB={fr:['azertyuiop','qsdfghjklm','⏎wxcvbn⌫'],es:['qwertyuiop','asdfghjklñ','⏎zxcvbnm⌫'],en:['qwertyuiop','asdfghjkl','⏎zxcvbnm⌫']};
   const LN={fr:'Français',es:'Español',en:'English'};
   let lang=store.get('bb.motLang',null);if(!KB[lang])lang=I18N.lang==='en'?'en':'fr';
-  let mode=store.get('bb.motMode','day');if(!['day','free','sday','sfree','slvl','stime'].includes(mode))mode='day';
+  let mode=store.get('bb.motMode','day');if(!['day','free','sday','sfree','slvl','stime','cday','cfree'].includes(mode))mode='day';
   const DATA={};
   let D=null,target='',guesses=[],cur='',over=false,won=false,busy=false,loading=false,shakeRow=-1,revealRow=-1;
   async function data(l){if(DATA[l])return DATA[l];const r=await fetch('mots-'+l+'.json');const j=await r.json();return DATA[l]={s:j.s,v:new Set(j.v.split(' '))}}
@@ -26,7 +26,7 @@ const Words=(()=>{
   function clueOpts(){const c=$('#sop-clue'),ln=Sopa.LN;c.innerHTML='<option value="words">📝 Liste de mots</option><option value="emoji">🧩 Indices emoji</option>'+['fr','es','en'].filter(l=>l!==lang).map(l=>`<option value="tr:${l}">🌍 Liste en ${ln[l]}</option>`).join('');
     if(![...c.options].some(o=>o.value===sopClue))sopClue='words';c.value=sopClue}
   const dayClue=()=>{const k=dayNum()%3;return k===0?'words':k===1?'emoji':'tr:'+(lang==='fr'?'es':'fr')};
-  function showS(on){gridEl.hidden=on;kbEl.hidden=on;sopEls[0].hidden=!on;sopEls[1].hidden=!on;sopEls[2].hidden=!on||mode==='sday';if(!on)$('#sop-ov').hidden=true;if(on)clueOpts()}
+  function showS(on){showC(false);gridEl.hidden=on;kbEl.hidden=on;sopEls[0].hidden=!on;sopEls[1].hidden=!on;sopEls[2].hidden=!on||mode==='sday';if(!on)$('#sop-ov').hidden=true;if(on)clueOpts()}
   let sopNote='',noteT=0;
   function taGrid(G){if(!TA)return;TA.grid++;TA.score+=3;TA.left+=10;sopNote='Grille terminée ! +10 s';noteT=2;start(false)}
   function sopTick(G,note,ev){if(mode==='stime'&&TA){if(ev){const add=ev.k==='word'?4+Math.floor(ev.w.length/2):ev.k==='bonus'?10:12;TA.left+=add;TA.score+=ev.k==='word'?1:ev.k==='bonus'?2:3;note=(note||'')+(note?' ':'')+'+'+add+' s'}else if(!note){TA.left--;if(TA.left<=0){taEnd();return}}
@@ -64,7 +64,31 @@ const Words=(()=>{
     else window._duel&&window._duel.report('sopL',1,'inc');
     snd(2);Celebrate.run(rec?'fireworks':'confetti',rec?'Record !':'Bravo !',()=>{msg((mode==='sday'?'Soupe du jour terminée':'Soupe terminée')+' en '+fmt(G.t)+(rec?' · record !':''));
       Celebrate.ask(G.rev?'Grille terminée':'Mot mystère : '+G.mys.toUpperCase()+(G.early?' ⭐':''),(G.early?'Trouvé avant la fin de la grille, bravo ! ':'')+'Temps : '+fmt(G.t)+' · record '+fmt(best[k])+'. Une nouvelle soupe ?','Nouvelle soupe','Fermer',()=>{setMode('sfree');start(true)},null)})}
-  async function start(fresh){if(isS()){sopStart(fresh);return}showS(false);loading=true;msg('');try{D=await data(lang)}catch(e){loading=false;msg('Liste de mots indisponible hors ligne. Ouvre ce jeu une fois avec une connexion.');return}loading=false;
+  /* ---------- mots croisés ---------- */
+  const crxEls=[$('#crx-bar'),$('#crx-wrap'),$('#crx-clue'),$('#crx-kb')],isC=()=>mode[0]==='c';
+  let crxDi=store.get('bb.crxDiff',1);if(!(crxDi>=0&&crxDi<=2))crxDi=1;$('#crx-diff').value=String(crxDi);
+  let crxCm=store.get('bb.crxCm','def');if(crxCm!=='def'&&crxCm!=='emoji')crxCm='def';$('#crx-cm').value=crxCm;let crxPend=null;
+  function showC(on){crxEls.forEach(e=>e.hidden=!on);if(!on)$('#crx-ov').hidden=true;$('#crx-diff').hidden=mode!=='cfree';$('#crx-cm').hidden=mode!=='cfree'}
+  const crxDaySeed=()=>dayNum()*7919+({fr:31,es:577,en:1013})[lang];
+  function saveCrxDay(G){const all=store.get('bb.crxDay',{});all[lang]={d:dkey(),fill:G.fill,rv:G.rv,helps:G.helps,t:G.t,done:!!G.done};store.set('bb.crxDay',all)}
+  let crxNote='',crxNT=0;
+  function crxTick(G,note){if(note){crxNote=note;crxNT=3}else if(crxNT>0)crxNT--;const n=G.words.filter(w=>w.cells.every(c=>G.fill[c])).length;
+    msg(crxNT>0&&crxNote?crxNote:(mode==='cday'?'Grille du jour · ':'')+n+'/'+G.words.length+' mots · ⏱ '+fmt(G.t)+' · '+'★'.repeat(Cross.stars(G)));if(mode==='cday'&&!G.done)saveCrxDay(G)}
+  function crxDone(G){const st=Cross.stars(G);snd(2);
+    if(mode==='cday'){const all=store.get('bb.crxDay',{}),first=!(all[lang]&&all[lang].d===dkey()&&all[lang].done);saveCrxDay(G);if(first)window._duel&&window._duel.report('crxD',1,'inc');
+      Celebrate.run(st===3?'fireworks':'confetti','★'.repeat(st),()=>{msg('Grille du jour terminée en '+fmt(G.t)+' · '+'★'.repeat(st)+' · nouvelle grille demain');Celebrate.ask('Grille du jour terminée','★'.repeat(st)+' · temps '+fmt(G.t)+'. Une grille libre ?','Grille libre','Fermer',()=>{setMode('cfree');start(true)},null)});return}
+    const best=store.get('bb.crxBest',{}),k=lang+G.di,rec=st===3&&(!best[k]||G.t<best[k]);if(rec){best[k]=G.t;store.set('bb.crxBest',best)}window._duel&&window._duel.report('crxL',1,'inc');
+    Celebrate.run(rec?'fireworks':'confetti',rec?'Record !':'★'.repeat(st),()=>{msg('Grille terminée en '+fmt(G.t)+' · '+'★'.repeat(st)+(rec?' · record !':''));Celebrate.ask(rec?'Record !':'Grille terminée','★'.repeat(st)+' · temps '+fmt(G.t)+(best[k]?' · record '+fmt(best[k]):'')+'. Une nouvelle grille ?','Nouvelle grille','Fermer',()=>start(true),null)})}
+  async function crxStart(fresh){showS(false);gridEl.hidden=true;kbEl.hidden=true;showC(true);newBtn.disabled=mode==='cday';msg('');let B;
+    try{B=await Cross.data(lang)}catch(e){msg('Grilles indisponibles hors ligne. Ouvre ce jeu une fois avec une connexion.');return}if(!isC())return;
+    if(mode==='cday'){const all=store.get('bb.crxDay',{}),st=all[lang]&&all[lang].d===dkey()?all[lang]:null;const G=Cross.start(B,lang,crxDaySeed(),1,'def',crxDone,st,crxTick);if(G.done)msg('Grille du jour terminée en '+fmt(G.t)+' · nouvelle grille demain');return}
+    if(crxPend&&!fresh){const o=crxPend;crxPend=null;Cross.start(B,o.lang,o.seed,o.di,o.cm,crxDone,o,crxTick);return}
+    const G=Cross.get();if(!fresh&&G&&!G.done&&G.lang===lang&&G.di===crxDi&&G.cm===crxCm&&G.seed!==crxDaySeed()){Cross.start(B,G.lang,G.seed,G.di,G.cm,crxDone,G,crxTick);return}
+    Cross.start(B,lang,Math.floor(Math.random()*1e9),crxDi,crxCm,crxDone,null,crxTick)}
+  $('#crx-diff').onchange=()=>{crxDi=+$('#crx-diff').value;store.set('bb.crxDiff',crxDi);$('#crx-diff').blur();start(true)};
+  $('#crx-cm').onchange=()=>{crxCm=$('#crx-cm').value;store.set('bb.crxCm',crxCm);$('#crx-cm').blur();start(true)};
+  $('#crx-list').onclick=()=>Cross.list();$('#crx-help').onclick=()=>Cross.help();
+  async function start(fresh){if(isC()){crxStart(fresh);return}if(isS()){sopStart(fresh);return}showS(false);loading=true;msg('');try{D=await data(lang)}catch(e){loading=false;msg('Liste de mots indisponible hors ligne. Ouvre ce jeu une fois avec une connexion.');return}loading=false;
     cur='';busy=false;shakeRow=-1;revealRow=-1;
     if(mode==='day'){target=dailyWord();const s=dayState();guesses=s?s.g.slice():[];over=!!(s&&s.done);won=!!(s&&s.won)}
     else if(fresh||!target||over){let t;do{t=D.s[rnd(Math.min(D.s.length,1200))]}while(t===dailyWord());target=t;guesses=[];over=false;won=false}
@@ -108,6 +132,7 @@ const Words=(()=>{
   $('#sop-diff').onchange=()=>{sopDi=+$('#sop-diff').value;store.set('bb.sopDiff',sopDi);$('#sop-diff').blur();if(mode==='sfree')start(true)};
   kbEl.addEventListener('pointerdown',e=>{const b=e.target.closest('.key');if(!b)return;e.preventDefault();key(b.dataset.k)});
   addEventListener('keydown',e=>{if($('#g-mot').hidden||Celebrate.active()||e.ctrlKey||e.metaKey||e.altKey)return;
+    if(isC()){if(e.key==='Backspace'){e.preventDefault();Cross.key('⌫');return}let c=(e.key||'').toLowerCase();if(c.length!==1)return;if(c!=='ñ')c=c.normalize('NFD').replace(/[̀-ͯ]/g,'');if(/^[a-zñ]$/.test(c)){e.preventDefault();Cross.key(c)}return}
     if(e.key==='Enter'){e.preventDefault();key('⏎');return}if(e.key==='Backspace'){e.preventDefault();key('⌫');return}
     let k=(e.key||'').toLowerCase();if(k.length!==1)return;if(k!=='ñ')k=k.normalize('NFD').replace(/[̀-ͯ]/g,'');if(/^[a-zñ]$/.test(k)){e.preventDefault();key(k)}});
   let AC=null;
@@ -117,11 +142,11 @@ const Words=(()=>{
   langSel.innerHTML=Object.entries(LN).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');langSel.value=lang;
   langSel.onchange=()=>{lang=langSel.value;store.set('bb.motLang',lang);langSel.blur();target='';start(true)};
   modeSel.value=mode;modeSel.onchange=()=>{setMode(modeSel.value);modeSel.blur();start(true)};
-  newBtn.onclick=()=>{if(mode==='sfree'){const G=Sopa.get();if(!G||G.done||!G.found.length){start(true);return}Celebrate.ask('Nouvelle soupe ?','La grille en cours sera abandonnée.','Nouvelle soupe','Continuer',()=>start(true),null);return}if(mode!=='free')return;if(over||!guesses.length){start(true);return}Celebrate.ask('Nouveau mot ?','Le mot en cours sera abandonné.','Nouveau mot','Continuer',()=>start(true),null)};
-  function save(){if(mode==='sfree'||mode==='slvl'){const G=Sopa.get();if(!G||G.done||!G.found.length&&G.t<5)return null;return{sop:{lvl:mode==='slvl'?sopLvl:0,lang:G.lang,seed:G.seed,di:G.di,found:G.found,t:G.t,mok:G.mok||0,early:G.early||0,clue:G.clue}}}if(mode!=='free'||over||!guesses.length||busy)return null;return{lang,target,guesses}}
-  function load(o){if(o.sop&&KB[o.sop.lang]){lang=o.sop.lang;langSel.value=lang;if(o.sop.lvl){setMode('slvl');sopLvl=o.sop.lvl}else setMode('sfree');sopPend=o.sop;sopDi=o.sop.di;$('#sop-diff').value=String(sopDi);restored=false;return}if(!KB[o.lang]||typeof o.target!=='string'||!Array.isArray(o.guesses))return;lang=o.lang;langSel.value=lang;setMode('free');target=o.target;guesses=o.guesses;over=false;won=false;restored=true}
+  newBtn.onclick=()=>{if(mode==='cfree'){const G=Cross.get();if(!G||G.done||!G.fill.some(Boolean)){start(true);return}Celebrate.ask('Nouvelle grille ?','La grille en cours sera abandonnée.','Nouvelle grille','Continuer',()=>start(true),null);return}if(mode==='sfree'){const G=Sopa.get();if(!G||G.done||!G.found.length){start(true);return}Celebrate.ask('Nouvelle soupe ?','La grille en cours sera abandonnée.','Nouvelle soupe','Continuer',()=>start(true),null);return}if(mode!=='free')return;if(over||!guesses.length){start(true);return}Celebrate.ask('Nouveau mot ?','Le mot en cours sera abandonné.','Nouveau mot','Continuer',()=>start(true),null)};
+  function save(){if(mode==='cfree'){const G=Cross.get();if(!G||G.done||!G.fill.some(Boolean))return null;return{crx:{lang:G.lang,seed:G.seed,di:G.di,cm:G.cm,fill:G.fill,rv:G.rv,helps:G.helps,t:G.t}}}if(mode==='sfree'||mode==='slvl'){const G=Sopa.get();if(!G||G.done||!G.found.length&&G.t<5)return null;return{sop:{lvl:mode==='slvl'?sopLvl:0,lang:G.lang,seed:G.seed,di:G.di,found:G.found,t:G.t,mok:G.mok||0,early:G.early||0,clue:G.clue}}}if(mode!=='free'||over||!guesses.length||busy)return null;return{lang,target,guesses}}
+  function load(o){if(o.crx&&KB[o.crx.lang]){lang=o.crx.lang;langSel.value=lang;setMode('cfree');crxPend=o.crx;crxDi=o.crx.di;$('#crx-diff').value=String(crxDi);crxCm=o.crx.cm;$('#crx-cm').value=crxCm;restored=false;return}if(o.sop&&KB[o.sop.lang]){lang=o.sop.lang;langSel.value=lang;if(o.sop.lvl){setMode('slvl');sopLvl=o.sop.lvl}else setMode('sfree');sopPend=o.sop;sopDi=o.sop.di;$('#sop-diff').value=String(sopDi);restored=false;return}if(!KB[o.lang]||typeof o.target!=='string'||!Array.isArray(o.guesses))return;lang=o.lang;langSel.value=lang;setMode('free');target=o.target;guesses=o.guesses;over=false;won=false;restored=true}
   let restored=false,started=false;
   return{frame(){},resize(){},save,load,pause(){},resume(){},
     enter(){if(!started||(mode==='day'&&target&&target!==(D&&D.s.length?dailyWord():target))){started=true;if(restored){restored=false;data(lang).then(d=>{D=d;render();newBtn.disabled=false}).catch(()=>start(false))}else start(false)}},
-    sub:()=>{if(isS()){const a=store.get('bb.sopDay',{})[lang];return 'Soupe de lettres · '+LN[lang]+(taBest()?' · chrono '+taBest():'')+(lvStars().filter(Boolean).length?' · parcours '+lvStars().filter(Boolean).length+'/'+NLV:'')+(a&&a.d===dkey()&&a.done?' · soupe du jour ✓':'')}const s=stats(),d=dayState();return LN[lang]+(d&&d.done?(d.won?' · trouvé ✓':' · raté'):' · mot du jour')+(s.st?' · série '+s.st:'')}}
+    sub:()=>{if(isC()){const a=store.get('bb.crxDay',{})[lang];return 'Mots croisés · '+LN[lang]+(a&&a.d===dkey()&&a.done?' · grille du jour ✓':' · grille du jour')}if(isS()){const a=store.get('bb.sopDay',{})[lang];return 'Soupe de lettres · '+LN[lang]+(taBest()?' · chrono '+taBest():'')+(lvStars().filter(Boolean).length?' · parcours '+lvStars().filter(Boolean).length+'/'+NLV:'')+(a&&a.d===dkey()&&a.done?' · soupe du jour ✓':'')}const s=stats(),d=dayState();return LN[lang]+(d&&d.done?(d.won?' · trouvé ✓':' · raté'):' · mot du jour')+(s.st?' · série '+s.st:'')}}
 })();
